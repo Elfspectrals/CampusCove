@@ -21,6 +21,8 @@ import type { ZoneCheckoutDonePayload, ZoneCheckoutErrorPayload } from '../../ty
 import { worldCuboids, type CellStoreEntry } from './useMallCellTemplates'
 import { useFurnitureStore, type FurnitureStoreDeps } from './useFurnitureStore'
 import type { ZoneBuyer } from './useZoneBuyers'
+import type { SportsCoachSpot } from '../../game/sports/sportsSignup'
+import type { RobotModel } from '../../game/sports/robotLook'
 
 const NPC_HALF_EXTENTS = { hx: 0.3, hy: 0.9, hz: 0.3 }
 const ANIMAL_CROSSFADE_S = 0.4
@@ -95,6 +97,9 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
   const atms = shallowRef<Vec3[]>([])
   const marketStalls = shallowRef<MarketStallAnchor[]>([])
   const marketShoppers = shallowRef<THREE.Object3D[]>([])
+  const sportsPassDesks = shallowRef<Vec3[]>([])
+  const sportsCoaches = shallowRef<SportsCoachSpot[]>([])
+  const robotModels = shallowRef<RobotModel[]>([])
   const blockers: string[] = []
   const storeAreas: StoreArea[] = []
   const zoneGroups: Array<{ group: THREE.Group; bounds: WorldBounds }> = []
@@ -120,6 +125,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     configureRoomMeshShadows(object)
     normalizeRoomMaterials(object, 'city')
     placeProp(object, item)
+    object.userData.zoneProp = { id: item.id, key: item.key }
     group.add(object)
     if (collision) worldCuboids(object, collision.cuboids).forEach((c, i) => block(blockerKey(zone, item.id, i), c))
   }
@@ -278,6 +284,10 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     const npcAt = (id: string) => decorated.decor.props.find((p) => p.kind === 'npc' && p.id === id)!.position
     buyers.value = [...buyers.value, ...decorated.decor.areas.filter((a) => a.role === 'buyer').map((area) => ({ zone: zone.key, area, position: npcAt(area.npc) }))]
     atms.value = [...atms.value, ...decorated.decor.props.filter((p) => p.kind === 'item' && p.key === 'atm').map((p) => p.position)]
+    const npcProps = decorated.decor.props.filter((p): p is NpcProp => p.kind === 'npc')
+    sportsPassDesks.value = [...sportsPassDesks.value, ...npcProps.filter((p) => p.sportsPassDesk).map((p) => p.position)]
+    sportsCoaches.value = [...sportsCoaches.value, ...npcProps.flatMap((p) => (p.coach ? [{ coach: p.coach, position: p.position }] : []))]
+    robotModels.value = [...robotModels.value, ...npcProps.flatMap((p) => (p.robotOf ? [{ coach: p.robotOf, body: p.body, outfit: p.outfit }] : []))]
     const sellers = decorated.decor.areas.filter((a) => a.role === 'seller')
     const opened = await Promise.allSettled(sellers.map((a) => openAreaStore(decorated, a, group)))
     const storeOf = new Map(sellers.flatMap((a, i) => {
@@ -332,5 +342,5 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     disposeObject3D(root)
   })
 
-  return { onTownLoaded, tick, currentStoreKey, buyers, atms, marketStalls, marketShoppers }
+  return { onTownLoaded, tick, currentStoreKey, buyers, atms, marketStalls, marketShoppers, sportsPassDesks, sportsCoaches, robotModels }
 }

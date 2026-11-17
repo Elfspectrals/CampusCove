@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "sport": "football",
+  "status": "ready",
+  "zone": "sports_gym",
+  "coachId": "gym_coach",
+  "signup": {
+    "teams": true,
+    "settings": [
+      {
+        "key": "teamSize",
+        "label": "Format",
+        "options": [
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "key": "durationSec",
+        "label": "Length",
+        "options": [
+          240,
+          360,
+          480
+        ]
+      }
+    ]
+  },
+  "venues": [
+    {
+      "id": "gym_court",
+      "zone": "sports_gym",
+      "sizeM": [
+        44,
+        24
+      ],
+      "goalSizeM": [
+        3,
+        2
+      ],
+      "walls": true,
+      "coachId": "gym_coach"
+    },
+    {
+      "id": "athletics_football",
+      "zone": "sports_athletics",
+      "sizeM": [
+        55,
+        35
+      ],
+      "goalSizeM": [
+        5,
+        2
+      ],
+      "walls": false,
+      "coachId": "athletics_coach"
+    }
+  ],
+  "formats": {
+    "gym_court": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "athletics_football": [
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "durationsSec": [
+    240,
+    360,
+    480
+  ],
+  "halvesByDurationSec": {
+    "480": 2
+  },
+  "minPlayers": 4,
+  "kickoffCountdownSec": 60,
+  "rejoinGraceSec": 10,
+  "ball": {
+    "radiusM": 0.18,
+    "massKg": 0.43,
+    "restitution": 0.55,
+    "wallRestitution": 0.7,
+    "rimRestitution": 0.5,
+    "friction": 1.4
+  },
+  "carryAheadM": 0.55,
+  "dribbleReachM": 0.9,
+  "pickupHeightM": 0.6,
+  "passPower": 8,
+  "passLift": 0.6,
+  "shotPowerRange": [
+    8,
+    17
+  ],
+  "shotLiftRange": [
+    1,
+    4
+  ],
+  "shotChargeMs": 1000,
+  "tackle": {
+    "reachM": 1.8,
+    "coneDeg": 70,
+    "cooldownMs": 3000,
+    "groundMs": 800,
+    "slideFromMps": 6.5
+  },
+  "standingTackle": {
+    "reachM": 1.1,
+    "coneDeg": 90,
+    "cooldownMs": 1000
+  },
+  "through": {
+    "leadM": 5,
+    "speed": 13
+  },
+  "kickIgnoreMs": 350,
+  "restartMs": 3000,
+  "gear": [],
+  "tasks": [
+    "matches_played",
+    "hat_trick"
+  ],
+  "passAssist": {
+    "coneDeg": 70,
+    "maxM": 30,
+    "speedPerM": 0.35,
+    "maxSpeed": 16
+  },
+  "lob": {
+    "holdMs": 250,
+    "chargeMs": 750,
+    "angleDeg": 40,
+    "rangeM": [
+      10,
+      30
+    ]
+  },
+  "sprintCarry": {
+    "extraM": 0.6,
+    "speedMps": [
+      5,
+      8.5
+    ]
+  },
+  "shotAssist": {
+    "maxOffM": 2.5,
+    "insidePostM": 0.35
+  },
+  "overcharge": {
+    "from": 0.9,
+    "lift": 3
+  }
+}

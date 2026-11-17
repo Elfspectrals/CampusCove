@@ -56,7 +56,7 @@ export async function onCashBagPick(room: GameRoom, client: GameClient, payload:
   try {
     const data = await callRealtimeBackend(player.token, `/cash-drops/${id}/pick`, 'POST')
     removeCashBag(room, id)
-    client.send('cash_bag_picked', { id, amount: data?.amount, cash: data?.cash, tools: isCodeList(data?.tools) ? data.tools : [] })
+    client.send('cash_bag_picked', { id, amount: data?.amount, cash: data?.cash, tools: isCodeList(data?.tools) ? data.tools : [], gear: isCodeList(data?.gear) ? data.gear : [] })
     if (bag.murderVictimAccountId !== null && bag.murderVictimAccountId !== player.accountId) reportCrime(room, player, 'bag_theft', bag.murderVictimAccountId)
   } catch (error) {
     const failure = errorPayload(error, 'You could not pick up the cash.', 'cash_bag_failed')

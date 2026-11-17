@@ -33,6 +33,7 @@ const props = defineProps<{
   decorOptions: SelectOption[]
   wear: Record<WearSlot, string[]>
   vendorTaken: boolean
+  coachIds?: readonly string[]
   preset: CellPreset
   bounds?: WorldBounds
   cropOptions?: SelectOption[]
@@ -314,6 +315,15 @@ function setRole(role: string): void {
   change(role ? { ...rest, role: role as StaffRole } : rest)
 }
 
+const robotOptions = computed<SelectOption[]>(() => [{ value: '', label: 'Not a robot model' }, ...(props.coachIds ?? []).map((id) => ({ value: id, label: `Robots of ${id}` }))])
+
+function setRobotOf(coach: string): void {
+  const npc = figure.value
+  if (npc?.kind !== 'npc') return
+  const { robotOf: _previous, ...rest } = npc
+  change(coach ? { ...rest, robotOf: coach } : rest)
+}
+
 const vendorAllowed = computed(() => figure.value?.kind === 'npc' && figure.value.pose === 'idle' && figure.value.scale.every((s) => s === 1))
 
 function piece(slot: WearSlot): OutfitPiece | MannequinPiece | undefined {
@@ -528,6 +538,10 @@ const flatMaterials = computed(() => props.materialOptions.filter((o) => !o.prev
               Cashier (sells the cart)
             </label>
           </template>
+          <div v-if="figure.kind === 'npc' && coachIds && coachIds.length > 0" class="grid grid-cols-[5.5rem_1fr] items-center gap-2">
+            <span class="text-xs text-mist" title="The robots this coach calls for solo play copy this figure's outfit and colours">Robot model</span>
+            <EditorSearchSelect :model-value="figure.robotOf ?? ''" :options="robotOptions" :searchable="false" @update:model-value="setRobotOf($event)" />
+          </div>
           <div class="grid grid-cols-[5.5rem_1fr] items-center gap-2">
             <span class="text-xs text-mist">{{ figure.kind === 'npc' ? 'Skin' : 'Body' }}</span>
             <EditorColorPicker :model-value="figure.body" @update:model-value="change({ ...figure, body: $event })" />

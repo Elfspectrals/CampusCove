@@ -23,3 +23,8 @@ test('an item made for one place or activity says where it is used', () => {
   assert.equal(itemType({ kind: 'furniture', code: 'decor_alarm' }).use, 'Your house: goes off on a break-in')
   assert.equal(itemType({ kind: 'tool', code: 'tool_house_key' }).use, null)
 })
+
+test('sports gear says which venue needs it', () => {
+  assert.deepEqual(itemType({ kind: 'sports_gear', code: 'gear_ice_skates' }), { label: 'Sports gear', use: 'Ice rink: needed to skate' })
+  assert.equal(itemType({ kind: 'sports_gear', code: 'gear_swimsuit' }).use, 'Pool: needed to swim and dive')
+})

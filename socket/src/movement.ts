@@ -4,6 +4,13 @@ import { cellOf, insideCell } from './jail.ts'
 import { inSecretVolume } from './pub.ts'
 import { drainStamina, JUMP_STAMINA_COST, SPRINT_STAMINA_PER_S } from './stamina.ts'
 import { SPEED_BOOST_FACTOR } from './survivalStats.ts'
+import { entersPassAreaWithoutPass } from './sports/pass.ts'
+import { entersTakenBoardEdge } from './sports/poolDiving.ts'
+import { entersPoolWaterWithoutSwimsuit, poolSwimRejection } from './sports/poolWater.ts'
+import { leavesFreeCourt } from './sports/gymFree.ts'
+import { entersReservedVenue, leavesConfinedMatch } from './sports/venues.ts'
+import { boxerIsDown } from './sports/boxing.ts'
+import { skateSpeedCap, skatingRejection } from './sports/skatingRink.ts'
 import type { GameRoom, HousingUnit, Player } from './types.ts'
 import { type WorldHouse, worldBounds, worldHouse, worldPub } from './world.ts'
 
@@ -13,7 +20,7 @@ const MAX_SPRINT_SPEED = 8.5 * 1.25
 const MAX_MOVE_BUDGET_SECONDS = 1
 const MOVE_MARGIN = 1.5
 
-export type MoveRejection = 'out_of_world' | 'frozen' | 'knocked_out' | 'cuffed' | 'jailed' | 'too_fast' | 'locked_in' | 'locked_house' | 'secret_room_closed'
+export type MoveRejection = 'out_of_world' | 'frozen' | 'knocked_out' | 'cuffed' | 'jailed' | 'too_fast' | 'locked_in' | 'locked_house' | 'secret_room_closed' | 'no_pass' | 'match_bounds' | 'venue_reserved' | 'tackled' | 'boxing_down' | 'no_skates' | 'skate_start' | 'skate_fallen' | 'no_swimsuit' | 'board_taken' | 'swim_too_fast' | 'below_pool_floor'
 
 export function toInterior(house: WorldHouse, x: number, z: number): { x: number, z: number } {
   const dx = x - house.position.x
@@ -57,14 +64,25 @@ export function moveRejection(room: GameRoom, player: Player, x: number, y: numb
   // fly (noclip): through walls, locked doors and cells, at any speed
   if (hasPower(player, 'fly')) return null
   if (player.cuffedBy) return 'cuffed'
+  if (now < player.sportsDownUntil) return 'tackled'
   const cell = cellOf(player)
   if (cell && !insideCell(cell.bounds, x, z)) return 'jailed'
   const elapsed = Math.min((now - player.lastMoveAt) / 1000, MAX_MOVE_BUDGET_SECONDS)
-  const baseSpeed = sprinting ? MAX_SPRINT_SPEED : MAX_WALK_SPEED
+  const baseSpeed = skateSpeedCap(player, x, z) ?? (sprinting ? MAX_SPRINT_SPEED : MAX_WALK_SPEED)
   const boosted = now < player.speedBoostUntil ? baseSpeed * SPEED_BOOST_FACTOR : baseSpeed
   const maxSpeed = hasPower(player, 'speed') ? boosted * SPEED_POWER_FACTOR : boosted
   if (Math.hypot(x - player.x, z - player.z) > maxSpeed * elapsed + MOVE_MARGIN) return 'too_fast'
   if (entersClosedSecretRoom(player, x, y, z, now)) return 'secret_room_closed'
+  if (entersPassAreaWithoutPass(player, x, z, now)) return 'no_pass'
+  if (entersReservedVenue(room, player, x, z)) return 'venue_reserved'
+  if (leavesConfinedMatch(room, player, x, z) || leavesFreeCourt(room, player, x, z)) return 'match_bounds'
+  if (boxerIsDown(room, player) && Math.hypot(x - player.x, z - player.z) > MOVE_MARGIN) return 'boxing_down'
+  const skating = skatingRejection(room, player, x, z, now)
+  if (skating) return skating
+  if (entersPoolWaterWithoutSwimsuit(player, x, z)) return 'no_swimsuit'
+  if (entersTakenBoardEdge(room, player, x, y, z)) return 'board_taken'
+  const swim = poolSwimRejection(player, x, y, z, elapsed, maxSpeed / baseSpeed)
+  if (swim) return swim
   const from = unitAt(room.housingUnits, player.x, player.z)
   const to = unitAt(room.housingUnits, x, z)
   if (from === to) return null

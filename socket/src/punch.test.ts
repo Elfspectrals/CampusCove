@@ -31,7 +31,8 @@ function fakePlayer(sessionId: string, x: number, z: number, ry = 0): Player {
     wantedDirty: false,
     lastHitAt: new Map(),
     lastAssaultAt: new Map(),
-    heldTool: null
+    heldTool: null,
+    sportsLoans: new Map()
   } as Player
 }
 

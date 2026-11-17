@@ -20,6 +20,26 @@ enum ActionCounter: string
     case ClothesBought = 'clothes_bought';
     case PubOrderDays = 'pub_order_days';
     case PubGames = 'pub_games';
+    case SkateRaces = 'skate_races';
+    case SkateCleanRuns = 'skate_clean_runs';
     case DuelsWon = 'duels_won';
     case SecretRoomWeeks = 'secret_room_weeks';
+    case FootballMatches = 'football_matches';
+    case BasketballMatches = 'basketball_matches';
+    case HatTricks = 'hat_tricks';
+    case SharpshooterMatches = 'sharpshooter_matches';
+    case RacesRun = 'races_run';
+    case Fast400Runs = 'fast_400_runs';
+    case TennisMatches = 'tennis_matches';
+    case TennisWhitewashes = 'tennis_whitewashes';
+    case SongsDanced = 'songs_danced';
+    case FullComboHard = 'full_combo_hard';
+    case ClimbLinesTopped = 'climb_lines_topped';
+    case BlackLinesTopped = 'black_lines_topped';
+    case BoxingWins = 'boxing_wins';
+    case PetanqueGames = 'petanque_games';
+    case PetanqueCarreaux = 'petanque_carreaux';
+    case SwimRaces = 'swim_races';
+    case SwimFast50 = 'swim_fast_50';
+    case PlatformDives = 'platform_dives';
 }

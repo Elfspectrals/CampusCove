@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "key": "sports_dance",
+  "name": "Cove Dance Studio",
+  "footprint": [
+    13.0,
+    20.009999999999998
+  ],
+  "footprintCenterZ": -0.004999999999999893,
+  "doorLocal": [
+    0.0,
+    1.25,
+    10.0
+  ],
+  "interiorOffset": [
+    0.0,
+    0.2,
+    4.595
+  ],
+  "collision": [
+    {
+      "cx": 0.0,
+      "cz": -0.004999999999999893,
+      "hx": 6.7,
+      "hz": 10.204999999999998,
+      "hy": 2.6
+    }
+  ]
+}

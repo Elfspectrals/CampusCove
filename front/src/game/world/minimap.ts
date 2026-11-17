@@ -6,7 +6,7 @@ import { storeBuildings, workBuildings, houseBuildings, type WorldBounds, type W
  * over it by the HUD. North (-Z) is up, east (+X) is right. Nothing is rendered per frame.
  */
 
-export type MapMarkerKind = 'store' | 'work' | 'home'
+export type MapMarkerKind = 'store' | 'work' | 'home' | 'bus'
 
 export interface MapMarker {
   id: string
@@ -63,6 +63,7 @@ export function mapMarkers(manifest: WorldManifest, homeKey: string | null): Map
     ...storeBuildings(manifest).map((b) => at(b.key, 'store', b.name, b.position)),
     ...workBuildings(manifest).map((b) => at(b.key, 'work', b.name, b.position)),
   ]
+  for (const stop of manifest.bus?.stops ?? []) markers.push({ id: `bus:${stop.id}`, kind: 'bus', name: `${stop.name} bus stop`, x: stop.A.pole[0], z: stop.A.pole[1] })
   const home = homeKey ? houseBuildings(manifest).find((b) => b.key === homeKey) : undefined
   if (home) markers.push(at(home.key, 'home', home.name, home.position))
   return markers

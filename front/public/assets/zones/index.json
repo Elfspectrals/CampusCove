@@ -14,9 +14,20 @@
     "pond",
     "pub",
     "retail_park",
+    "sports_athletics",
+    "sports_entrance",
+    "sports_gym",
+    "sports_reception",
+    "sports_tennis",
     "storage",
     "summit_sports",
     "town_market",
-    "work_district"
+    "work_district",
+    "sports_dance",
+    "sports_climbing",
+    "sports_boxing",
+    "sports_ice_rink",
+    "sports_petanque",
+    "sports_pool"
   ]
 }

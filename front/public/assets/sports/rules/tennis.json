@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "sport": "tennis",
+  "status": "ready",
+  "zone": "sports_tennis",
+  "coachId": "tennis_coach",
+  "signup": {
+    "teams": true,
+    "settings": [
+      {
+        "key": "mode",
+        "label": "Mode",
+        "options": [
+          "singles",
+          "doubles"
+        ]
+      },
+      {
+        "key": "format",
+        "label": "Format",
+        "options": [
+          "short_set_4",
+          "tiebreak_7"
+        ]
+      }
+    ]
+  },
+  "courts": [
+    {
+      "id": "tennis_1",
+      "centre": [
+        -454.645,
+        0,
+        -271.5
+      ],
+      "sizeM": [
+        10.97,
+        23.77
+      ],
+      "netHeightM": 0.914
+    },
+    {
+      "id": "tennis_2",
+      "centre": [
+        -432.355,
+        0,
+        -271.5
+      ],
+      "sizeM": [
+        10.97,
+        23.77
+      ],
+      "netHeightM": 0.914
+    }
+  ],
+  "modes": [
+    "singles",
+    "doubles"
+  ],
+  "players": {
+    "singles": 2,
+    "doubles": 4
+  },
+  "formats": [
+    "short_set_4",
+    "tiebreak_7"
+  ],
+  "ball": {
+    "radiusM": 0.033,
+    "restitution": 0.75,
+    "bounceKeep": 0.8,
+    "drag": 0,
+    "gravity": 9.81
+  },
+  "hit": {
+    "windowMs": 150,
+    "reachM": 1.8,
+    "sweetSpotM": 0.8,
+    "maxHeightM": 2.8,
+    "driveSpeedMs": [
+      11,
+      19
+    ],
+    "missM": 4,
+    "powerByTiming": "linear",
+    "swingAheadMs": 350,
+    "perfectTimingMs": [
+      -60,
+      200
+    ],
+    "timingFloor": 0.5,
+    "netClearM": 0.35,
+    "chargeMs": 600,
+    "smashSpeedMs": 25,
+    "cooldownMs": 400,
+    "whiffRecoveryMs": 700
+  },
+  "lob": {
+    "speedMs": [
+      6.5,
+      8.5
+    ]
+  },
+  "serve": {
+    "tossStartY": 1.8,
+    "tossSpeedMs": 5,
+    "windowMs": 400,
+    "speedMs": [
+      12,
+      20
+    ],
+    "autoTossAfterMs": 10000,
+    "floor": 0.3,
+    "reachM": 1.0
+  },
+  "faults": "simplified",
+  "rejoinGraceSec": 10,
+  "gear": [
+    "gear_tennis_racket"
+  ],
+  "tasks": [
+    "tennis",
+    "tennis_whitewash"
+  ]
+}

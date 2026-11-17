@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { gameOptions } from '../composables/game/useGameOptions'
 
 interface SoundDef {
   urls: string[]
@@ -16,6 +17,8 @@ const DOOR_RANGE = { refDistance: 1, maxDistance: 5 }
 /** Lockpicking is louder: the socket sends it within 12 m (LOCKPICK_NOISE_RADIUS). */
 const LOCKPICK_RANGE = { refDistance: 2, maxDistance: 12 }
 const ALARM_RANGE = { refDistance: 4, maxDistance: 25 }
+const TENNIS_RANGE = { refDistance: 3, maxDistance: 30 }
+const PETANQUE_RANGE = { refDistance: 3, maxDistance: 25 }
 
 const doorUrls = (name: string, count: number) => Array.from({ length: count }, (_, i) => `/assets/sfx/door/${name}_${i + 1}.mp3`)
 
@@ -38,6 +41,30 @@ const SOUNDS = {
   market_bell: { urls: ['/assets/sfx/market/bell.mp3'], volume: 0.6 },
   market_bought: { urls: ['/assets/sfx/market/bought.mp3'], volume: 0.7 },
   market_sold: { urls: ['/assets/sfx/market/sold.mp3'], volume: 0.7 },
+  gym_kick: { urls: ['/assets/sfx/gym/kick.mp3'], volume: 0.8, refDistance: 3, maxDistance: 25 },
+  gym_bounce: { urls: ['/assets/sfx/gym/bounce.mp3'], volume: 0.6, refDistance: 3, maxDistance: 25 },
+  gym_whistle: { urls: ['/assets/sfx/gym/whistle.mp3'], volume: 0.7 },
+  gym_swish: { urls: ['/assets/sfx/gym/swish.mp3'], volume: 0.8, refDistance: 4, maxDistance: 30 },
+  run_step_good: { urls: ['/assets/sfx/running/step_good.mp3'], volume: 1 },
+  run_step_off: { urls: ['/assets/sfx/running/step_off.mp3'], volume: 0.5 },
+  tennis_swing: { urls: ['/assets/sfx/tennis/swing.mp3'], volume: 0.6 },
+  tennis_hit: { urls: ['/assets/sfx/tennis/hit.mp3'], volume: 1, ...TENNIS_RANGE },
+  tennis_bounce: { urls: ['/assets/sfx/tennis/bounce.mp3'], volume: 0.8, ...TENNIS_RANGE },
+  tennis_net: { urls: ['/assets/sfx/tennis/net.mp3'], volume: 0.8 },
+  tennis_call: { urls: ['/assets/sfx/tennis/call.mp3'], volume: 0.7 },
+  boxing_bell: { urls: ['/assets/sfx/boxing/bell.mp3'], volume: 0.8 },
+  glove_hit: { urls: ['/assets/sfx/boxing/glove_hit.mp3'], volume: 0.9 },
+  glove_block: { urls: ['/assets/sfx/boxing/glove_block.mp3'], volume: 0.7 },
+  bag_hit: { urls: ['/assets/sfx/boxing/bag_hit.mp3'], volume: 0.8 },
+  skate_push: { urls: ['/assets/sfx/skating/push.mp3'], volume: 0.5 },
+  skate_brake: { urls: ['/assets/sfx/skating/brake.mp3'], volume: 0.6 },
+  skate_fall: { urls: ['/assets/sfx/skating/fall.mp3'], volume: 0.9 },
+  skate_bump: { urls: ['/assets/sfx/skating/bump.mp3'], volume: 0.8 },
+  skate_start: { urls: ['/assets/sfx/skating/start.mp3'], volume: 0.8 },
+  petanque_land: { urls: ['/assets/sfx/petanque/land.mp3'], volume: 0.8, ...PETANQUE_RANGE },
+  petanque_clack: { urls: ['/assets/sfx/petanque/clack.mp3'], volume: 0.9, ...PETANQUE_RANGE },
+  petanque_carreau: { urls: ['/assets/sfx/petanque/carreau.mp3'], volume: 0.8, ...PETANQUE_RANGE },
+  petanque_point: { urls: ['/assets/sfx/petanque/point.mp3'], volume: 0.6 },
 } satisfies Record<string, SoundDef>
 
 export type SfxName = keyof typeof SOUNDS
@@ -61,6 +88,7 @@ export function createSfx(getCamera: () => THREE.Camera | undefined) {
       camera.add(listener)
     }
     if (listener.context.state === 'suspended') void listener.context.resume()
+    listener.setMasterVolume(gameOptions.masterVolume)
     return listener
   }
 
@@ -68,7 +96,7 @@ export function createSfx(getCamera: () => THREE.Camera | undefined) {
     const buffer = variants[Math.floor(Math.random() * variants.length)]
     if (!buffer) throw new Error(`No sound loaded for ${name}`)
     audio.setBuffer(buffer)
-    audio.setVolume(SOUNDS[name].volume)
+    audio.setVolume(SOUNDS[name].volume * gameOptions.effectsVolume)
     audio.setPlaybackRate(1 + (Math.random() * 2 - 1) * PITCH_SPREAD)
     const ended = audio.onEnded.bind(audio)
     audio.onEnded = () => {

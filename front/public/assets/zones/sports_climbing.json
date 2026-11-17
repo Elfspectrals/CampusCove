@@ -1,0 +1,323 @@
+{
+  "version": 1,
+  "zone": "sports_climbing",
+  "name": "Cove Climbing Hall",
+  "areas": [],
+  "props": [
+    {
+      "id": "climbing_coach",
+      "kind": "npc",
+      "position": [
+        -571.8,
+        0.2,
+        -203.5
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#a8734f",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#2b1d14"
+        },
+        {
+          "slot": "top",
+          "key": "staff_polo",
+          "color": "#e07a2f"
+        },
+        {
+          "slot": "bottom",
+          "key": "track_pants",
+          "color": "#2e3440"
+        },
+        {
+          "slot": "shoes",
+          "key": "runners",
+          "color": "#e07a2f"
+        }
+      ],
+      "coach": "climbing_duel"
+    },
+    {
+      "id": "climbing_shoe_attendant",
+      "kind": "npc",
+      "position": [
+        -548.805,
+        0.2,
+        -210.05
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#e2b48f",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#6b4a2b"
+        },
+        {
+          "slot": "top",
+          "key": "staff_polo",
+          "color": "#2a9d8f"
+        },
+        {
+          "slot": "bottom",
+          "key": "track_pants",
+          "color": "#2e3440"
+        },
+        {
+          "slot": "shoes",
+          "key": "runners",
+          "color": "#f2f2f2"
+        }
+      ]
+    },
+    {
+      "id": "sports_climbing_shoe_shelf_01",
+      "kind": "item",
+      "key": "shoe_wall_shelf",
+      "code": "decor_shoe_wall_shelf",
+      "forSale": false,
+      "position": [
+        -548.0,
+        0.2,
+        -194.9
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_climbing_yoga_mats_01",
+      "kind": "item",
+      "key": "yoga_mat_rolls",
+      "code": "decor_yoga_mat_rolls",
+      "forSale": false,
+      "position": [
+        -552.5,
+        0.2,
+        -195.4
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_climbing_monstera_01",
+      "kind": "item",
+      "key": "monstera",
+      "code": "decor_monstera",
+      "forSale": false,
+      "position": [
+        -546.9,
+        0.2,
+        -195.3
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_climbing_trash_bin_01",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [
+        -546.9,
+        0.2,
+        -207.0
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_climbing_chalk_bag_01",
+      "kind": "item",
+      "key": "chalk_bag",
+      "code": "decor_chalk_bag",
+      "forSale": false,
+      "position": [
+        -566.0,
+        0.2,
+        -208.6
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_climbing_chalk_bag_02",
+      "kind": "item",
+      "key": "chalk_bag",
+      "code": "decor_chalk_bag",
+      "forSale": false,
+      "position": [
+        -560.5,
+        0.2,
+        -198.4
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_climbing_chalk_bag_03",
+      "kind": "item",
+      "key": "chalk_bag",
+      "code": "decor_chalk_bag",
+      "forSale": false,
+      "position": [
+        -571.9,
+        0.2,
+        -206.5
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_climbing_hold_bucket_01",
+      "kind": "item",
+      "key": "hold_bucket",
+      "code": "decor_hold_bucket",
+      "forSale": false,
+      "position": [
+        -562.5,
+        0.2,
+        -208.7
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_climbing_hold_bucket_02",
+      "kind": "item",
+      "key": "hold_bucket",
+      "code": "decor_hold_bucket",
+      "forSale": false,
+      "position": [
+        -565.5,
+        0.2,
+        -198.3
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_climbing_hold_bucket_03",
+      "kind": "item",
+      "key": "hold_bucket",
+      "code": "decor_hold_bucket",
+      "forSale": false,
+      "position": [
+        -571.9,
+        0.2,
+        -200.5
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_climbing_rope_coil_01",
+      "kind": "item",
+      "key": "rope_coil",
+      "code": "decor_rope_coil",
+      "forSale": false,
+      "position": [
+        -571.2,
+        0.2,
+        -211.6
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_climbing_rope_coil_02",
+      "kind": "item",
+      "key": "rope_coil",
+      "code": "decor_rope_coil",
+      "forSale": false,
+      "position": [
+        -571.2,
+        0.2,
+        -195.4
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_climbing_route_board_01",
+      "kind": "item",
+      "key": "route_board",
+      "code": "decor_route_board",
+      "forSale": false,
+      "position": [
+        -546.45,
+        1.0,
+        -199.0
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  ]
+}

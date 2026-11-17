@@ -251,6 +251,16 @@ fc = cb.fcurves.new('pose.bones["Hips"].rotation_quaternion', index=0)
   - Listen with `mixer.addEventListener('finished', e => e.action===a && …)`.
   - Without clamp, the action disables itself and its weight falls back to the binding's original state (usually the rest pose) until another action takes the weight. With clamp it holds the last frame. Either way, `reset()` is needed before it plays again (`AnimationAction.js`, `PropertyMixer.js` apply).
 - **Crossfade:** the project uses `crossFadeTo(next, 0.22, false)` (`glbCharacter.ts:121-157`). Use `warp=true` or `syncWith` between cycles whose foot phases match.
+- **No snap back to the rest pose between clips** (found 2026-11-15 on the dance moves). For every clip:
+  - A one-shot starts and ends exactly on the pose of the clip it returns to (the `DanceMove*` clips on the `Dance`
+    frame-0 pose). A looped clip starts and ends on a pose that blends with
+    the clips around it, never the bind pose.
+  - A looped clip's last frame equals its first frame on every channel.
+  - Every clip keys the same set of bones (all bones, translation, rotation and scale, as `sample_actions` does). A
+    bone without a track in one of two blended clips falls back to its rest pose during the blend.
+  - The player crossfades from the running action to the next one (`crossFadeTo`, or `fadeOut` + `reset().fadeIn().play()`
+    on the next). Never `stop()` an action and then start another, and never let a `LoopOnce` action end without
+    `clampWhenFinished`: both hand the bones back to the rest pose for at least one frame.
 - **Additive:** `AnimationUtils.makeClipAdditive(clip.clone(), 0, ref, 30)`. Always clone, because it mutates the clip in place.
 - **Retargeting** with `SkeletonUtils.retargetClip`:
   - `names` maps target to source in sanitized form.
@@ -307,8 +317,9 @@ fc = cb.fcurves.new('pose.bones["Hips"].rotation_quaternion', index=0)
 ## 5. Verification checklist before calling a clip done
 
 1. **Clip names:** run `gltf-transform inspect` on the **optimized** GLB. Every expected clip is present with the exact case: PascalCase for humans, lowercase for animals. No stale actions.
-2. **Loop seam:**
+2. **Loop seam and blends:**
    - The first and last key are equal on every channel.
+   - Every clip of the GLB has the same set of tracks; one-shots start and end on the pose of the clip they return to (§3.3).
    - Input accessor min = 0 and max = N/fps (human clips key from frame 0 in `sample_actions`; animals export with `export_anim_slide_to_zero=True`).
    - Integer harmonics only.
 3. **No jumps:** between consecutive frames no bone rotates more than 90° (angle = 2·acos(|dot|)). Do not gate on dot ≥ 0 in the exported GLB: the exporter decomposes matrices and can flip signs harmlessly.

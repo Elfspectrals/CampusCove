@@ -1,5 +1,6 @@
 import { callRealtimeBackend } from './backend.ts'
 import { inSecretVolume } from './pub.ts'
+import { countsForExplorer } from './sports/explorer.ts'
 import type { Player } from './types.ts'
 import { worldPub, worldZoneKeysAt } from './world.ts'
 
@@ -48,7 +49,7 @@ function warn(context: string, error: unknown): void {
 function reportNewZones(player: Player): void {
   const reported = zonesReportedByAccount.get(player.accountId) ?? new Set<string>()
   zonesReportedByAccount.set(player.accountId, reported)
-  for (const zone of worldZoneKeysAt(player.x, player.z)) {
+  for (const zone of worldZoneKeysAt(player.x, player.z).filter(countsForExplorer)) {
     if (reported.has(zone)) continue
     reported.add(zone)
     callRealtimeBackend(player.token, '/tasks/zone-visited', 'POST', { zone }).catch((error: unknown) => {

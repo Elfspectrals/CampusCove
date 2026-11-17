@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_RopeCoil": {
+      "mask": "parts_DC_RopeCoil.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#9fd5f1"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#4f98ce"
+        }
+      ]
+    }
+  }
+}

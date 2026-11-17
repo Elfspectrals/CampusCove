@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "sport": "petanque",
+  "status": "ready",
+  "zone": "sports_petanque",
+  "coachId": "petanque_coach",
+  "coach": [-400, -254.6],
+  "signup": {
+    "teams": true,
+    "settings": [
+      {
+        "key": "format",
+        "label": "Format",
+        "options": [
+          "1v1_3",
+          "2v2_3",
+          "3v3_2"
+        ]
+      },
+      {
+        "key": "targetPoints",
+        "label": "Game to",
+        "options": [
+          7,
+          13
+        ]
+      }
+    ]
+  },
+  "pistes": [
+    { "id": "petanque_1", "centre": [-406.3, -264.5], "sizeM": [4, 15] },
+    { "id": "petanque_2", "centre": [-402.1, -264.5], "sizeM": [4, 15] },
+    { "id": "petanque_3", "centre": [-397.9, -264.5], "sizeM": [4, 15] },
+    { "id": "petanque_4", "centre": [-393.7, -264.5], "sizeM": [4, 15] }
+  ],
+  "formats": [
+    { "id": "1v1_3", "teamSize": 1, "boules": 3 },
+    { "id": "2v2_3", "teamSize": 2, "boules": 3 },
+    { "id": "3v3_2", "teamSize": 3, "boules": 2 }
+  ],
+  "targetPoints": [7, 13],
+  "boule": { "radiusM": 0.0375, "massKg": 0.7 },
+  "jack": { "radiusM": 0.015, "massKg": 0.018, "throwDistanceRangeM": [6, 10], "minSideGapM": 0.5 },
+  "ground": { "rollingDecelMs2": 0.9, "restitution": 0.75 },
+  "throw": {
+    "circleFromEndM": 1,
+    "circleReachM": 1.2,
+    "maxDistanceM": 13,
+    "maxAimDeg": 30,
+    "pointLandFraction": 0.5,
+    "shootSpeedMs": 7,
+    "shootKeepFraction": 0.2,
+    "pointApexM": 1.6,
+    "shootApexM": 2.6,
+    "aimScatterDeg": 1.2,
+    "powerScatter": 0.02,
+    "carreauRadiusM": 0.3,
+    "shotClockSec": 40
+  },
+  "endPauseSec": 5,
+  "throwModes": ["point", "shoot"],
+  "powerMeter": { "riseMs": 1200 },
+  "rejoinGraceSec": 10,
+  "gear": ["gear_boules"],
+  "tasks": ["games_played", "carreau"]
+}

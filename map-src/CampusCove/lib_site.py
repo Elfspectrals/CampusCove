@@ -252,6 +252,39 @@ def street_lamp(s, name, gx, gz, M, h=4.0, col=True):
         s.col(name, gx, gz, 0.35, 0.35, 2.0)
 
 
+def bus_shelter(s, name, gx, gz, rot, label, M, w=4.0, d=1.5, h=2.4, col=True):
+    """Glass bus shelter, open on its front (furn convention: rot 0 opens toward game -Z, pi toward +Z): four posts,
+    roof with a name fascia, glass back and sides, a bench along the back and a timetable board. M: frame, glass,
+    wood, sign, sign_text. rot is a multiple of pi/2 (the collision boxes stay axis-aligned with it)."""
+    hw, hd = w / 2, d / 2
+    s.add(L.furn(s.coll, f"{name}_Frame", gx, gz, rot, [
+        *[(px, pz, 0.0, 0.08, 0.08, h, M["frame"]) for px in (-hw + 0.04, hw - 0.04) for pz in (-hd + 0.04, hd - 0.04)],
+        (0, 0, h, w + 0.3, d + 0.3, 0.1, M["frame"], 0.02), (0, -hd - 0.12, h - 0.22, w + 0.3, 0.06, 0.22, M["sign"]),
+        (-0.6, hd - 0.35, 0.0, 0.05, 0.4, 0.45, M["frame"]), (0.6, hd - 0.35, 0.0, 0.05, 0.4, 0.45, M["frame"]),
+        (hw - 0.3, hd - 0.12, 0.9, 0.5, 0.04, 0.8, M["sign"])]))
+    s.add(L.furn(s.coll, f"{name}_Glass", gx, gz, rot, [
+        (0, hd - 0.04, 0.3, w - 0.16, 0.02, h - 0.5, M["glass"]),
+        (-hw + 0.04, 0.05, 0.3, 0.02, d - 0.26, h - 0.5, M["glass"]), (hw - 0.04, 0.05, 0.3, 0.02, d - 0.26, h - 0.5, M["glass"])]))
+    c, sn = math.cos(rot), math.sin(rot)
+
+    def at(lx, lz):
+        return gx + lx * c + lz * sn, gz - lx * sn + lz * c
+
+    s.add(L.furn(s.coll, f"{name}_Seat", *at(0.0, hd - 0.35), rot, [(0, 0, 0.45, w * 0.6, 0.4, 0.05, M["wood"], 0.01)]))
+    fx, fz = at(0.0, -hd - 0.155)
+    t = L.text_mesh(s.coll, f"{name}_Label", label, fx, fz, h - 0.2, 0.14, 0.005, M["sign_text"], resolution=2)
+    t.rotation_euler = (math.pi / 2, 0, rot + math.pi)
+    s.add(t)
+    if col:
+        sx_, sz_ = (w, 0.2) if abs(sn) < 0.5 else (0.2, w)
+        s.col(f"{name}_Back", *at(0.0, hd - 0.04), sx_, sz_, h)
+        for side, lx in (("W", -hw + 0.04), ("E", hw - 0.04)):
+            ax, az = (0.2, d) if abs(sn) < 0.5 else (d, 0.2)
+            s.col(f"{name}_Side{side}", *at(lx, 0.0), ax, az, h)
+        bx, bz = (w * 0.6, 0.45) if abs(sn) < 0.5 else (0.45, w * 0.6)
+        s.col(f"{name}_Seat", *at(0.0, hd - 0.35), bx, bz, 0.5)
+
+
 def bench(s, name, gx, gz, rot, M, col=True):
     s.add(L.furn(s.coll, name, gx, gz, rot, [(-0.7, 0, 0.0, 0.08, 0.42, 0.42, M["iron"]), (0.7, 0, 0.0, 0.08, 0.42, 0.42, M["iron"]),
                                               (0, 0, 0.42, 1.6, 0.44, 0.06, M["wood"], 0.01), (0, 0.2, 0.48, 1.6, 0.06, 0.42, M["wood"], 0.01)]))

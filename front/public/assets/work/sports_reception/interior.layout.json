@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "key": "sports_reception",
+  "name": "Cove Sports Park",
+  "spawn": [
+    0.0,
+    1.6,
+    3.7
+  ],
+  "exit": {
+    "position": [
+      0.0,
+      4.75
+    ],
+    "radius": 1.4
+  },
+  "stations": [],
+  "npcs": {
+    "passClerk": [
+      0.0,
+      0.0,
+      -2.95
+    ]
+  },
+  "counters": {
+    "pass": [
+      0.0,
+      0.0,
+      -2.0
+    ]
+  },
+  "seats": []
+}

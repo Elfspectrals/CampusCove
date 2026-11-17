@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "zone": "sports_ice_rink",
+  "name": "Cove Ice Rink",
+  "props": [
+    {
+      "id": "rink_coach",
+      "kind": "npc",
+      "position": [
+        -494.8,
+        0.2,
+        -275.5
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#e0b08c",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#2b2622"
+        },
+        {
+          "slot": "top",
+          "key": "track_jacket",
+          "color": "#2f6fb0"
+        },
+        {
+          "slot": "bottom",
+          "key": "track_pants",
+          "color": "#1f2a33"
+        },
+        {
+          "slot": "shoes",
+          "key": "runners",
+          "color": "#f2f2f2"
+        }
+      ],
+      "coach": "rink_coach"
+    }
+  ],
+  "areas": []
+}

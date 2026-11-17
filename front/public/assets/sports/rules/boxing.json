@@ -1,0 +1,242 @@
+{
+  "version": 1,
+  "sport": "boxing",
+  "status": "ready",
+  "zone": "sports_boxing",
+  "coachId": "boxing_coach",
+  "signup": {
+    "teams": false,
+    "settings": [
+      {
+        "key": "rounds",
+        "label": "Rounds",
+        "options": [
+          1,
+          3,
+          5
+        ]
+      }
+    ]
+  },
+  "ring": {
+    "centre": {
+      "x": -383,
+      "y": 1.1,
+      "z": -229.6
+    },
+    "sizeM": 6.1,
+    "halfM": 3.05,
+    "ropes": 4
+  },
+  "coach": {
+    "x": -387,
+    "z": -233.8
+  },
+  "corners": {
+    "red": {
+      "x": -380.55,
+      "y": 1.1,
+      "z": -232.05
+    },
+    "blue": {
+      "x": -385.45,
+      "y": 1.1,
+      "z": -227.15
+    }
+  },
+  "exits": {
+    "red": {
+      "x": -388.45,
+      "y": 0.2,
+      "z": -230.6
+    },
+    "blue": {
+      "x": -388.45,
+      "y": 0.2,
+      "z": -228
+    }
+  },
+  "roundsChoices": [
+    1,
+    3,
+    5
+  ],
+  "introSec": 5,
+  "roundSec": 60,
+  "restSec": 20,
+  "health": 120,
+  "restHealth": 20,
+  "endurance": 100,
+  "enduranceRegenPerSec": 12,
+  "lowEndurance": 25,
+  "lowEnduranceSlowdown": 1.5,
+  "punches": {
+    "jab": {
+      "damage": 5,
+      "enduranceCost": 6,
+      "cooldownMs": 450,
+      "reachM": 1.7,
+      "points": 1
+    },
+    "cross": {
+      "damage": 9,
+      "enduranceCost": 11,
+      "cooldownMs": 800,
+      "reachM": 1.9,
+      "points": 2
+    },
+    "hook": {
+      "damage": 17,
+      "enduranceCost": 18,
+      "cooldownMs": 1150,
+      "reachM": 1.5,
+      "points": 3
+    },
+    "uppercut": {
+      "damage": 21,
+      "enduranceCost": 20,
+      "cooldownMs": 1250,
+      "reachM": 1.3,
+      "points": 3
+    }
+  },
+  "hold": {
+    "ms": 250
+  },
+  "bufferMs": 200,
+  "combo": {
+    "windowMs": 500,
+    "list": [
+      {
+        "id": "one_two",
+        "sequence": [
+          "jab",
+          "cross"
+        ],
+        "bonusDamage": 3,
+        "bonusPoints": 1
+      },
+      {
+        "id": "double_jab",
+        "sequence": [
+          "jab",
+          "jab",
+          "cross"
+        ],
+        "bonusDamage": 5,
+        "bonusPoints": 2
+      },
+      {
+        "id": "one_two_hook",
+        "sequence": [
+          "jab",
+          "cross",
+          "hook"
+        ],
+        "bonusDamage": 6,
+        "bonusPoints": 2
+      },
+      {
+        "id": "upper_hook",
+        "sequence": [
+          "uppercut",
+          "hook"
+        ],
+        "bonusDamage": 5,
+        "bonusPoints": 2
+      },
+      {
+        "id": "full_combo",
+        "sequence": [
+          "jab",
+          "cross",
+          "hook",
+          "uppercut"
+        ],
+        "bonusDamage": 10,
+        "bonusPoints": 4
+      }
+    ]
+  },
+  "guard": {
+    "damageFactor": 0.2,
+    "drainPerSec": 10
+  },
+  "flurry": {
+    "freePunches": 4,
+    "restMs": 800,
+    "costStep": 0.5,
+    "damageStep": 0.2,
+    "minDamage": 0.4
+  },
+  "parry": {
+    "windowMs": 250,
+    "rearmMs": 600,
+    "stunMs": 900
+  },
+  "counter": {
+    "windowMs": 1200,
+    "damageFactor": 2,
+    "bonusPoints": 2
+  },
+  "guardBreak": {
+    "staggerMs": 700,
+    "damageFactor": 0.5
+  },
+  "dodge": {
+    "cooldownMs": 1000,
+    "windowMs": 400,
+    "enduranceCost": 8
+  },
+  "knockdown": {
+    "countSec": 10,
+    "maxPerFight": 3,
+    "getUpPerRound": 1,
+    "getUpPresses": 12,
+    "getUpHealth": 50,
+    "pressGapMs": 80
+  },
+  "hit": {
+    "facingCos": 0.3,
+    "heightM": 1
+  },
+  "bag": {
+    "roundSec": 60,
+    "windowMs": 1200,
+    "leaveM": 3,
+    "pointsPerPunch": 10,
+    "streakForDouble": 3,
+    "extra": [
+      { "id": "slip_counter", "sequence": ["dodge_left", "cross", "hook"] },
+      { "id": "duck_under", "sequence": ["dodge_right", "hook", "uppercut"] },
+      { "id": "high_guard", "sequence": ["guard", "jab", "cross"] },
+      { "id": "machine_gun", "sequence": ["jab", "jab", "jab", "cross"] },
+      { "id": "body_breaker", "sequence": ["jab", "jab", "hook", "uppercut"] },
+      { "id": "in_and_out", "sequence": ["jab", "dodge_left", "jab", "dodge_right", "cross"] },
+      { "id": "finisher", "sequence": ["jab", "cross", "hook", "uppercut", "cross"] }
+    ]
+  },
+  "punchBags": [
+    {
+      "x": -386.25,
+      "z": -221.8
+    },
+    {
+      "x": -382.45,
+      "z": -221.8
+    },
+    {
+      "x": -378.65,
+      "z": -221.8
+    }
+  ],
+  "minPlayers": 2,
+  "maxPlayers": 2,
+  "rejoinGraceSec": 10,
+  "gear": [
+    "gear_boxing_gloves"
+  ],
+  "tasks": [
+    "fights_won_distinct"
+  ]
+}

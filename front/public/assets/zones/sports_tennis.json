@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "zone": "sports_tennis",
+  "name": "Cove Sports Park tennis courts",
+  "props": [
+    {
+      "id": "sports_tennis_coach",
+      "kind": "npc",
+      "position": [
+        -443.5,
+        0.08,
+        -271.5
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#a8714f",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#2b1d14"
+        },
+        {
+          "slot": "top",
+          "key": "staff_polo",
+          "color": "#f4f4ef"
+        },
+        {
+          "slot": "bottom",
+          "key": "shorts",
+          "color": "#2a9d8f"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#f2f2f2"
+        },
+        {
+          "slot": "head_accessory",
+          "key": "studio",
+          "color": "#2a9d8f"
+        }
+      ],
+      "coach": "tennis_coach"
+    },
+    {
+      "id": "sports_tennis_robot",
+      "kind": "npc",
+      "position": [
+        -443.5,
+        0.08,
+        -270.1
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#55585f",
+      "outfit": [
+        {
+          "slot": "head_accessory",
+          "key": "robot_droid",
+          "color": "#f4f6f4"
+        },
+        {
+          "slot": "top",
+          "key": "robot_droid",
+          "color": "#f4f6f4"
+        },
+        {
+          "slot": "bottom",
+          "key": "robot",
+          "color": "#f4f6f4"
+        },
+        {
+          "slot": "shoes",
+          "key": "robot",
+          "color": "#9fe3c0"
+        }
+      ],
+      "robotOf": "tennis_coach"
+    },
+    {
+      "id": "sports_tennis_racket_01",
+      "kind": "decor",
+      "key": "tennis_racket_flat",
+      "position": [
+        -443.5,
+        0.48,
+        -263.8
+      ],
+      "yaw": 0.1,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_tennis_racket_02",
+      "kind": "decor",
+      "key": "tennis_racket_flat",
+      "position": [
+        -443.5,
+        0.48,
+        -279.2
+      ],
+      "yaw": 3.04,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_tennis_ball_basket_1",
+      "kind": "decor",
+      "key": "tennis_ball_basket",
+      "position": [
+        -444.7,
+        0.08,
+        -266.0
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_tennis_ball_basket_2",
+      "kind": "decor",
+      "key": "tennis_ball_basket",
+      "position": [
+        -442.3,
+        0.08,
+        -266.0
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "areas": []
+}

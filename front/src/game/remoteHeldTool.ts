@@ -1,11 +1,14 @@
 import * as THREE from 'three'
 import { createGltfLoader } from './gltfLoaderFactory'
+import { heldGearUrl } from './sports/heldGear'
 
 const TOOL_CODE = /^tool_([a-z]+)$/
 const GRIP_HEIGHT = 0.35
 const loader = createGltfLoader()
 
 function heldToolUrl(code: string): string | null {
+  const gear = heldGearUrl(code)
+  if (gear) return gear
   const key = TOOL_CODE.exec(code)?.[1]
   return key ? `/assets/items/tools/${key}/model.glb` : null
 }

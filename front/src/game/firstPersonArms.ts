@@ -9,10 +9,23 @@ const BASE_FADE_S = 0.2
 const ONE_SHOT_FADE_S = 0.06
 const PUNCH_FADE_S = 0.02
 const PICK_CANCEL_FADE_S = 0.15
-const ONE_SHOT_CLIPS = ['Equip', 'UseDoor', 'UseKey', 'Punch', 'PunchL', 'Pick'] as const
+const ONE_SHOT_CLIPS = ['Equip', 'UseDoor', 'UseKey', 'Punch', 'PunchL', 'Pick', 'TennisForehand', 'TennisBackhand', 'TennisLob', 'TennisServe', 'PetanquePoint', 'PetanqueShoot'] as const
+const TENNIS_SWING_CLIPS = { forehand: 'TennisForehand', backhand: 'TennisBackhand', lob: 'TennisLob', serve: 'TennisServe' } as const
 const HELD_CLIPS = ['Pick'] as const
 const EAT_CLIPS = { eat: 'Eat', drink: 'Drink' } as const
+export type ArmsClimbPose = 'hang' | 'lower' | null
+export type ArmsClimbMove = 'reachL' | 'reachR' | 'top' | 'fall'
+const CLIMB_POSE_CLIPS = { hang: 'FpClimbHang', lower: 'FpClimbLower' } as const
+const CLIMB_MOVE_CLIPS: Record<ArmsClimbMove, string> = { reachL: 'FpClimbReachL', reachR: 'FpClimbReachR', top: 'FpClimbTop', fall: 'FpClimbFall' }
 const EAT_FADE_S = 0.25
+const BOXING_SHOT_FADE_S = 0.1
+const BOXING_LOOP_FADE_S = 0.12
+const TWIN_SUFFIX = '#twin'
+export const FP_BOXING_LOOPS = ['FpGuard', 'FpBlock'] as const
+export const FP_BOXING_SHOTS = ['FpJab', 'FpCross', 'FpHook', 'FpUppercut', 'FpHit'] as const
+const FP_BOXING_CHARGES = ['FpHookCharge', 'FpUppercutCharge'] as const
+export type FpBoxingShot = (typeof FP_BOXING_SHOTS)[number]
+export type FpBoxingCharge = (typeof FP_BOXING_CHARGES)[number]
 
 /**
  * A procedural arm pose, in camera space (the arms root sits at the camera): where the hand goes, which way the
@@ -58,11 +71,14 @@ export function createFirstPersonArms(container: THREE.Group) {
   let base: THREE.AnimationAction | null = null
   let oneShot: THREE.AnimationAction | null = null
   let holding = false
+  let climbPose: ArmsClimbPose = null
   let watchTarget = 0
   let watchWeight = 0
   let frozenFor = 0
   let lastPunch: PunchHand | null = null
   let lastPunchAt = 0
+  let boxingClips: THREE.AnimationClip[] | null = null
+  let boxingBlock = false
   const poseQuat = new THREE.Quaternion()
   const roll = new THREE.Quaternion()
   const poseArm = new THREE.Vector3()
@@ -76,7 +92,7 @@ export function createFirstPersonArms(container: THREE.Group) {
     return found
   }
 
-  function playBase(name: 'Idle' | 'Walk' | 'Hold'): void {
+  function playBase(name: 'Idle' | 'Walk' | 'Hold' | (typeof FP_BOXING_LOOPS)[number] | (typeof CLIMB_POSE_CLIPS)[keyof typeof CLIMB_POSE_CLIPS]): void {
     const next = action(name)
     if (base === next) return
     next.reset().fadeIn(BASE_FADE_S).play()
@@ -147,19 +163,46 @@ export function createFirstPersonArms(container: THREE.Group) {
         actions = new Map(gltf.animations.map((clip) => [clip.name, mixer!.clipAction(clip)]))
         for (const name of ONE_SHOT_CLIPS) action(name).setLoop(THREE.LoopOnce, 1)
         for (const name of HELD_CLIPS) action(name).clampWhenFinished = true
+        for (const name of Object.values(CLIMB_MOVE_CLIPS)) {
+          const climbMove = action(name)
+          climbMove.setLoop(THREE.LoopOnce, 1)
+          climbMove.clampWhenFinished = true
+        }
         mixer.addEventListener('finished', onFinished)
         playBase('Idle')
+        applyBoxing()
       })
       .catch((err: unknown) => {
         console.error('[firstPersonArms] load failed', url, err)
       })
   }
 
+  function applyBoxing(): void {
+    if (!mixer || !boxingClips) return
+    for (const clip of boxingClips) {
+      const shot = (FP_BOXING_SHOTS as readonly string[]).includes(clip.name)
+      const twin = clip.clone()
+      twin.name = clip.name + TWIN_SUFFIX
+      for (const one of shot ? [clip, twin] : [clip]) {
+        const boxingAction = mixer.clipAction(one)
+        if (shot) {
+          boxingAction.setLoop(THREE.LoopOnce, 1)
+          boxingAction.clampWhenFinished = true
+        }
+        actions.set(one.name, boxingAction)
+      }
+    }
+    oneShot?.fadeOut(BOXING_LOOP_FADE_S)
+    oneShot = null
+    playBase(boxingBlock ? 'FpBlock' : 'FpGuard')
+  }
+
   function update(dt: number, position: { x: number; z: number }): void {
     if (!mixer) return
     const speed = dt > 0 ? Math.hypot(position.x - lastPosition.x, position.z - lastPosition.z) / dt : 0
     lastPosition.set(position.x, 0, position.z)
-    if (!oneShot) playBase(holding ? 'Hold' : speed > MIN_WALK_SPEED ? 'Walk' : 'Idle')
+    if (!oneShot && !boxingClips) playBase(climbPose ? CLIMB_POSE_CLIPS[climbPose] : holding ? 'Hold' : speed > MIN_WALK_SPEED ? 'Walk' : 'Idle')
+    if (!oneShot && boxingClips) playBase(boxingBlock ? 'FpBlock' : 'FpGuard')
     if (base && base === actions.get('Walk')) base.timeScale = firstPersonWalkTimeScale(speed)
     if (frozenFor > 0) frozenFor -= dt
     else mixer.update(dt)
@@ -236,10 +279,62 @@ export function createFirstPersonArms(container: THREE.Group) {
       lastPunchAt = now
       playOnce(lastPunch === 'jab' ? 'PunchL' : 'Punch', PUNCH_FADE_S)
     },
+    tennisSwing: (swing: keyof typeof TENNIS_SWING_CLIPS) => playOnce(TENNIS_SWING_CLIPS[swing], PUNCH_FADE_S),
+    setClimbPose: (pose: ArmsClimbPose) => {
+      climbPose = pose
+    },
+    climbMove: (move: ArmsClimbMove) => {
+      if (!mixer) return
+      const next = action(CLIMB_MOVE_CLIPS[move])
+      oneShot?.stop()
+      next.reset().fadeIn(ONE_SHOT_FADE_S).play()
+      base?.fadeOut(ONE_SHOT_FADE_S)
+      oneShot = next
+    },
     pick: (durationMs?: number) => playOnce('Pick', ONE_SHOT_FADE_S, durationMs && durationMs / 1000),
+    throwBoule: (mode: 'point' | 'shoot') => playOnce(mode === 'shoot' ? 'PetanqueShoot' : 'PetanquePoint'),
     cancelPick,
     hitStop: (seconds: number) => {
       frozenFor = seconds
+    },
+    setBoxing: (clips: THREE.AnimationClip[] | null) => {
+      boxingClips = clips
+      boxingBlock = false
+      if (clips) applyBoxing()
+      else if (mixer) {
+        oneShot?.fadeOut(BASE_FADE_S)
+        oneShot = null
+        playBase('Idle')
+      }
+    },
+    setBoxingBlock: (on: boolean) => {
+      boxingBlock = on
+    },
+    boxingShot: (name: FpBoxingShot, fromS = 0) => {
+      if (!mixer || !boxingClips) return
+      const first = action(name)
+      const next = oneShot === first ? action(name + TWIN_SUFFIX) : first
+      next.reset()
+      next.time = fromS
+      next.fadeIn(BOXING_SHOT_FADE_S).play()
+      oneShot?.fadeOut(BOXING_SHOT_FADE_S)
+      base?.fadeOut(BOXING_SHOT_FADE_S)
+      oneShot = next
+    },
+    boxingCharge: (name: FpBoxingCharge) => {
+      if (!mixer || !boxingClips) return
+      const next = action(name)
+      if (oneShot === next) return
+      next.reset().fadeIn(BOXING_LOOP_FADE_S).play()
+      oneShot?.fadeOut(BOXING_LOOP_FADE_S)
+      base?.fadeOut(BOXING_LOOP_FADE_S)
+      oneShot = next
+    },
+    boxingRelax: () => {
+      if (!mixer || !boxingClips || !oneShot || !(FP_BOXING_CHARGES as readonly string[]).includes(oneShot.getClip().name)) return
+      oneShot.fadeOut(BOXING_LOOP_FADE_S)
+      oneShot = null
+      base?.reset().fadeIn(BOXING_LOOP_FADE_S).play()
     },
     dispose: clear,
   }

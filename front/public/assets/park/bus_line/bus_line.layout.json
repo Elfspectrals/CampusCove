@@ -1,0 +1,661 @@
+{
+  "version": 1,
+  "busFloorY": 0.4,
+  "busSize": [
+    2.55,
+    3.0,
+    12.0
+  ],
+  "collision": [
+    {
+      "name": "COL_BusLine_BL_town_A_Pole",
+      "cx": -4.0,
+      "cz": 22.1,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_town_A_Shelter_Back",
+      "cx": -12.6,
+      "cz": 22.81,
+      "hx": 2.0,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_town_A_Shelter_SideW",
+      "cx": -14.56,
+      "cz": 22.1,
+      "hx": 0.1,
+      "hz": 0.75,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_town_A_Shelter_SideE",
+      "cx": -10.64,
+      "cz": 22.1,
+      "hx": 0.1,
+      "hz": 0.75,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_town_A_Shelter_Seat",
+      "cx": -12.6,
+      "cz": 22.5,
+      "hx": 1.2,
+      "hz": 0.225,
+      "hy": 0.25,
+      "cy": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_town_B_Pole",
+      "cx": 4.0,
+      "cz": 16.1,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_town_B_Shelter_Back",
+      "cx": 6.6,
+      "cz": 11.49,
+      "hx": 2.0,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_town_B_Shelter_SideW",
+      "cx": 8.56,
+      "cz": 12.2,
+      "hx": 0.1,
+      "hz": 0.75,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_town_B_Shelter_SideE",
+      "cx": 4.64,
+      "cz": 12.2,
+      "hx": 0.1,
+      "hz": 0.75,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_town_B_Shelter_Seat",
+      "cx": 6.6,
+      "cz": 11.8,
+      "hx": 1.2,
+      "hz": 0.225,
+      "hy": 0.25,
+      "cy": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_mall_A_Pole",
+      "cx": -132.1,
+      "cz": -13.8,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_mall_A_Shelter_Back",
+      "cx": -127.5,
+      "cz": -17.61,
+      "hx": 2.0,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_mall_A_Shelter_SideW",
+      "cx": -125.54,
+      "cz": -16.9,
+      "hx": 0.1,
+      "hz": 0.75,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_mall_A_Shelter_SideE",
+      "cx": -129.46,
+      "cz": -16.9,
+      "hx": 0.1,
+      "hz": 0.75,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_mall_A_Shelter_Seat",
+      "cx": -127.5,
+      "cz": -17.3,
+      "hx": 1.2,
+      "hz": 0.225,
+      "hy": 0.25,
+      "cy": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_mall_B_Pole",
+      "cx": -146.7,
+      "cz": -24.0,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_mall_B_Shelter_Back",
+      "cx": -151.31,
+      "cz": -32.0,
+      "hx": 0.1,
+      "hz": 2.0,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_mall_B_Shelter_SideW",
+      "cx": -150.6,
+      "cz": -33.96,
+      "hx": 0.75,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_mall_B_Shelter_SideE",
+      "cx": -150.6,
+      "cz": -30.04,
+      "hx": 0.75,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_mall_B_Shelter_Seat",
+      "cx": -151.0,
+      "cz": -32.0,
+      "hx": 0.225,
+      "hz": 1.2,
+      "hy": 0.25,
+      "cy": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_cove_heights_A_Pole",
+      "cx": -240.0,
+      "cz": -149.7,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_cove_heights_A_Shelter_Back",
+      "cx": -231.0,
+      "cz": -154.31,
+      "hx": 2.0,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_cove_heights_A_Shelter_SideW",
+      "cx": -229.04,
+      "cz": -153.6,
+      "hx": 0.1,
+      "hz": 0.75,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_cove_heights_A_Shelter_SideE",
+      "cx": -232.96,
+      "cz": -153.6,
+      "hx": 0.1,
+      "hz": 0.75,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_cove_heights_A_Shelter_Seat",
+      "cx": -231.0,
+      "cz": -154.0,
+      "hx": 1.2,
+      "hz": 0.225,
+      "hy": 0.25,
+      "cy": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_orchard_A_Pole",
+      "cx": -76.9,
+      "cz": -88.0,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_orchard_A_Shelter_Back",
+      "cx": -81.51,
+      "cz": -96.0,
+      "hx": 0.1,
+      "hz": 2.0,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_orchard_A_Shelter_SideW",
+      "cx": -80.8,
+      "cz": -97.96,
+      "hx": 0.75,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_orchard_A_Shelter_SideE",
+      "cx": -80.8,
+      "cz": -94.04,
+      "hx": 0.75,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_orchard_A_Shelter_Seat",
+      "cx": -81.2,
+      "cz": -96.0,
+      "hx": 0.225,
+      "hz": 1.2,
+      "hy": 0.25,
+      "cy": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_orchard_B_Pole",
+      "cx": -69.5,
+      "cz": -100.0,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_orchard_B_Shelter_Back",
+      "cx": -64.89,
+      "cz": -92.0,
+      "hx": 0.1,
+      "hz": 2.0,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_orchard_B_Shelter_SideW",
+      "cx": -65.6,
+      "cz": -90.04,
+      "hx": 0.75,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_orchard_B_Shelter_SideE",
+      "cx": -65.6,
+      "cz": -93.96,
+      "hx": 0.75,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_orchard_B_Shelter_Seat",
+      "cx": -65.2,
+      "cz": -92.0,
+      "hx": 0.225,
+      "hz": 1.2,
+      "hy": 0.25,
+      "cy": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_farm_A_Pole",
+      "cx": -76.9,
+      "cz": -112.0,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_farm_A_Shelter_Back",
+      "cx": -81.51,
+      "cz": -120.0,
+      "hx": 0.1,
+      "hz": 2.0,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_farm_A_Shelter_SideW",
+      "cx": -80.8,
+      "cz": -121.96,
+      "hx": 0.75,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_farm_A_Shelter_SideE",
+      "cx": -80.8,
+      "cz": -118.04,
+      "hx": 0.75,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_farm_A_Shelter_Seat",
+      "cx": -81.2,
+      "cz": -120.0,
+      "hx": 0.225,
+      "hz": 1.2,
+      "hy": 0.25,
+      "cy": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_farm_B_Pole",
+      "cx": -69.5,
+      "cz": -124.0,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_farm_B_Shelter_Back",
+      "cx": -64.89,
+      "cz": -116.0,
+      "hx": 0.1,
+      "hz": 2.0,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_farm_B_Shelter_SideW",
+      "cx": -65.6,
+      "cz": -114.04,
+      "hx": 0.75,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_farm_B_Shelter_SideE",
+      "cx": -65.6,
+      "cz": -117.96,
+      "hx": 0.75,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_farm_B_Shelter_Seat",
+      "cx": -65.2,
+      "cz": -116.0,
+      "hx": 0.225,
+      "hz": 1.2,
+      "hy": 0.25,
+      "cy": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_pub_A_Pole",
+      "cx": 91.1,
+      "cz": -88.0,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_pub_A_Shelter_Back",
+      "cx": 95.71,
+      "cz": -82.0,
+      "hx": 0.1,
+      "hz": 2.0,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_pub_A_Shelter_SideW",
+      "cx": 95.0,
+      "cz": -80.04,
+      "hx": 0.75,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_pub_A_Shelter_SideE",
+      "cx": 95.0,
+      "cz": -83.96,
+      "hx": 0.75,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_pub_A_Shelter_Seat",
+      "cx": 95.4,
+      "cz": -82.0,
+      "hx": 0.225,
+      "hz": 1.2,
+      "hy": 0.25,
+      "cy": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_pub_B_Pole",
+      "cx": 99.0,
+      "cz": -106.2,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_pub_B_Shelter_Back",
+      "cx": 104.5,
+      "cz": -108.61,
+      "hx": 2.0,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_pub_B_Shelter_SideW",
+      "cx": 106.46,
+      "cz": -107.9,
+      "hx": 0.1,
+      "hz": 0.75,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_pub_B_Shelter_SideE",
+      "cx": 102.54,
+      "cz": -107.9,
+      "hx": 0.1,
+      "hz": 0.75,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_pub_B_Shelter_Seat",
+      "cx": 104.5,
+      "cz": -108.3,
+      "hx": 1.2,
+      "hz": 0.225,
+      "hy": 0.25,
+      "cy": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_police_A_Pole",
+      "cx": 74.0,
+      "cz": 2.6,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_police_A_Shelter_Back",
+      "cx": 82.0,
+      "cz": -0.51,
+      "hx": 2.0,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_police_A_Shelter_SideW",
+      "cx": 83.96,
+      "cz": 0.2,
+      "hx": 0.1,
+      "hz": 0.75,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_police_A_Shelter_SideE",
+      "cx": 80.04,
+      "cz": 0.2,
+      "hx": 0.1,
+      "hz": 0.75,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_police_A_Shelter_Seat",
+      "cx": 82.0,
+      "cz": -0.2,
+      "hx": 1.2,
+      "hz": 0.225,
+      "hy": 0.25,
+      "cy": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_police_B_Pole",
+      "cx": 74.0,
+      "cz": 10.0,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_police_B_Shelter_Back",
+      "cx": 66.0,
+      "cz": 15.11,
+      "hx": 2.0,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_police_B_Shelter_SideW",
+      "cx": 64.04,
+      "cz": 14.4,
+      "hx": 0.1,
+      "hz": 0.75,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_police_B_Shelter_SideE",
+      "cx": 67.96,
+      "cz": 14.4,
+      "hx": 0.1,
+      "hz": 0.75,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_BusLine_BL_police_B_Shelter_Seat",
+      "cx": 66.0,
+      "cz": 14.8,
+      "hx": 1.2,
+      "hz": 0.225,
+      "hy": 0.25,
+      "cy": 0.25,
+      "yaw": 0.0
+    }
+  ]
+}

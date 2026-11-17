@@ -1,0 +1,245 @@
+{
+  "version": 1,
+  "bounds": {
+    "minX": -467.0,
+    "maxX": -404.0,
+    "minZ": -231.0,
+    "maxZ": -191.0
+  },
+  "gym": {
+    "kind": "work",
+    "key": "sports_gym",
+    "name": "Cove Gymnasium",
+    "job": "sports",
+    "position": [
+      -435.5,
+      0.0,
+      -211.0
+    ],
+    "rotationY": -1.5708,
+    "door": [
+      -464.0,
+      1.25,
+      -211.0
+    ],
+    "footprint": [
+      34.0,
+      56.81
+    ],
+    "interiorOffset": [
+      0.0,
+      0.2,
+      23.095
+    ]
+  },
+  "coach": {
+    "position": [
+      -431.695,
+      0.2,
+      -223.1
+    ],
+    "yaw": 0.0
+  },
+  "court": {
+    "version": 1,
+    "floorY": 0.2,
+    "ceilingY": 9.2,
+    "arena": {
+      "minX": -455.695,
+      "maxX": -407.695,
+      "minZ": -222.2,
+      "maxZ": -194.4
+    },
+    "playArea": {
+      "minX": -454.895,
+      "maxX": -408.495,
+      "minZ": -222.2,
+      "maxZ": -196.0
+    },
+    "court": {
+      "minX": -453.695,
+      "maxX": -409.695,
+      "minZ": -220.3,
+      "maxZ": -196.3
+    },
+    "centre": {
+      "x": -431.695,
+      "z": -208.3
+    },
+    "coach": {
+      "x": -431.695,
+      "z": -223.1
+    },
+    "goals": {
+      "blue": {
+        "lineX": -453.695,
+        "inward": -1,
+        "minZ": -209.8,
+        "maxZ": -206.8,
+        "height": 2,
+        "depth": 1.0
+      },
+      "red": {
+        "lineX": -409.695,
+        "inward": 1,
+        "minZ": -209.8,
+        "maxZ": -206.8,
+        "height": 2,
+        "depth": 1.0
+      }
+    },
+    "baskets": {
+      "blue": {
+        "x": -452.12,
+        "y": 3.25,
+        "z": -208.3,
+        "rimRadius": 0.225,
+        "board": {
+          "minX": -452.8207,
+          "maxX": -452.7907,
+          "minY": 3.135,
+          "maxY": 4.185,
+          "minZ": -209.2,
+          "maxZ": -207.4
+        },
+        "threePointRadius": 6.75
+      },
+      "red": {
+        "x": -411.27,
+        "y": 3.25,
+        "z": -208.3,
+        "rimRadius": 0.225,
+        "board": {
+          "minX": -410.5993,
+          "maxX": -410.5693,
+          "minY": 3.135,
+          "maxY": 4.185,
+          "minZ": -209.2,
+          "maxZ": -207.4
+        },
+        "threePointRadius": 6.75
+      }
+    },
+    "sideBaskets": [
+      {
+        "x": -415.695,
+        "y": 3.25,
+        "z": -195.675,
+        "rimRadius": 0.225,
+        "board": {
+          "minX": -416.595,
+          "maxX": -414.795,
+          "minY": 3.135,
+          "maxY": 4.185,
+          "minZ": -195.0043,
+          "maxZ": -194.9743
+        }
+      },
+      {
+        "x": -423.695,
+        "y": 3.25,
+        "z": -195.675,
+        "rimRadius": 0.225,
+        "board": {
+          "minX": -424.595,
+          "maxX": -422.795,
+          "minY": 3.135,
+          "maxY": 4.185,
+          "minZ": -195.0043,
+          "maxZ": -194.9743
+        }
+      },
+      {
+        "x": -439.695,
+        "y": 3.25,
+        "z": -195.675,
+        "rimRadius": 0.225,
+        "board": {
+          "minX": -440.595,
+          "maxX": -438.795,
+          "minY": 3.135,
+          "maxY": 4.185,
+          "minZ": -195.0043,
+          "maxZ": -194.9743
+        }
+      },
+      {
+        "x": -447.695,
+        "y": 3.25,
+        "z": -195.675,
+        "rimRadius": 0.225,
+        "board": {
+          "minX": -448.595,
+          "maxX": -446.795,
+          "minY": 3.135,
+          "maxY": 4.185,
+          "minZ": -195.0043,
+          "maxZ": -194.9743
+        }
+      }
+    ],
+    "scoreboard": {
+      "x": -408.3,
+      "y": 6.05,
+      "z": -208.3,
+      "width": 1.88,
+      "height": 1.24,
+      "facing": [
+        -1,
+        0
+      ]
+    }
+  },
+  "collision": [
+    {
+      "name": "COL_SportsGym_SG_Lamp0",
+      "cx": -465.7,
+      "cz": -215.2,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsGym_SG_Lamp1",
+      "cx": -465.7,
+      "cz": -206.8,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsGym_SG_Bench0",
+      "cx": -465.7,
+      "cz": -217.6,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsGym_SG_Bench1",
+      "cx": -465.7,
+      "cz": -204.4,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_sports_gym",
+      "cx": -435.595,
+      "cz": -211.0,
+      "hx": 28.605,
+      "hz": 17.2,
+      "hy": 2.2,
+      "cy": 2.2,
+      "yaw": 0.0
+    }
+  ]
+}

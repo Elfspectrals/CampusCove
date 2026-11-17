@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "zone": {
+    "minX": -580.0,
+    "maxX": -543.0,
+    "minZ": -216.0,
+    "maxZ": -191.0
+  },
+  "hall": {
+    "kind": "work",
+    "key": "sports_climbing",
+    "name": "Cove Climbing Hall",
+    "job": "sports",
+    "position": [
+      -561.5,
+      0.0,
+      -203.5
+    ],
+    "rotationY": 1.5708,
+    "door": [
+      -546.0,
+      1.25,
+      -203.5
+    ],
+    "footprint": [
+      19.0,
+      31.0
+    ],
+    "interiorOffset": [
+      0.0,
+      0.2,
+      10.095
+    ]
+  },
+  "points": {
+    "shoeAttendant": [
+      -548.805,
+      0.2,
+      -210.05
+    ],
+    "leadWallX": -576.3
+  },
+  "collision": [
+    {
+      "name": "COL_SportsClimbing_SCl_Bench0",
+      "cx": -545.25,
+      "cz": -207.5,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsClimbing_SCl_Bench1",
+      "cx": -545.25,
+      "cz": -199.5,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsClimbing_SCl_Lamp",
+      "cx": -543.7,
+      "cz": -206.3,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsClimbing_SCl_Tree0",
+      "cx": -543.9,
+      "cz": -215.1,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsClimbing_SCl_Tree1",
+      "cx": -543.9,
+      "cz": -191.9,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_sports_climbing",
+      "cx": -561.5,
+      "cz": -203.5,
+      "hx": 15.7,
+      "hz": 9.7,
+      "hy": 7.1,
+      "cy": 7.1,
+      "yaw": 0.0
+    }
+  ]
+}

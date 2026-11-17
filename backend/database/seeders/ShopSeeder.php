@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Services\HouseAlarmService;
 use App\Services\LockpickService;
+use App\Services\SportsGearService;
 use App\Services\StarterCosmeticGrantService;
 use App\Support\FoodCatalog;
 use Illuminate\Database\Seeder;
@@ -237,10 +238,20 @@ class ShopSeeder extends Seeder
             self::wear('bottom', 'track_pants', 'Summit Track Pants', 2),
             self::wear('bottom', 'basketball_shorts', 'Summit Court Shorts', 1),
             self::wear('bottom', 'leggings', 'Summit Leggings', 1),
+            self::wear('top', 'team_jersey_red', 'Summit Team Jersey (Red)', 1),
+            self::wear('top', 'team_jersey_blue', 'Summit Team Jersey (Blue)', 1),
+            self::wear('top', 'tracksuit', 'Summit Tracksuit Top', 2),
+            self::wear('bottom', 'tracksuit', 'Summit Tracksuit Bottoms', 2),
             // ---- newcomer outfit: given by the character creator and worn again after each death, never sold
             self::starterWear('top', 'newcomer', 'Newcomer Tee'),
             self::starterWear('bottom', 'newcomer', 'Newcomer Joggers'),
             self::starterWear('shoes', 'newcomer', 'Newcomer Sneakers'),
+            self::sportsGear('gear_swimsuit', 'Swimsuit', 'swimming', 'bottom', 'wear/bottom/swimsuit'),
+            self::sportsGear('gear_boxing_gloves', 'Boxing Gloves', 'boxing', 'hands', 'decor/boxing_gloves'),
+            self::sportsGear('gear_boules', 'Set of Boules', 'petanque', 'held', 'decor/petanque_boules'),
+            self::sportsGear('gear_tennis_racket', 'Tennis Racket', 'tennis', 'held', 'decor/tennis_racket'),
+            self::sportsGear('gear_running_spikes', 'Running Spikes', 'running', 'shoes', 'decor/running_spikes'),
+            self::sportsGear('gear_ice_skates', 'Ice Skates', 'skating', 'shoes', 'decor/ice_skates'),
         ];
         // ---- food and drinks (eaten from the hotbar; sold at the Campus Cafe counter)
         foreach (FoodCatalog::items() as $food) {
@@ -254,6 +265,9 @@ class ShopSeeder extends Seeder
                 $itemDefIds[$def['code']] = (int) $existing;
                 if (array_key_exists('portions', $def)) {
                     DB::table('item_defs')->where('code', $def['code'])->update(self::foodColumns($def));
+                }
+                if (array_key_exists('meta_json', $def)) {
+                    DB::table('item_defs')->where('code', $def['code'])->update(['meta_json' => json_encode($def['meta_json'], JSON_THROW_ON_ERROR)]);
                 }
                 if (array_key_exists('cosmetic_slot', $def) || array_key_exists('preview_image', $def) || array_key_exists('model_glb', $def)) {
                     DB::table('item_defs')->where('code', $def['code'])->update(array_filter([
@@ -289,6 +303,9 @@ class ShopSeeder extends Seeder
             }
             if (array_key_exists('portions', $def)) {
                 $insert = array_merge($insert, self::foodColumns($def));
+            }
+            if (array_key_exists('meta_json', $def)) {
+                $insert['meta_json'] = json_encode($def['meta_json'], JSON_THROW_ON_ERROR);
             }
 
             $itemDefIds[$def['code']] = (int) DB::table('item_defs')->insertGetId($insert, 'item_def_id');
@@ -424,6 +441,15 @@ class ShopSeeder extends Seeder
             self::coins('tool_wrench', 120, 150),
             self::coins('tool_hammer', 120, 151),
             self::coins('tool_crowbar', 120, 152),
+            self::coins('COS_WEAR_TOP_TEAM_JERSEY_RED', 110, 331),
+            self::coins('COS_WEAR_TOP_TEAM_JERSEY_BLUE', 110, 332),
+            self::coins('COS_WEAR_TOP_TRACKSUIT', 240, 333),
+            self::coins('COS_WEAR_BOTTOM_TRACKSUIT', 140, 334),
+            self::coins('gear_running_spikes', 260, 336),
+            self::coins('gear_tennis_racket', 180, 340),
+            self::coins('gear_boxing_gloves', 150, 160),
+            self::coins('gear_boules', 150, 160),
+            self::coins('gear_swimsuit', 90, 153),
         ];
         foreach (FoodCatalog::items() as $i => $food) {
             if ($food['price'] !== null) {
@@ -603,6 +629,24 @@ class ShopSeeder extends Seeder
     private static function starterWear(string $slot, string $key, string $name): array
     {
         return array_merge(self::wear($slot, $key, $name, 0), ['tradable' => false, 'bind' => 'bound', 'max_stack' => 99]);
+    }
+
+    /** @return array<string, mixed> */
+    private static function sportsGear(string $code, string $name, string $sport, string $slot, string $asset): array
+    {
+        return [
+            'code' => $code,
+            'name' => $name,
+            'preview_image' => "/assets/{$asset}/preview.png",
+            'model_glb' => "/assets/{$asset}/model.glb",
+            'kind' => SportsGearService::KIND,
+            'rarity' => 1,
+            'tradable' => true,
+            'premium_only' => false,
+            'bind' => 'none',
+            'max_stack' => 1,
+            'meta_json' => ['sport' => $sport, 'slot' => $slot],
+        ];
     }
 
     /** @return array<string, mixed> */

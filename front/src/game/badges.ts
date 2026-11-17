@@ -2,6 +2,7 @@ import type { UiIconName } from '../components/ui/icons.ts'
 
 export const BADGES = {
   new_citizen: { icon: 'home', overHead: true },
+  sports_champion: { icon: 'trophy', overHead: false },
 } as const satisfies Record<string, { icon: UiIconName; overHead: boolean }>
 
 export type BadgeCode = keyof typeof BADGES

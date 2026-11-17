@@ -6,7 +6,7 @@
   "scripts": {
     "start": "tsx server.ts",
     "dev": "tsx watch server.ts",
-    "test": "tsx --test src/*.test.ts",
+    "test": "tsx --test src/*.test.ts src/sports/*.test.ts",
     "typecheck": "tsc"
   },
   "dependencies": {

@@ -614,6 +614,30 @@ PICK_KEYS = eased(90, [
 ])
 PICK_BALANCE = eased(90, [(0, {}), (20, {"z": -0.01, "rx": -0.06}), (63, {"z": -0.01, "rx": -0.06}), (74, {}), (90, {})])
 
+PETANQUE_FRAMES = 48
+BOULE_PALM_DOWN = -110
+POINT_FOLLOW = {"x": -0.05, "y": 0.2, "z": 0.0, "rx": -0.02, "twist": BOULE_PALM_DOWN, "flex": -0.1}
+PETANQUE_POINT = eased(PETANQUE_FRAMES, [
+    (0, {}),
+    (3, {"z": -0.02, "rx": -0.08}),
+    (14, {"x": 0.03, "y": -0.12, "z": -0.32, "rx": -1.1}),
+    (23, {"y": 0.1, "z": -0.11, "rx": -0.28, "twist": BOULE_PALM_DOWN}),
+    (29, POINT_FOLLOW),
+    (37, POINT_FOLLOW),
+    (PETANQUE_FRAMES, {}),
+])
+SHOOT_FOLLOW = {"y": 0.2, "z": 0.1, "rx": 0.45, "twist": BOULE_PALM_DOWN, "flex": -0.08}
+PETANQUE_SHOOT = eased(PETANQUE_FRAMES, [
+    (0, {}),
+    (3, {"y": 0.02, "z": 0.02, "rx": 0.08}),
+    (15, {"x": 0.03, "y": -0.15, "z": -0.35, "rx": -1.3}),
+    (22, {"y": 0.18, "z": 0.0, "rx": 0.12, "twist": BOULE_PALM_DOWN}),
+    (27, SHOOT_FOLLOW),
+    (34, SHOOT_FOLLOW),
+    (PETANQUE_FRAMES, {}),
+])
+PETANQUE_BALANCE = eased(PETANQUE_FRAMES, [(0, {}), (10, {"z": -0.03, "rx": -0.1}), (36, {"z": -0.03, "rx": -0.1}), (PETANQUE_FRAMES, {})])
+
 
 MOUTH = Vector((0.0, -0.04, -0.085))
 HELD_GRIP = Vector((-0.032, 0.1, 0.0))
@@ -667,6 +691,187 @@ def hold_tool(wrist):
     return pose_at
 
 
+SWING_FRAMES = 14
+LOB_FRAMES = 15
+SERVE_FRAMES = 27
+LEFT_HOLD = idle(HOLD_FRAMES, 0.9, -1)(0)
+
+
+def racket(wrist, grip, up, forearm):
+    return hold_at(wrist, Vector(grip), Vector(up), Vector(forearm))
+
+
+def offset(pose, delta):
+    return {k: pose.get(k, 0.0) + delta.get(k, 0.0) for k in pose.keys() | delta.keys()}
+
+
+def forehand(wrist):
+    rest = hold_tool(wrist)(0)
+    return eased(SWING_FRAMES, [
+        (0, rest),
+        (3, racket(wrist, (0.34, 0.24, -0.2), (0.5, -0.8, 0.3), (0.8, 0.5, 0.0))),
+        (6, racket(wrist, (0.12, 0.44, -0.16), (1.0, 0.2, 0.1), (-0.15, 1.0, 0.2))),
+        (9, racket(wrist, (-0.22, 0.4, -0.06), (-0.6, -0.6, 0.5), (-0.4, 0.8, 0.45))),
+        (SWING_FRAMES, rest),
+    ])
+
+
+def backhand(wrist):
+    rest = hold_tool(wrist)(0)
+    return eased(SWING_FRAMES, [
+        (0, rest),
+        (3, racket(wrist, (-0.24, 0.3, -0.26), (-0.3, -0.8, 0.5), (-0.6, 0.3, 0.1))),
+        (6, racket(wrist, (-0.08, 0.42, -0.1), (-1.0, 0.0, 0.1), (0.1, 0.8, 0.6))),
+        (9, racket(wrist, (0.3, 0.36, -0.04), (0.2, -0.5, 1.0), (0.5, 0.7, 0.3))),
+        (SWING_FRAMES, rest),
+    ])
+
+
+def lob(wrist):
+    rest = hold_tool(wrist)(0)
+    return eased(LOB_FRAMES, [
+        (0, rest),
+        (4, racket(wrist, (0.32, 0.24, -0.3), (0.4, -0.6, -0.6), (0.6, 0.6, -0.2))),
+        (7.5, racket(wrist, (0.12, 0.42, -0.14), (1.0, 0.2, -0.15), (-0.1, 0.6, 0.8))),
+        (11, racket(wrist, (0.04, 0.4, 0.06), (0.1, -0.86, 0.5), (-0.1, 0.5, 0.86))),
+        (LOB_FRAMES, rest),
+    ])
+
+
+def serve(wrist):
+    rest = hold_tool(wrist)(0)
+    return eased(SERVE_FRAMES, [
+        (0, rest),
+        (4, racket(wrist, (0.22, 0.3, -0.28), (0.3, 0.6, -0.6), (0.2, 0.6, 0.7))),
+        (8, racket(wrist, (0.32, 0.0, 0.06), (0.3, -0.6, 0.8), (0.4, 0.8, 0.6))),
+        (11, racket(wrist, (0.26, -0.02, 0.2), (0.1, -0.6, -0.8), (0.3, 0.8, -0.6))),
+        (15, racket(wrist, (0.1, 0.45, 0.12), (0.0, 0.7, 1.0), (0.0, 1.0, -0.7))),
+        (19, racket(wrist, (-0.18, 0.3, -0.24), (-0.6, 0.5, -0.6), (0.2, 0.6, 0.3))),
+        (SERVE_FRAMES, rest),
+    ])
+
+
+def toss(wrist):
+    up, back = Vector((0.05, 0.6, 0.8)), Vector((0.2, -0.3, -1.0))
+    return eased(SERVE_FRAMES, [
+        (0, LEFT_HOLD),
+        (4, offset(LEFT_HOLD, {"z": -0.03, "y": 0.02})),
+        (9, fist_at("L", wrist, Vector((-0.06, 0.38, 0.0)), up, back)),
+        (13, fist_at("L", wrist, Vector((-0.05, 0.38, 0.06)), up, back)),
+        (18, offset(LEFT_HOLD, {"x": 0.04, "y": -0.04, "z": -0.04})),
+        (SERVE_FRAMES, LEFT_HOLD),
+    ])
+
+
+def balance(frames, reach, tuck, contact):
+    return eased(frames, [
+        (0, LEFT_HOLD),
+        (contact - 3, offset(LEFT_HOLD, reach)),
+        (contact + 3, offset(LEFT_HOLD, tuck)),
+        (frames, LEFT_HOLD),
+    ])
+
+
+CLIMB_HANG_AT = Vector((0.17, 0.44, 0.13))
+CLIMB_REACH_AT = Vector((0.14, 0.44, 0.4))
+CLIMB_REACH_MID_AT = Vector((0.16, 0.34, 0.29))
+CLIMB_PULL_AT = Vector((0.15, 0.43, 0.08))
+CLIMB_FOREARM = Vector((-0.25, 0.35, 1.0))
+CLIMB_MID_FOREARM = Vector((-0.2, 0.8, 1.0))
+CLIMB_REACH_FOREARM = Vector((-0.2, 0.22, 1.0))
+CLIMB_BRACE_TILT = -0.05
+CLIMB_BACK = Vector((0.15, -1.0, 0.25))
+CLIMB_PUMP_AT = Vector((0.13, 0.3, 0.05))
+CLIMB_PUMP_FOREARM = Vector((-0.1, 0.25, 1.0))
+CLIMB_PUMP_BACK = Vector((0.1, -1.0, 0.1))
+ROPE_AT = {"R": Vector((0.035, 0.38, -0.05)), "L": Vector((0.03, 0.38, -0.15))}
+ROPE_FOREARM = Vector((-0.5, 0.75, 0.5))
+ROPE_BACK = Vector((0.75, -0.35, 0.2))
+CLIMB_REACH_FRAMES = 14
+CLIMB_HANG_FRAMES = 60
+CLIMB_FALL_FRAMES = 18
+CLIMB_LOWER_FRAMES = 30
+CLIMB_TOP_FRAMES = 27
+
+
+def climb_grip(side, wrist, at, forearm, back):
+    m = MIRROR[side].to_3x3()
+    return fist_at(side, wrist, m @ at, m @ forearm, m @ back)
+
+
+def lowered(pose, dz):
+    return {**pose, "z": pose.get("z", 0.0) + dz}
+
+
+def climb_arm_poses(side, wrist):
+    grip = lambda at: climb_grip(side, wrist, at, CLIMB_FOREARM, CLIMB_BACK)
+    return {
+        "hang": grip(CLIMB_HANG_AT),
+        "reach": climb_grip(side, wrist, CLIMB_REACH_AT, CLIMB_REACH_FOREARM, CLIMB_BACK),
+        "mid": climb_grip(side, wrist, CLIMB_REACH_MID_AT, CLIMB_MID_FOREARM, CLIMB_BACK),
+        "pull": grip(CLIMB_PULL_AT),
+        "pump": climb_grip(side, wrist, CLIMB_PUMP_AT, CLIMB_PUMP_FOREARM, CLIMB_PUMP_BACK),
+        "rope": climb_grip(side, wrist, ROPE_AT[side], ROPE_FOREARM, ROPE_BACK),
+    }
+
+
+def climb_reach(c):
+    return eased(CLIMB_REACH_FRAMES, [
+        (0, c["hang"]),
+        (2, lowered(c["hang"], -0.025)),
+        (5, c["mid"]),
+        (8, c["reach"]),
+        (10, lowered(c["reach"], -0.01)),
+        (CLIMB_REACH_FRAMES, c["hang"]),
+    ])
+
+
+def climb_brace(c, frames, pull_at, dz):
+    braced = lowered(c["hang"], dz)
+    braced["rx"] += CLIMB_BRACE_TILT
+    return eased(frames, [(0, c["hang"]), (pull_at, braced), (frames, c["hang"])])
+
+
+def climb_hang(c, phase, side_sign):
+    def pose_at(fr):
+        t = 2 * math.pi * fr / CLIMB_HANG_FRAMES
+        pose = dict(c["hang"])
+        pose["x"] += side_sign * 0.008 * math.sin(t + phase)
+        pose["z"] += 0.006 * math.sin(2 * t + phase)
+        pose["rx"] += math.radians(1.0) * math.sin(t + phase - 0.5)
+        return pose
+    return pose_at
+
+
+def climb_fall(c):
+    gone = {**lowered(c["hang"], -0.55), "y": c["hang"]["y"] - 0.12, "rx": c["hang"]["rx"] - 0.6}
+    return eased(CLIMB_FALL_FRAMES, [(0, c["hang"]), (3, lowered(c["hang"], 0.02)), (CLIMB_FALL_FRAMES, gone)])
+
+
+def climb_lower(c, phase):
+    def pose_at(fr):
+        t = 2 * math.pi * fr / CLIMB_LOWER_FRAMES
+        pose = dict(c["rope"])
+        pose["z"] += 0.012 * math.sin(t + phase)
+        pose["rx"] += math.radians(1.5) * math.sin(t + phase - 0.4)
+        return pose
+    return pose_at
+
+
+def climb_top(c):
+    return eased(CLIMB_TOP_FRAMES, [
+        (0, c["hang"]),
+        (2, lowered(c["hang"], -0.025)),
+        (5, c["mid"]),
+        (9, c["reach"]),
+        (13, c["pull"]),
+        (17, c["pump"]),
+        (20, lowered(c["pump"], -0.07)),
+        (22, lowered(c["pump"], -0.06)),
+        (CLIMB_TOP_FRAMES, c["hang"]),
+    ])
+
+
 def pick(fr):
     pose = PICK_KEYS(fr)
     if 26 < fr < 63:
@@ -700,14 +905,52 @@ CROSS_HAND = eased(CROSS_FRAMES, [(0, RELAXED), (4, FIST), (10, FIST), (CROSS_FR
 PICK_HAND = eased(90, [(0, RELAXED), (4, RELAXED), (16, OPEN), (20, OPEN), (26, GRAB), (74, GRAB), (86, RELAXED), (90, RELAXED)])
 KEY_HAND = eased(24, [(0, RELAXED), (3, RELAXED), (8, PINCH), (20, PINCH), (24, RELAXED)])
 DOOR_HAND = eased(16, [(0, RELAXED), (3, OPEN), (7, HOOK), (10, HOOK), (16, RELAXED)])
+POINT_HAND = eased(PETANQUE_FRAMES, [(0, RELAXED), (3, GRAB), (21, GRAB), (24, OPEN), (37, OPEN), (PETANQUE_FRAMES, RELAXED)])
+SHOOT_HAND = eased(PETANQUE_FRAMES, [(0, RELAXED), (3, GRAB), (20, GRAB), (23, OPEN), (34, OPEN), (PETANQUE_FRAMES, RELAXED)])
 
 
 def hold_hand(fr):
     return blend(GRIP, FIST, 0.05 * (1 - math.cos(2 * math.pi * fr / HOLD_FRAMES)) / 2)
 
 
+SWING_GRIP = blend(GRIP, FIST, 0.3)
+
+
+def swing_hand(frames, contact):
+    return eased(frames, [(0, GRIP), (contact, SWING_GRIP), (frames, GRIP)])
+
+
+TOSS_HAND = eased(SERVE_FRAMES, [(0, RELAXED), (4, GRAB), (8, GRAB), (10, OPEN), (18, RELAXED), (SERVE_FRAMES, RELAXED)])
+
+
 def guard_hand(frames):
     return eased(frames, [(0, RELAXED), (3, LOOSE_FIST), (frames - 4, LOOSE_FIST), (frames, RELAXED)])
+
+
+CLIMB_SQUEEZE = blend(GRIP, FIST, 0.12)
+CLIMB_GRAB_HAND = [(0, GRIP), (2, GRIP), (4, OPEN), (7, OPEN), (9, GRIP)]
+
+
+def climb_hang_hand(fr):
+    return blend(GRIP, FIST, 0.06 * (1 - math.cos(2 * math.pi * fr / CLIMB_HANG_FRAMES)) / 2)
+
+
+def rope_hand(phase):
+    return lambda fr: blend(GRIP, FIST, 0.2 + 0.06 * math.cos(2 * math.pi * fr / CLIMB_LOWER_FRAMES + phase))
+
+
+def climb_finger_clips(side):
+    reach = eased(CLIMB_REACH_FRAMES, CLIMB_GRAB_HAND + [(CLIMB_REACH_FRAMES, GRIP)])
+    brace = lambda frames, at: eased(frames, [(0, GRIP), (at, CLIMB_SQUEEZE), (frames, GRIP)])
+    top = eased(CLIMB_TOP_FRAMES, CLIMB_GRAB_HAND + [(13, GRIP), (15, FIST), (22, FIST), (CLIMB_TOP_FRAMES, GRIP)])
+    return {
+        "FpClimbReachL": (CLIMB_REACH_FRAMES, reach if side == "L" else brace(CLIMB_REACH_FRAMES, 10)),
+        "FpClimbReachR": (CLIMB_REACH_FRAMES, reach if side == "R" else brace(CLIMB_REACH_FRAMES, 10)),
+        "FpClimbHang": (CLIMB_HANG_FRAMES, climb_hang_hand),
+        "FpClimbFall": (CLIMB_FALL_FRAMES, eased(CLIMB_FALL_FRAMES, [(0, GRIP), (3, OPEN), (CLIMB_FALL_FRAMES, RELAXED)])),
+        "FpClimbLower": (CLIMB_LOWER_FRAMES, rope_hand(0.0 if side == "R" else math.pi)),
+        "FpClimbTop": (CLIMB_TOP_FRAMES, top if side == "R" else brace(CLIMB_TOP_FRAMES, 13)),
+    }
 
 
 def finger_clips(side):
@@ -725,6 +968,13 @@ def finger_clips(side):
         "Eat": (30, main(lambda fr: GRIP)),
         "Drink": (30, main(lambda fr: GRIP)),
         "Hold": (HOLD_FRAMES, main(hold_hand)),
+        "TennisForehand": (SWING_FRAMES, main(swing_hand(SWING_FRAMES, 6))),
+        "TennisBackhand": (SWING_FRAMES, main(swing_hand(SWING_FRAMES, 6))),
+        "TennisLob": (LOB_FRAMES, main(swing_hand(LOB_FRAMES, 7.5))),
+        "TennisServe": (SERVE_FRAMES, swing_hand(SERVE_FRAMES, 15) if side == "R" else TOSS_HAND),
+        "PetanquePoint": (PETANQUE_FRAMES, main(POINT_HAND)),
+        "PetanqueShoot": (PETANQUE_FRAMES, main(SHOOT_HAND)),
+        **climb_finger_clips(side),
     }
 
 
@@ -775,6 +1025,29 @@ def animate(arm, hand):
         bake(arm["L"], clip, 30, lambda fr: OFF_HAND_LOW)
     bake(arm["R"], "Hold", HOLD_FRAMES, hold_tool(hand["R"].location))
     bake(arm["L"], "Hold", HOLD_FRAMES, idle(HOLD_FRAMES, 0.9, -1))
+    bake(arm["R"], "TennisForehand", SWING_FRAMES, forehand(hand["R"].location))
+    bake(arm["L"], "TennisForehand", SWING_FRAMES, balance(SWING_FRAMES, {"x": 0.05, "y": 0.08, "z": 0.06, "rx": 0.2}, {"x": -0.06, "y": -0.03, "z": -0.03}, 6))
+    bake(arm["R"], "TennisBackhand", SWING_FRAMES, backhand(hand["R"].location))
+    bake(arm["L"], "TennisBackhand", SWING_FRAMES, balance(SWING_FRAMES, {"x": 0.04, "y": 0.05}, {"x": -0.08, "y": -0.04}, 6))
+    bake(arm["R"], "TennisLob", LOB_FRAMES, lob(hand["R"].location))
+    bake(arm["L"], "TennisLob", LOB_FRAMES, balance(LOB_FRAMES, {"x": 0.04, "y": 0.06, "z": 0.03, "rx": 0.15}, {"x": -0.05, "y": -0.03, "z": 0.02}, 7))
+    bake(arm["R"], "TennisServe", SERVE_FRAMES, serve(hand["R"].location))
+    bake(arm["L"], "TennisServe", SERVE_FRAMES, toss(hand["L"].location))
+    for clip, pose_at in (("PetanquePoint", PETANQUE_POINT), ("PetanqueShoot", PETANQUE_SHOOT)):
+        bake(arm["R"], clip, PETANQUE_FRAMES, pose_at)
+        bake(hand["R"], clip, PETANQUE_FRAMES, pose_at, move_hand)
+        bake(arm["L"], clip, PETANQUE_FRAMES, PETANQUE_BALANCE)
+    climb = {side: climb_arm_poses(side, hand[side].location) for side in ("R", "L")}
+    for reaching, clip in (("R", "FpClimbReachR"), ("L", "FpClimbReachL")):
+        other = "L" if reaching == "R" else "R"
+        bake(arm[reaching], clip, CLIMB_REACH_FRAMES, climb_reach(climb[reaching]))
+        bake(arm[other], clip, CLIMB_REACH_FRAMES, climb_brace(climb[other], CLIMB_REACH_FRAMES, 11, -0.03))
+    for side, side_sign, phase in (("R", 1, 0.0), ("L", -1, math.pi)):
+        bake(arm[side], "FpClimbHang", CLIMB_HANG_FRAMES, climb_hang(climb[side], phase, side_sign))
+        bake(arm[side], "FpClimbFall", CLIMB_FALL_FRAMES, climb_fall(climb[side]))
+        bake(arm[side], "FpClimbLower", CLIMB_LOWER_FRAMES, climb_lower(climb[side], phase))
+    bake(arm["R"], "FpClimbTop", CLIMB_TOP_FRAMES, climb_top(climb["R"]))
+    bake(arm["L"], "FpClimbTop", CLIMB_TOP_FRAMES, climb_brace(climb["L"], CLIMB_TOP_FRAMES, 13, -0.05))
 
 
 def build(key, load=import_skin, out_rel=("skins",), fp_proportions=False):

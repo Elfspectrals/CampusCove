@@ -46,6 +46,8 @@ import {
 import { emptyHand } from './tools.ts'
 import type { ClientPayload, GameClient, GameRoom, JailSentence, Player, Stats } from './types.ts'
 import { reportCrime } from './wanted.ts'
+import { sportsDeath } from './sports/index.ts'
+import { swimmingInPool } from './sports/poolWater.ts'
 import { type ClinicBed, citySpawn, worldClinic, worldFountains, worldHouse } from './world.ts'
 
 export const SURVIVAL_TICK_MS = 2000
@@ -70,7 +72,7 @@ const CODE_PATTERN = /^[a-z0-9_]{1,64}$/
 const fountainBudgets = new Map<number | string, FountainState>()
 const FOUNTAIN_COOLDOWN = FOUNTAIN_COOLDOWN_MS / SURVIVAL_TIME_SCALE
 
-export type DamageCause = 'hunger' | 'thirst' | 'fall' | 'punch'
+export type DamageCause = 'hunger' | 'thirst' | 'fall' | 'punch' | 'drown'
 export type KnockOutCause = 'health' | 'alcohol'
 
 function warn(context: string, error: unknown): void {
@@ -169,6 +171,7 @@ function knockOut(room: GameRoom, client: GameClient, player: Player, cause: Kno
   emptyHand(room, client, player)
   leavePub(room, player)
   endDuty(room, player, 'death')
+  sportsDeath(room, player)
   releaseCuffs(room, player, 'suspect_down')
   const jailed = cause === 'health' && goesToNpcJail(player)
   const sentenceSaved = jailed ? sentenceAtDeath(room, player) : null
@@ -187,7 +190,8 @@ function knockOut(room: GameRoom, client: GameClient, player: Player, cause: Kno
         lostItems: Number(data?.lost?.items) || 0,
         lostClothes: Number(data?.lost?.clothes) || 0,
         lostCash: Number(data?.cash_drop?.amount) || 0,
-        lostTools: Array.isArray(data?.cash_drop?.tools) ? data.cash_drop.tools.length : 0
+        lostTools: Array.isArray(data?.cash_drop?.tools) ? data.cash_drop.tools.length : 0,
+        lostGear: Array.isArray(data?.cash_drop?.gear) ? data.cash_drop.gear.length : 0
       })
       if (data?.licence_lost === true && room.players.get(client.sessionId) === player) loseLicence(room, player)
       if (cause === 'health') dropCashBag(room, diedAt, data?.cash_drop, killerAccountId === null ? null : player.accountId)
@@ -244,6 +248,10 @@ export function releaseClinicBed(room: GameRoom, player: Player): void {
 /** Called for every accepted move: tracks the highest point of a fall and hurts on landing. */
 export function onSurvivalMove(room: GameRoom, client: GameClient, player: Player, previousY: number, distXZ: number): void {
   if (player.adminPowers?.has('fly')) {
+    player.fallPeakY = player.y
+    return
+  }
+  if (swimmingInPool(player)) {
     player.fallPeakY = player.y
     return
   }

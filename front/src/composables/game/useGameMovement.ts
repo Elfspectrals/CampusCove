@@ -1,3 +1,4 @@
+import { gameOptions } from './useGameOptions'
 import type { Ref, ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
@@ -13,12 +14,16 @@ import { advanceHitStop, cameraJolt, idleHitStop, punchKick, scheduleHitStop } f
 import { cameraMotionScale, createStepSmoother, verticalFovFor } from '../../game/comfort'
 import { comfortSettings } from './useComfortSettings'
 import { flyStep } from '../../game/admin/selfPowers'
+import type { WaterRect } from '../../game/sports/pool/poolRace'
+import type { SwimInput, SwimStep } from '../../game/sports/pool/swimMotion'
 
 /** Takeoff speed and gravity (m/s, m/s²): a ~0.95 m hop that lasts ~0.6 s. */
 const JUMP_VELOCITY = 6.5
 const GRAVITY = 22
 const MAX_FRAME_DT = 0.1
 const MOUSE_SENSITIVITY = 0.002
+const SKATE_KEY_TURN = 1.6
+const SCREEN_TURN_PER_S = 14
 /** Position updates sent to the server at most this often (ms). */
 const EMIT_INTERVAL_MS = 50
 
@@ -62,17 +67,31 @@ export interface UseGameMovementDeps {
   flying?: () => boolean
   /** Runs once the camera is placed each frame, for extra camera motion (drunken sway). */
   afterCameraPlaced?: (camera: THREE.PerspectiveCamera, dt: number) => void
+  cameraRoll?: (dt: number) => number
+  skate?: (dt: number, yaw: number, keys: { forward: boolean; brake: boolean }) => { dx: number; dz: number } | null
+  afterSkate?: (wanted: number, moved: number) => void
+  lockedLook?: () => { yaw: number; pitch: number } | null
+  autoRun?: (dt: number) => { dx: number; dz: number } | null
+  moveFrameYaw?: () => number | null
+  faceSpot?: () => { x: number; z: number } | null
+  swim?: {
+    waterAt: (x: number, z: number, feetY: number) => WaterRect | null
+    step: (water: WaterRect, eyeY: number, vy: number, input: SwimInput, yaw: number, pitch: number, dt: number) => SwimStep
+  }
 }
 
 /** First-person controls (WASD/ZQSD + pointer-lock mouse look), position sync, and the render loop. */
 export function useGameMovement(deps: UseGameMovementDeps) {
   const { pointerLocked, myPosition } = deps
-  const keys = { forward: false, back: false, left: false, right: false, sprint: false, up: false, down: false }
+  const keys = { forward: false, back: false, left: false, right: false, sprint: false, up: false, down: false, brake: false }
   let sprinting = false
   let jumpRequested = false
   /** Height of the feet above the ground while jumping, and its vertical speed. */
   let airY = 0
   let airVelocity = 0
+  let airGravity = GRAVITY
+  let swimVy = 0
+  let wasSwimming = false
   const direction = new THREE.Vector3(0, 0, -1)
   const rightVec = new THREE.Vector3()
   let lastEmit = 0
@@ -100,19 +119,57 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     const camera = deps.getCamera()
     if (!camera) return
 
-    yaw -= mouseX * MOUSE_SENSITIVITY
-    pitch -= mouseY * MOUSE_SENSITIVITY
-    pitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, pitch))
+    const frameYaw = deps.moveFrameYaw?.() ?? null
+    if (frameYaw === null) {
+      const turn = MOUSE_SENSITIVITY * gameOptions.mouseSensitivity
+      yaw -= mouseX * turn
+      pitch -= mouseY * turn * (gameOptions.invertY ? -1 : 1)
+      pitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, pitch))
+    } else {
+      const ahead = keys.forward ? 1 : keys.back ? -1 : 0
+      const aside = keys.right ? 1 : keys.left ? -1 : 0
+      const faced = deps.faceSpot?.() ?? null
+      if (faced || ahead !== 0 || aside !== 0) {
+        const wishX = faced ? faced.x - myPosition.x : -Math.sin(frameYaw) * ahead + Math.cos(frameYaw) * aside
+        const wishZ = faced ? faced.z - myPosition.z : -Math.cos(frameYaw) * ahead - Math.sin(frameYaw) * aside
+        const turn = Math.atan2(-wishX, -wishZ) - yaw
+        yaw += Math.atan2(Math.sin(turn), Math.cos(turn)) * (1 - Math.exp(-SCREEN_TURN_PER_S * dt))
+      }
+      pitch = 0
+    }
     mouseX = 0
     mouseY = 0
-    direction.set(0, 0, -1).applyAxisAngle(THREE.Object3D.DEFAULT_UP, yaw)
+    const lockedLook = deps.lockedLook?.() ?? null
+    if (lockedLook) {
+      yaw = lockedLook.yaw
+      pitch = lockedLook.pitch
+    }
+    direction.set(0, 0, -1).applyAxisAngle(THREE.Object3D.DEFAULT_UP, frameYaw ?? yaw)
     rightVec.crossVectors(direction, THREE.Object3D.DEFAULT_UP).normalize()
 
     const feetY = myPosition.y - EYE_HEIGHT - airY
     const push = knockback.step(dt)
     const locked = deps.movementLocked?.() ?? false
     const flying = !locked && (deps.flying?.() ?? false)
-    if (flying && !deps.inventoryOpen.value) {
+    const water = locked || flying ? null : (deps.swim?.waterAt(myPosition.x, myPosition.z, feetY) ?? null)
+    if (water && deps.swim) {
+      if (!wasSwimming) swimVy = airY > 0 ? airVelocity : 0
+      airY = 0
+      airVelocity = 0
+      const free = !deps.inventoryOpen.value
+      const forward = free ? (keys.forward ? 1 : keys.back ? -1 : 0) : 0
+      const right = free ? (keys.right ? 1 : keys.left ? -1 : 0) : 0
+      const speedFactor = deps.speedFactor()
+      sprinting = keys.sprint && (forward !== 0 || right !== 0) && speedFactor > 0 && deps.trySpendSprint(dt, sprinting)
+      const input = { forward, right, up: free && keys.up, down: free && keys.down, fast: sprinting, speedFactor }
+      const swim = deps.swim.step(water, myPosition.y, swimVy, input, yaw, pitch, dt)
+      const pushFactor = speedFactor > 0 ? 1 : 0
+      const resolved = resolveWorldMovement(myPosition, swim.dx + push.dx * pushFactor, swim.dz + push.dz * pushFactor, myPosition.y - EYE_HEIGHT)
+      myPosition.x = resolved.x
+      myPosition.z = resolved.z
+      myPosition.y = swim.y
+      swimVy = swim.vy
+    } else if (flying && !deps.inventoryOpen.value) {
       const fly = flyStep(
         yaw,
         pitch,
@@ -129,27 +186,38 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     } else if (!deps.inventoryOpen.value && !locked) {
       const forward = keys.forward ? 1 : keys.back ? -1 : 0
       const right = keys.right ? 1 : keys.left ? -1 : 0
+      const skating = deps.skate?.(dt, yaw, { forward: keys.forward, brake: keys.brake }) ?? null
       const speedFactor = deps.speedFactor()
-      const moving = (forward !== 0 || right !== 0) && speedFactor > 0
+      const moving = !skating && (forward !== 0 || right !== 0) && speedFactor > 0
+      const auto = !skating && forward === 0 && right === 0 ? (deps.autoRun?.(dt) ?? null) : null
       sprinting = keys.sprint && moving && deps.trySpendSprint(dt, sprinting)
-      if (jumpRequested && airY === 0 && speedFactor > 0 && deps.trySpendJump()) airVelocity = JUMP_VELOCITY
+      if (skating) yaw -= right * SKATE_KEY_TURN * dt
+      else if (jumpRequested && airY === 0 && speedFactor > 0 && deps.trySpendJump()) airVelocity = JUMP_VELOCITY
       const step = (sprinting ? SPRINT_SPEED : WALK_SPEED) * speedFactor * dt
       const pushFactor = speedFactor > 0 ? 1 : 0
-      const dx = direction.x * forward * step + rightVec.x * right * step + push.dx * pushFactor
-      const dz = direction.z * forward * step + rightVec.z * right * step + push.dz * pushFactor
+      const walkX = auto ? auto.dx * speedFactor : direction.x * forward * step + rightVec.x * right * step
+      const walkZ = auto ? auto.dz * speedFactor : direction.z * forward * step + rightVec.z * right * step
+      const dx = skating ? (skating.dx + push.dx) * pushFactor : walkX + push.dx * pushFactor
+      const dz = skating ? (skating.dz + push.dz) * pushFactor : walkZ + push.dz * pushFactor
       const liftY = capsuleLiftInBuilding(myPosition.x, myPosition.z, feetY)
       const resolved = resolveWorldMovement(myPosition, dx, dz, liftY)
+      if (skating) deps.afterSkate?.(Math.hypot(dx, dz), Math.hypot(resolved.x - myPosition.x, resolved.z - myPosition.z))
       myPosition.x = resolved.x
       myPosition.z = resolved.z
     } else {
       sprinting = false
     }
     jumpRequested = false
-    if (!locked && !flying) {
+    wasSwimming = water !== null
+    const intoWater = !water && !locked && !flying && (deps.swim?.waterAt(myPosition.x, myPosition.z, feetY) ?? null) !== null
+    if (!locked && !flying && !water && !intoWater) {
       if (airY > 0 || airVelocity > 0) {
-        airVelocity -= GRAVITY * dt
+        airVelocity -= airGravity * dt
         airY = Math.max(0, airY + airVelocity * dt)
-        if (airY === 0) airVelocity = 0
+        if (airY === 0) {
+          airVelocity = 0
+          airGravity = GRAVITY
+        }
       }
       myPosition.y = EYE_HEIGHT + airY + (buildingFloorAt(myPosition.x, myPosition.z, feetY) ?? terrainHeightAt(myPosition.x, myPosition.z))
     }
@@ -165,7 +233,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     const motion = cameraMotionScale(comfortSettings.reduceCameraMotion)
     camera.rotation.y = yaw
     camera.rotation.x = pitch + (shake.pitch + kick.pitch) * motion.shake
-    camera.rotation.z = shake.roll * motion.roll
+    camera.rotation.z = (shake.roll + (deps.cameraRoll?.(dt) ?? 0)) * motion.roll
     const fov = verticalFovFor(comfortSettings.fov, camera.aspect) + kick.fov * motion.fovKick
     if (fov !== camera.fov) {
       camera.fov = fov
@@ -210,6 +278,10 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     camera.rotation.order = 'YXZ'
     camera.rotation.y = yaw
     camera.rotation.x = pitch
+  }
+
+  function look(): { yaw: number; pitch: number } {
+    return { yaw, pitch }
   }
 
   function kickCamera(): void {
@@ -282,6 +354,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     if (matches('jump', e.code)) {
       // Space would otherwise press a focused button or scroll the page
       e.preventDefault()
+      keys.brake = true
       if (!e.repeat && pointerLocked.value) jumpRequested = true
       keys.up = true
       return
@@ -302,7 +375,10 @@ export function useGameMovement(deps: UseGameMovementDeps) {
   }
 
   function onKeyUp(e: KeyboardEvent) {
-    if (matches('jump', e.code)) keys.up = false
+    if (matches('jump', e.code)) {
+      keys.up = false
+      keys.brake = false
+    }
     setMoveKey(e.code, false)
   }
 
@@ -338,6 +414,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     containerSize,
     requestPointerLock,
     setLook,
+    look,
     onCanvasMouseDown,
     startRenderLoop,
     stopRenderLoop,
@@ -347,5 +424,9 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     freezeCamera,
     joltCamera,
     knockBack: knockback.push,
+    leap(velocity: number, gravity: number): void {
+      airVelocity = velocity
+      airGravity = gravity
+    },
   }
 }

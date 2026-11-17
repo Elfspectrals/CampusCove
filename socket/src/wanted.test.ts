@@ -68,7 +68,8 @@ function setup() {
       wantedDecayMs: WANTED_DECAY_MS,
       wantedDirty: false,
       lastHitAt: new Map(),
-      lastAssaultAt: new Map()
+      lastAssaultAt: new Map(),
+      sportsLoans: new Map()
     } as unknown as Player
     const sent: Sent[] = []
     const client = { sessionId, sent, send: (type: string, payload: unknown) => void sent.push({ type, payload }) } as FakeClient

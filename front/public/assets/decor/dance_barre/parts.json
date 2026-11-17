@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_DanceBarreWood": {
+      "mask": "parts_DC_DanceBarreWood.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#c9a36a"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#ab844b"
+        }
+      ]
+    }
+  }
+}

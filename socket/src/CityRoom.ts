@@ -61,6 +61,7 @@ import { voiceRoomName, voiceToken } from './voice.ts'
 import { VOICE_SYNC_MS, createVoiceSync, liveKitService, onVoiceMute } from './voiceSync.ts'
 import {
   createPlayer,
+  makeRobot,
   normalizeAppearanceIds,
   normalizeBodyModelGlb,
   normalizeNumber,
@@ -107,10 +108,55 @@ import type {
   Player,
   PubState
 } from './types.ts'
-import { type WorldHouse, citySpawn, workDoor, worldHouse } from './world.ts'
+import { type WorldHouse, citySpawn, workDoor, worldBusLine, worldHouse } from './world.ts'
+import { isRidingBus, leaveBus, newBusState, onBusAlight, onBusBoard, tickBus } from './bus.ts'
+import { BUS_SYNC_MS } from './busConstants.ts'
 import { sendTaskTierReached, type TaskTierReached } from './tasks.ts'
 import { applyTutorialChange, type TutorialChange } from './tutorial.ts'
 import { onTaskMove } from './taskTracking.ts'
+import {
+  SPORTS_TICK_MS,
+  joinSports,
+  onBoxingBag,
+  onBoxingBagCombo,
+  tickBoxingBags,
+  onBoxingDodge,
+  onBoxingGetUp,
+  onBoxingGuard,
+  onBoxingPress,
+  onBoxingRelease,
+  leaveSportsRoom,
+  moveInSports,
+  newSportsState,
+  moveDanceSpectator,
+  moveEmote,
+  onDanceEmotePlay,
+  onDancePress,
+  onEmoteList,
+  sendEmotesOnJoin,
+  stopEmote,
+  onSportsCoachOpen,
+  onSportsPassBuy,
+  onSportsSignup,
+  onSportsMatchLeave,
+  onSportsRobots,
+  onSportsSignupLeave,
+  robotViews,
+  useRobotFactory,
+  tickSports
+} from './sports/index.ts'
+import { onGearQuote, onGearRent } from './sports/gearRental.ts'
+import { isRacing, onRunLook, onRunStep } from './sports/runningVenue.ts'
+import { onGymAction, onGymBall, onGymBallReturn, tickGym } from './sports/gym.ts'
+import { onTennisHit } from './sports/tennis.ts'
+import { onTennisBallTake, tickTennisFree } from './sports/tennisFree.ts'
+import { CLIMB_TICK_MS, onClimbCheck, onClimbHold, onClimbLetGo, onClimbStart, tickClimbing } from './sports/climbing.ts'
+import { onFigurePress, onFigureRelease } from './sports/figureRink.ts'
+import { onSkateBrake, onSkatePush, tickSkating } from './sports/skatingRink.ts'
+import { onPetanqueAim, onPetanqueThrow } from './sports/petanque.ts'
+import { onPoolJump, onPoolTrick } from './sports/poolDiving.ts'
+import { onPoolDive, onPoolStroke } from './sports/poolRace.ts'
+import { POOL_BREATH_TICK_MS, tickPoolBreath } from './sports/poolWater.ts'
 
 function warn(context: string, error: unknown): void {
   console.warn(`[colyseus] ${context}:`, error instanceof Error ? error.message : error)
@@ -129,10 +175,13 @@ export class CityRoom extends Room implements GameRoom {
   cashBags = new Map<number, CashBag>()
   market: MarketSnapshot | null = null
   storageAuction = newStorageAuction()
+  sports = newSportsState()
+  bus = newBusState(worldBusLine())
   pub: PubState = { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map(), quiz: null, quizSchedule: 0 }
 
   onCreate() {
     this.maxClients = CITY_MAX_PLAYERS
+    useRobotFactory(makeRobot)
 
     this.onMessage('move', (client, payload: ClientPayload) => this.onMove(client, payload))
     this.onMessage('appearance', (client, payload: ClientPayload) => this.onAppearance(client, payload))
@@ -233,6 +282,70 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('storage_open_mine', (client) => void onStorageOpenMine(this, client))
     this.clock.setInterval(() => void tickStorageAuction(this, Date.now()).catch((error) => warn('storage auction tick failed', error)), STORAGE_TICK_MS)
     this.onMessage('admin_quiz_start', (client) => onAdminQuizStart(this, client))
+    this.onMessage('sports_pass_buy', (client, payload: ClientPayload) => void onSportsPassBuy(this, client, payload))
+    this.onMessage('sports_coach_open', (client, payload: ClientPayload) => onSportsCoachOpen(this, client, payload))
+    this.onMessage('sports_signup', (client, payload: ClientPayload) => void onSportsSignup(this, client, payload).catch((error) => warn('sports sign-up failed', error)))
+    this.onMessage('sports_signup_leave', (client) => onSportsSignupLeave(this, client))
+    this.onMessage('sports_robots', (client, payload: ClientPayload) => onSportsRobots(this, client, payload))
+    this.onMessage('sports_leave', (client) => {
+      onSportsMatchLeave(this, client)
+      onGymBallReturn(this, client)
+    })
+    this.onMessage('sports_gear_quote', (client) => void onGearQuote(this, client))
+    this.onMessage('sports_gear_rent', (client) => void onGearRent(this, client))
+    this.onMessage('sports_run_step', (client, payload: ClientPayload) => onRunStep(this, client, payload))
+    this.onMessage('sports_run_look', (client, payload: ClientPayload) => onRunLook(this, client, payload))
+    this.onMessage('gym_action', (client, payload: ClientPayload) => onGymAction(this, client, payload))
+    this.onMessage('gym_ball', (client, payload: ClientPayload) => onGymBall(this, client, payload))
+    this.onMessage('gym_ball_return', (client) => onGymBallReturn(this, client))
+    this.onMessage('tennis_hit', (client, payload: ClientPayload) => onTennisHit(this, client, payload))
+    this.onMessage('tennis_ball_take', (client, payload: ClientPayload) => void onTennisBallTake(this, client, payload).catch((error) => warn('tennis ball failed', error)))
+    this.onMessage('dance_press', (client, payload: ClientPayload) => onDancePress(this, client, payload))
+    this.onMessage('emote_play', (client, payload: ClientPayload) => void onDanceEmotePlay(this, client, payload).catch((error) => warn('emote failed', error)))
+    this.onMessage('emote_list', (client) => void onEmoteList(this, client).catch((error) => warn('emote list failed', error)))
+    this.onMessage('climb_start', (client, payload: ClientPayload) => onClimbStart(this, client, payload))
+    this.onMessage('climb_hold', (client, payload: ClientPayload) => onClimbHold(this, client, payload))
+    this.onMessage('climb_check', (client) => onClimbCheck(this, client))
+    this.onMessage('climb_let_go', (client) => onClimbLetGo(this, client))
+    this.clock.setInterval(() => {
+      try {
+        tickClimbing(this)
+      } catch (error) {
+        warn('climbing tick failed', error)
+      }
+    }, CLIMB_TICK_MS)
+    this.onMessage('boxing_press', (client, payload: ClientPayload) => onBoxingPress(this, client, payload))
+    this.onMessage('boxing_release', (client, payload: ClientPayload) => onBoxingRelease(this, client, payload))
+    this.onMessage('boxing_guard', (client, payload: ClientPayload) => onBoxingGuard(this, client, payload))
+    this.onMessage('boxing_dodge', (client, payload: ClientPayload) => onBoxingDodge(this, client, payload))
+    this.onMessage('boxing_getup', (client) => onBoxingGetUp(this, client))
+    this.onMessage('boxing_bag', (client, payload: ClientPayload) => void onBoxingBag(this, client, payload).catch((error) => warn('boxing bag failed', error)))
+    this.onMessage('boxing_bag_combo', (client, payload: ClientPayload) => onBoxingBagCombo(this, client, payload))
+    this.onMessage('skate_push', (client) => onSkatePush(this, client))
+    this.onMessage('figure_press', (client, payload: ClientPayload) => onFigurePress(this, client, payload))
+    this.onMessage('figure_release', (client) => onFigureRelease(this, client))
+    this.onMessage('skate_brake', (client, payload: ClientPayload) => onSkateBrake(this, client, payload))
+    this.onMessage('petanque_aim', (client) => void onPetanqueAim(this, client).catch((error) => warn('petanque aim failed', error)))
+    this.onMessage('petanque_throw', (client, payload: ClientPayload) => onPetanqueThrow(this, client, payload))
+    this.onMessage('pool_dive', (client) => onPoolDive(this, client))
+    this.onMessage('pool_stroke', (client, payload: ClientPayload) => onPoolStroke(this, client, payload))
+    this.onMessage('pool_jump', (client, payload: ClientPayload) => onPoolJump(this, client, payload))
+    this.onMessage('pool_trick', (client, payload: ClientPayload) => onPoolTrick(this, client, payload))
+    this.clock.setInterval(() => {
+      try {
+        tickSports(this)
+        tickGym(this)
+        tickTennisFree(this)
+        tickBoxingBags(this)
+        tickSkating(this)
+      } catch (error) {
+        warn('sports tick failed', error)
+      }
+    }, SPORTS_TICK_MS)
+    this.clock.setInterval(() => tickPoolBreath(this, Date.now()), POOL_BREATH_TICK_MS)
+    this.onMessage('bus_board', (client, payload: ClientPayload) => onBusBoard(this, client, payload))
+    this.onMessage('bus_alight', (client, payload: ClientPayload) => onBusAlight(this, client, payload))
+    this.clock.setInterval(() => tickBus(this), BUS_SYNC_MS)
     scheduleNextQuiz(this)
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
     this.clock.setInterval(() => tickSurvival(this, SURVIVAL_TICK_MS / 1000), SURVIVAL_TICK_MS)
@@ -264,8 +377,10 @@ export class CityRoom extends Room implements GameRoom {
       if (stale) {
         onTradeLeave(this, stale)
         leavePub(this, stale)
+        leaveSportsRoom(this, stale, Date.now())
         leaveCuffs(this, stale)
         leavePickpocket(this, stale)
+        leaveBus(this, stale)
       }
       this.players.delete(staleSessionId)
       // saved before this session loads them
@@ -304,6 +419,8 @@ export class CityRoom extends Room implements GameRoom {
       await loadPoliceLicence(this, client, player)
       await loadSurvival(client, player)
     }
+    await joinSports(this, client, player)
+    sendEmotesOnJoin(this, client)
     await sendMarketOnJoin(this, client, player)
   }
 
@@ -314,8 +431,11 @@ export class CityRoom extends Room implements GameRoom {
     releaseClinicBed(this, player)
     leaveCuffs(this, player)
     leavePickpocket(this, player)
+    leaveBus(this, player)
     onTradeLeave(this, player)
     leavePub(this, player)
+    leaveSportsRoom(this, player, Date.now())
+    stopEmote(this, player.sessionId)
     void saveSurvival(player)
     void saveWanted(player)
     void saveJail(player)
@@ -335,14 +455,15 @@ export class CityRoom extends Room implements GameRoom {
   }
 
   otherPlayers(client: GameClient) {
-    return [...this.players.values()].filter((u) => u.sessionId !== client.sessionId && !hasPower(u, 'invisible')).map(publicPlayer)
+    const humans = [...this.players.values()].filter((u) => u.sessionId !== client.sessionId && !hasPower(u, 'invisible')).map(publicPlayer)
+    return [...humans, ...robotViews(this)]
   }
 
   // ------------------------------------------------------------ presence
 
   onMove(client: Client, payload: ClientPayload): void {
     const player = this.players.get(client.sessionId)
-    if (!player || !payload || typeof payload !== 'object') return
+    if (!player || !payload || typeof payload !== 'object' || isRidingBus(this, player) || isRacing(this, player)) return
     const x = normalizeNumber(payload.x, player.x)
     const y = normalizeNumber(payload.y, player.y)
     const z = normalizeNumber(payload.z, player.z)
@@ -359,7 +480,7 @@ export class CityRoom extends Room implements GameRoom {
       return
     }
     if (rejection !== null) {
-      client.send('position_correction', { x: player.x, y: player.y, z: player.z })
+      client.send('position_correction', { x: player.x, y: player.y, z: player.z, reason: rejection })
       return
     }
     const previousY = player.y
@@ -376,6 +497,9 @@ export class CityRoom extends Room implements GameRoom {
     checkTradeDistance(this, player)
     onSurvivalMove(this, client, player, previousY, distXZ)
     onTaskMove(player, distXZ, now)
+    moveInSports(this, player, now)
+    moveEmote(this, player)
+    moveDanceSpectator(this, player.sessionId, now)
   }
 
   broadcastMove(client: GameClient, player: Player): void {

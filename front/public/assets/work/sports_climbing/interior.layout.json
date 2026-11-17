@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "key": "sports_climbing",
+  "name": "Cove Climbing Hall",
+  "spawn": [
+    0.0,
+    1.6,
+    3.7
+  ],
+  "exit": {
+    "position": [
+      0.0,
+      4.75
+    ],
+    "radius": 1.4
+  },
+  "stations": [],
+  "npcs": {
+    "shoeAttendant": [
+      6.55,
+      0.0,
+      2.6
+    ]
+  },
+  "counters": {
+    "shoes": [
+      5.6,
+      0.0,
+      2.6
+    ]
+  },
+  "seats": []
+}

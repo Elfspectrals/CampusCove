@@ -72,6 +72,10 @@ npm run assets:optimize -- wear                                           # firs
 npm run wear:check
 ```
 
+Robot pieces (`robot_*` heads and tops, `robot` legs and feet, built by `robot_head`, `robot_torso`, `robot_legs` in `wear.py`) dress the
+sports robots and are never worn by a player, so their tops ship no first-person arms. They are primitives only (no AI
+shape); a robot head hides the `head` region, which also hides the face. Concept images: `docs/mockups/robot-concepts/`.
+
 The first-person arms come from the base body plus the equipped top (`wear/top/<key>/fp_arms.glb`, bare arms in
 `wear/bare/fp_arms.glb`).
 

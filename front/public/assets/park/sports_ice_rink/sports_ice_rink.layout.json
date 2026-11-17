@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "zone": {
+    "minX": -562.0,
+    "maxX": -481.0,
+    "minZ": -301.0,
+    "maxZ": -250.0
+  },
+  "building": {
+    "kind": "work",
+    "key": "sports_ice_rink",
+    "name": "Cove Ice Rink",
+    "job": "sports",
+    "position": [
+      -521.5,
+      0.0,
+      -275.5
+    ],
+    "rotationY": 1.5708,
+    "door": [
+      -484.0,
+      1.25,
+      -275.5
+    ],
+    "footprint": [
+      45.0,
+      75.41
+    ],
+    "interiorOffset": [
+      0.0,
+      0.2,
+      32.095
+    ]
+  },
+  "points": {
+    "rinkCoach": [
+      -494.8,
+      0.2,
+      -275.5
+    ],
+    "coachYaw": 1.5708
+  },
+  "collision": [
+    {
+      "name": "COL_SportsIceRink_SIR_BenchN",
+      "cx": -482.4,
+      "cz": -284.5,
+      "hx": 0.85,
+      "hz": 0.25,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsIceRink_SIR_BenchS",
+      "cx": -482.4,
+      "cz": -266.5,
+      "hx": 0.85,
+      "hz": 0.25,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsIceRink_SIR_Tree0",
+      "cx": -482.2,
+      "cz": -295.0,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsIceRink_SIR_Tree1",
+      "cx": -482.2,
+      "cz": -256.0,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsIceRink_SIR_Tree2",
+      "cx": -482.2,
+      "cz": -292.5,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsIceRink_SIR_Tree3",
+      "cx": -482.2,
+      "cz": -258.5,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_sports_ice_rink",
+      "cx": -521.705,
+      "cz": -275.5,
+      "hx": 37.905,
+      "hz": 22.7,
+      "hy": 4.699999999999999,
+      "cy": 4.699999999999999,
+      "yaw": 0.0
+    }
+  ]
+}

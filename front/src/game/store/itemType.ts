@@ -15,6 +15,12 @@ const USES: Readonly<Record<string, string>> = {
   tool_crowbar: 'Melee weapon',
   tool_hammer: 'Melee weapon',
   tool_wrench: 'Melee weapon',
+  gear_swimsuit: 'Pool: needed to swim and dive',
+  gear_boxing_gloves: 'Boxing hall: needed in the ring and on the bags',
+  gear_boules: 'Pétanque pistes: needed to play',
+  gear_tennis_racket: 'Tennis courts: needed to play',
+  gear_running_spikes: 'Athletics track: needed to race',
+  gear_ice_skates: 'Ice rink: needed to skate',
 }
 
 function kindLabel(item: Pick<ShopItem, 'kind' | 'code' | 'food'>): string {
@@ -29,6 +35,8 @@ function kindLabel(item: Pick<ShopItem, 'kind' | 'code' | 'food'>): string {
       return 'Furniture'
     case 'tool':
       return 'Tool'
+    case 'sports_gear':
+      return 'Sports gear'
     case 'misc':
       return 'Item'
   }

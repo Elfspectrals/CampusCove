@@ -119,7 +119,7 @@ def _set_rot(P, bone, m):
     P.rx(bone, math.degrees(e.x)); P.ry(bone, math.degrees(e.y)); P.rz(bone, math.degrees(e.z))
 
 
-def leg_ik(P, side, ankle, pitch=0.0, toe=0.0):
+def leg_ik(P, side, ankle, pitch=0.0, toe=0.0, yaw=None):
     bones = P.arm.data.bones
     hips, ul, ll = bones['Hips'], bones['UpperLeg' + side], bones['LowerLeg' + side]
     rh = Euler(P.rot.get('Hips', (0.0, 0.0, 0.0)), 'XYZ').to_matrix()
@@ -129,7 +129,7 @@ def leg_ik(P, side, ankle, pitch=0.0, toe=0.0):
     d = Vector(ankle) - hip
     dist = min(d.length, 0.9995 * (l1 + l2))
     dn = d.normalized()
-    hinge = rh @ Vector((1, 0, 0))
+    hinge = (rh if yaw is None else Matrix.Rotation(math.radians(yaw), 3, 'Z')) @ Vector((1, 0, 0))
     hinge = (hinge - hinge.dot(dn) * dn).normalized()
     cos_a = (l1 * l1 + dist * dist - l2 * l2) / (2 * l1 * dist)
     a = math.acos(max(-1.0, min(1.0, cos_a)))
@@ -138,8 +138,45 @@ def leg_ik(P, side, ankle, pitch=0.0, toe=0.0):
     r2 = _aim(shin, hip + dist * dn - knee, hinge)
     _set_rot(P, 'UpperLeg' + side, rh.transposed() @ r1)
     _set_rot(P, 'LowerLeg' + side, r1.transposed() @ r2)
-    _set_rot(P, 'Foot' + side, r2.transposed() @ Matrix.Rotation(math.radians(pitch), 3, 'X'))
+    heading = Matrix.Rotation(math.radians(yaw or 0.0), 3, 'Z')
+    _set_rot(P, 'Foot' + side, r2.transposed() @ heading @ Matrix.Rotation(math.radians(pitch), 3, 'X'))
     _set_rot(P, 'Toe' + side, Matrix.Rotation(math.radians(toe - pitch), 3, 'X'))
+
+
+def _bone_head(P, name):
+    chain = []
+    b = P.arm.data.bones[name]
+    while b:
+        chain.append(b)
+        b = b.parent
+    chain.reverse()
+    rot = Matrix.Identity(3)
+    pos = chain[0].head_local + P.loc.get(chain[0].name, Vector((0, 0, 0)))
+    for parent, child in zip(chain, chain[1:]):
+        rot = rot @ Euler(P.rot.get(parent.name, (0.0, 0.0, 0.0)), 'XYZ').to_matrix()
+        pos = pos + rot @ (child.head_local - parent.head_local)
+    return pos, rot
+
+
+def arm_ik(P, side, wrist, elbow):
+    bones = P.arm.data.bones
+    ua, la = bones['UpperArm' + side], bones['LowerArm' + side]
+    shoulder, parent = _bone_head(P, 'UpperArm' + side)
+    upper, lower = ua.tail_local - ua.head_local, la.tail_local - la.head_local
+    l1, l2 = upper.length, lower.length
+    d = Vector(wrist) - shoulder
+    dist = min(d.length, 0.9995 * (l1 + l2))
+    dn = d.normalized()
+    e = Vector(elbow)
+    e = (e - e.dot(dn) * dn).normalized()
+    hinge = e.cross(dn)
+    a = math.acos(max(-1.0, min(1.0, (l1 * l1 + dist * dist - l2 * l2) / (2 * l1 * dist))))
+    el = shoulder + l1 * (math.cos(a) * dn + math.sin(a) * e)
+    back = Vector((-1, 0, 0))
+    r1 = _frame(el - shoulder, hinge) @ _frame(upper, back).transposed()
+    r2 = _frame(shoulder + dist * dn - el, hinge) @ _frame(lower, back).transposed()
+    _set_rot(P, 'UpperArm' + side, parent.transposed() @ r1)
+    _set_rot(P, 'LowerArm' + side, r1.transposed() @ r2)
 
 
 def _hermite(p0, p1, m0, m1, u):

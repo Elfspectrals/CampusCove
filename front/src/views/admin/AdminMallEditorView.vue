@@ -280,6 +280,7 @@ watch(
     }
   },
 )
+const coachIds = computed(() => template.value.props.flatMap((p) => (p.kind === 'npc' && p.coach ? [p.coach] : [])))
 const vendorTaken = computed(() => template.value.props.some((p) => p.kind === 'npc' && p.vendor && p.id !== selectedId.value))
 const emptyWear = { hair: [], head_accessory: [], top: [], bottom: [], shoes: [] } as Record<WearSlot, string[]>
 
@@ -1147,6 +1148,7 @@ onUnmounted(() => {
           :decor-options="decorOptions"
           :wear="editorAssets?.wear ?? emptyWear"
           :vendor-taken="vendorTaken"
+          :coach-ids="coachIds"
           :preset="template.preset"
           :bounds="openZone?.bounds"
           :crop-options="cropOptions"

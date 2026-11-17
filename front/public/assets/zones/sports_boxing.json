@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "zone": "sports_boxing",
+  "name": "Cove Boxing Club",
+  "props": [
+    {
+      "id": "sports_boxing_coach",
+      "kind": "npc",
+      "position": [
+        -387.0,
+        0.2,
+        -233.8
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8d5a3b",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "buzz",
+          "color": "#1f1a17"
+        },
+        {
+          "slot": "top",
+          "key": "track_jacket",
+          "color": "#c8352d"
+        },
+        {
+          "slot": "bottom",
+          "key": "track_pants",
+          "color": "#1f3a5f"
+        },
+        {
+          "slot": "shoes",
+          "key": "runners",
+          "color": "#f2f2f2"
+        }
+      ],
+      "coach": "boxing_coach"
+    },
+    {
+      "id": "sports_boxing_robot",
+      "kind": "npc",
+      "position": [
+        -387.0,
+        0.2,
+        -232.4
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#55585f",
+      "outfit": [
+        {
+          "slot": "head_accessory",
+          "key": "robot_dummy",
+          "color": "#f1ead0"
+        },
+        {
+          "slot": "top",
+          "key": "robot_dummy",
+          "color": "#f1ead0"
+        },
+        {
+          "slot": "bottom",
+          "key": "robot",
+          "color": "#f1ead0"
+        },
+        {
+          "slot": "shoes",
+          "key": "robot",
+          "color": "#f08a7a"
+        }
+      ],
+      "robotOf": "boxing_coach"
+    },
+    {
+      "id": "sports_boxing_punch_bag_01",
+      "kind": "item",
+      "key": "punch_bag",
+      "code": "decor_punch_bag",
+      "forSale": false,
+      "position": [
+        -386.8,
+        0.2,
+        -221.8
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_boxing_punch_bag_02",
+      "kind": "item",
+      "key": "punch_bag",
+      "code": "decor_punch_bag",
+      "forSale": false,
+      "position": [
+        -383.0,
+        0.2,
+        -221.8
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_boxing_punch_bag_03",
+      "kind": "item",
+      "key": "punch_bag",
+      "code": "decor_punch_bag",
+      "forSale": false,
+      "position": [
+        -379.2,
+        0.2,
+        -221.8
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_boxing_gloves_01",
+      "kind": "item",
+      "key": "boxing_gloves",
+      "code": "decor_boxing_gloves",
+      "forSale": false,
+      "position": [
+        -389.6,
+        0.68,
+        -233.0
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "areas": []
+}

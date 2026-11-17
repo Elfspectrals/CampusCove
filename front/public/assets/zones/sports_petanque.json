@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "zone": "sports_petanque",
+  "name": "Cove Sports Park boulodrome",
+  "props": [
+    {
+      "id": "petanque_coach",
+      "kind": "npc",
+      "position": [
+        -400,
+        0.06,
+        -254.6
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#d9a27c",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#b9b4ab"
+        },
+        {
+          "slot": "head_accessory",
+          "key": "beret",
+          "color": "#1f2230"
+        },
+        {
+          "slot": "top",
+          "key": "plaid_shirt",
+          "color": "#3d6b8f"
+        },
+        {
+          "slot": "bottom",
+          "key": "basic",
+          "color": "#c9b48a"
+        },
+        {
+          "slot": "shoes",
+          "key": "basic",
+          "color": "#5a4030"
+        }
+      ],
+      "coach": "petanque_coach"
+    },
+    {
+      "id": "sports_petanque_trash_bin_01",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [
+        -402.6,
+        0.06,
+        -253.5
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_petanque_trash_bin_02",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [
+        -397.4,
+        0.06,
+        -253.5
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "areas": []
+}

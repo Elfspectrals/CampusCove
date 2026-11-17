@@ -105,6 +105,25 @@
       ]
     },
     {
+      "id": "summit_sports_ice_skates",
+      "kind": "item",
+      "key": "ice_skates",
+      "code": "gear_ice_skates",
+      "forSale": true,
+      "price": 260,
+      "position": [
+        -276.9,
+        1.34,
+        82.905
+      ],
+      "yaw": 0.6,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
       "id": "summit_sports_table_e",
       "kind": "item",
       "key": "folded_clothes_table",
@@ -229,6 +248,26 @@
         1,
         1
       ]
+    },
+    {
+      "id": "summit_sports_boxing_gloves",
+      "kind": "item",
+      "key": "boxing_gloves",
+      "code": "gear_boxing_gloves",
+      "forSale": true,
+      "price": 150,
+      "position": [
+        -277.0,
+        1.34,
+        82.905
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Red leather boxing gloves. Needed to fight in the ring of the Cove Boxing Club."
     },
     {
       "id": "summit_sports_top_track_jacket",
@@ -491,6 +530,193 @@
           "price": 220
         }
       ]
+    },
+    {
+      "id": "summit_sports_rail_team",
+      "kind": "item",
+      "key": "clothes_wall_rail",
+      "code": "decor_clothes_wall_rail",
+      "forSale": false,
+      "position": [
+        -278.75,
+        0.2,
+        86.589
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_top_team_jersey_red",
+      "kind": "mannequin",
+      "position": [
+        -277.5,
+        0.463,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "team_jersey_red",
+          "color": "#d62a2a",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TEAM_JERSEY_RED",
+          "price": 110
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_top_team_jersey_blue",
+      "kind": "mannequin",
+      "position": [
+        -278.75,
+        0.463,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "team_jersey_blue",
+          "color": "#2457c5",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TEAM_JERSEY_BLUE",
+          "price": 110
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_tracksuit",
+      "kind": "mannequin",
+      "position": [
+        -280.0,
+        0.463,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "tracksuit",
+          "color": "#1d5c50",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TRACKSUIT",
+          "price": 240
+        },
+        {
+          "slot": "bottom",
+          "key": "tracksuit",
+          "color": "#1d5c50",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_TRACKSUIT",
+          "price": 140
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_running_spikes",
+      "kind": "item",
+      "key": "running_spikes",
+      "code": "gear_running_spikes",
+      "forSale": true,
+      "price": 260,
+      "position": [
+        -289.6,
+        1.34,
+        82.905
+      ],
+      "yaw": 0.6,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Running spikes for timed races on the Cove Sports Park track. Never wear out."
+    },
+    {
+      "id": "summit_sports_tennis_racket",
+      "kind": "item",
+      "key": "tennis_racket",
+      "code": "gear_tennis_racket",
+      "forSale": true,
+      "price": 180,
+      "position": [
+        -276.0,
+        0.2,
+        79.7
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Tennis racket for the Cove Sports Park courts. Never wears out."
+    },
+    {
+      "id": "summit_sports_boules",
+      "kind": "item",
+      "key": "petanque_boules",
+      "code": "gear_boules",
+      "forSale": true,
+      "price": 150,
+      "position": [
+        -277.0,
+        1.34,
+        82.905
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Three steel boules and a jack. Needed for a game at the boulodrome, Cove Sports Park."
+    },
+    {
+      "id": "summit_sports_swimsuit",
+      "kind": "item",
+      "key": "swimsuit_stand",
+      "code": "gear_swimsuit",
+      "forSale": true,
+      "price": 90,
+      "position": [
+        -293.1,
+        1.23,
+        80.205
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Swimsuit for the Cove Pool: needed to swim, race and dive."
     }
   ],
   "areas": [

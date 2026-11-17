@@ -66,3 +66,4 @@ map-src/*
 !map-src/CampusCove/
 map-src/CampusCove/*
 !map-src/CampusCove/*.py
+!map-src/CampusCove/bus_route.json

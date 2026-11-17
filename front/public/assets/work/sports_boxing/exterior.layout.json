@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "key": "sports_boxing",
+  "name": "Cove Boxing Club",
+  "footprint": [
+    18.0,
+    23.61
+  ],
+  "footprintCenterZ": -3.8050000000000006,
+  "doorLocal": [
+    0.0,
+    1.25,
+    8.0
+  ],
+  "interiorOffset": [
+    0.0,
+    0.2,
+    2.595
+  ],
+  "collision": [
+    {
+      "cx": 0.0,
+      "cz": -3.8050000000000006,
+      "hx": 9.2,
+      "hz": 12.004999999999999,
+      "hy": 3.2
+    }
+  ]
+}

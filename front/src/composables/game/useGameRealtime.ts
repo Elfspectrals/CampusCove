@@ -1,3 +1,4 @@
+import type { RobotAppearance, RobotTeam } from '../../game/sports/robotLook'
 import { ADMIN_KICK_CLOSE_CODE } from '../../game/gameRoomConstants'
 import { ref, type Ref, type ShallowRef } from 'vue'
 import type { Router } from 'vue-router'
@@ -109,6 +110,29 @@ import type {
   PoliceErrorPayload,
   PoliceLicenceBoughtPayload,
   PoliceStatePayload,
+  SportsErrorPayload,
+  SportsAbsencePayload,
+  SportsLobbyClosedPayload,
+  SportsLobbyPayload,
+  SportsLoansPayload,
+  SportsRunResultPayload,
+  SportsRunStatePayload,
+  GymEndPayload,
+  GymErrorPayload,
+  GymFreePayload,
+  GymEventPayload,
+  GymStatePayload,
+  TennisFreePayload,
+  TennisStrokePayload,
+  TennisStatePayload,
+  SkateBalancePayload,
+  SkateBumpPayload,
+  SkateFallPayload,
+  SkateMovePayload,
+  SkateRacePayload,
+  SkateResultPayload,
+  SportsPassBoughtPayload,
+  SportsPassStatePayload,
   PickpocketAlertPayload,
   PickpocketErrorPayload,
   PickpocketFailedPayload,
@@ -119,13 +143,25 @@ import type {
   PickpocketSucceededPayload,
   PickpocketTakenPayload,
 } from '../../types/gameRealtime'
+import { type BoxingBagEndPayload, type BoxingBagHitPayload, type BoxingBagRoundPayload, type BoxingChargePayload, type BoxingDodgedPayload, type BoxingHitPayload, type BoxingStatePayload, boxerPose } from '../../game/sports/boxing'
+import { chargeClip, punchClip } from '../../avatar/boxingAnimLogic'
+import type { FigureEndPayload, FigureEventPayload, FigurePose, FigureStartPayload, FigureStatePayload } from '../../game/sports/skating/figure'
 import { useRemoteAvatars, type SeatPose } from './useRemoteAvatars'
 import { PUNCH_DAMAGE } from '../../game/punch'
+import { applySportsLoans, clearSportsLoans, forgetSportsLoans } from '../../game/sports/sportsLoans'
+import type { UserEmotePayload } from './useEmoteWheel'
+import { EMOTE_TIME_SCALE } from '../../game/sports/danceEmotes'
+import { RHYTHM_DANCE_CLIP, danceTimeScale, parseDanceStart, type DanceEnd, type DanceJudge, type DanceStart } from '../../game/sports/danceHud'
+import type { ClimbErrorPayload, ClimbStatePayload } from '../../game/sports/climbing'
+import type { PoolDive, PoolRaceResult, PoolRaceStart, PoolRaceState, StrokeResult, Trick } from '../../game/sports/pool/poolRace'
+import type { usePoolRace } from './usePoolRace'
+import type { usePoolSwim } from './usePoolSwim'
 
 const REALTIME_HTTP_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 
 /** Minimum delay between two cosmetics re-checks triggered by window focus. */
 const APPEARANCE_REFRESH_MIN_INTERVAL_MS = 10_000
+const BOXER_UNDRESS_MS = 6000
 
 function toWsUrl(rawUrl: string): string {
   if (rawUrl.startsWith('https://')) return `wss://${rawUrl.slice('https://'.length)}`
@@ -159,6 +195,7 @@ export interface GameRealtimeDeps {
     onActionError: () => void
   }
   loadTown: () => void
+  robotAppearance: (coach: string | undefined, team: RobotTeam | null) => RobotAppearance
   onHousingUnitsSync: (units: HousingUnitPayload[]) => void
   onHouseFurnitureSync: (houses: HouseFurniturePayload[]) => void
   onDoorsSync: (openDoorIds: string[]) => void
@@ -309,6 +346,80 @@ export interface GameRealtimeDeps {
     onCuffs: (data: PoliceCuffsPayload) => void
     onBounty: (data: PoliceBountyPayload) => void
   }
+  gearRental: {
+    onOffer: (data: { gear: string; price: number }) => void
+    onRented: (data: { gear: string; cash: number }) => void
+  }
+  sports: {
+    onPassState: (data: SportsPassStatePayload) => void
+    onPassBought: (data: SportsPassBoughtPayload) => void
+    onPassError: (data: SportsErrorPayload) => void
+    onCorrection: (reason: string | undefined) => void
+    onLobby: (data: SportsLobbyPayload) => void
+    onLobbyClosed: (data: SportsLobbyClosedPayload) => void
+    onError: (data: SportsErrorPayload) => void
+    onAbsence: (data: SportsAbsencePayload) => void
+    onRoomJoined: () => void
+    onTennisState: (data: TennisStatePayload) => void
+    onTennisFree: (data: TennisFreePayload) => void
+    onRunState: (data: SportsRunStatePayload) => void
+    onRunResult: (data: SportsRunResultPayload) => void
+  }
+  gym: {
+    onState: (data: GymStatePayload) => void
+    onEvent: (data: GymEventPayload) => void
+    onEnd: (data: GymEndPayload) => void
+    onFree: (data: GymFreePayload) => void
+    onError: (data: GymErrorPayload) => void
+  }
+  dance: {
+    onStart: (data: DanceStart) => void
+    onJudge: (data: DanceJudge) => void
+    onStray: () => void
+    onEnd: (data: DanceEnd) => void
+    onStop: () => void
+  }
+  figure: {
+    onStart: (data: FigureStartPayload) => void
+    onState: (data: FigureStatePayload) => void
+    onEvent: (data: FigureEventPayload) => void
+    onEnd: (data: FigureEndPayload) => void
+    onRoomJoined: () => void
+  }
+  emotes: {
+    clipOf: (id: string) => string | null
+    onUserEmote: (data: UserEmotePayload, mySessionId: string) => void
+    onList: (data: { unlocked: string[] }) => void
+    onError: (data: { message: string }) => void
+  }
+  climbing: {
+    onState: (data: ClimbStatePayload) => void
+    onError: (data: ClimbErrorPayload) => void
+    onRoomJoined: () => void
+  }
+  boxing: {
+    onState: (data: BoxingStatePayload) => void
+    onHit: (data: BoxingHitPayload, mySessionId: string) => void
+    onDodged: (data: BoxingDodgedPayload) => void
+    onTired: () => void
+    onBagHit: (data: BoxingBagHitPayload) => void
+    onBagRound: (data: BoxingBagRoundPayload) => void
+    onBagEnd: (data: BoxingBagEndPayload, mySessionId: string) => void
+    onNoGloves: () => void
+    onRoomLeft: () => void
+  }
+  skating: {
+    onRace: (data: SkateRacePayload) => void
+    onFall: (data: SkateFallPayload) => void
+    onBump: (data: SkateBumpPayload) => void
+    onBalance: (data: SkateBalancePayload) => void
+    isOnIce: (x: number, z: number) => boolean
+    onResult: (data: SkateResultPayload) => void
+    onCorrection: (reason: string | undefined) => void
+    onRoomJoined: () => void
+  }
+  pool: ReturnType<typeof usePoolRace>['handlers']
+  poolSwim: ReturnType<typeof usePoolSwim>['handlers']
   pickpocket: {
     onStarted: (data: PickpocketStartedPayload) => void
     onProgress: (data: PickpocketProgressPayload) => void
@@ -346,7 +457,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
   let previousQuantityByCode: Record<string, number> = {}
   let isInitialInventoryLoad = true
 
-  const remotes = useRemoteAvatars({ getScene: deps.getScene, myPosition: deps.myPosition, playSoundOn: deps.playSoundOn })
+  const remotes = useRemoteAvatars({ getScene: deps.getScene, myPosition: deps.myPosition, playSoundOn: deps.playSoundOn, onIce: deps.skating.isOnIce })
+  const ownAvatar = useRemoteAvatars({ getScene: deps.getScene, myPosition: deps.myPosition, playSoundOn: deps.playSoundOn, onIce: deps.skating.isOnIce, own: true })
+  let dressedBoxers = new Set<string>()
+  let undressTimer: ReturnType<typeof setTimeout> | null = null
 
   function setMyPosition(x: number, y: number, z: number): void {
     deps.myPosition.x = x
@@ -376,15 +490,31 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     deps.inventory.applyServerPayload(items)
   }
 
+  const robotCoaches = new Map<string, string | undefined>()
+
+  function dressed(user: RemoteUserPayload): RemoteUserPayload {
+    if (!user.robot) return user
+    robotCoaches.set(user.sessionId, user.coach)
+    return { ...user, ...deps.robotAppearance(user.coach, null) }
+  }
+
+  function setRobotTeam(sessionId: string, team: RobotTeam | null): boolean {
+    if (!robotCoaches.has(sessionId)) return false
+    void remotes.updateAppearance(sessionId, deps.robotAppearance(robotCoaches.get(sessionId), team))
+    return true
+  }
+
   function bindRoomEvents(room: Room) {
     room.onMessage('init', (payload: RoomInitPayload) => {
       remotes.clear()
+      ownAvatar.clear()
       deps.apartment.clearApartmentObjects()
       deps.roomMessage.value = null
       deps.loadTown()
       setMyPosition(payload.me.x, payload.me.y, payload.me.z)
+      void ownAvatar.upsert(room.sessionId, payload.me)
       for (const u of payload.users) {
-        if (u.sessionId !== room.sessionId) void remotes.upsert(u.sessionId, u, deps.seats.seatPose(u.seatId))
+        if (u.sessionId !== room.sessionId) void remotes.upsert(u.sessionId, dressed(u), deps.seats.seatPose(u.seatId))
         deps.seats.onSeated({ sessionId: u.sessionId, seatId: u.seatId ?? null }, room.sessionId)
       }
       if (payload.housingUnits !== undefined) syncHousingUnits(payload.housingUnits)
@@ -394,21 +524,31 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.pubQuiz.onInit(payload.pubQuiz ?? null)
       deps.cashBags.onSync(payload.cashBags ?? [])
       deps.admin.onInit(payload.isAdmin === true)
+      clearSportsLoans()
+      deps.sports.onRoomJoined()
+      deps.climbing.onRoomJoined()
+      deps.boxing.onRoomLeft()
+      deps.skating.onRoomJoined()
+      deps.pool.onRoomJoined()
+      deps.figure.onRoomJoined()
     })
 
     room.onMessage('housing_units_sync', (data: { units?: unknown }) => syncHousingUnits(data.units))
     room.onMessage('house_furniture_sync', (data: { houses: HouseFurniturePayload[] }) => deps.onHouseFurnitureSync(data.houses))
     room.onMessage('doors_sync', (data: { openDoors: string[] }) => deps.onDoorsSync(data.openDoors))
     room.onMessage('door_sound', (data: DoorSoundPayload) => deps.onDoorSound(data))
-    room.onMessage('position_correction', (data: { x: number; y: number; z: number }) => {
+    room.onMessage('position_correction', (data: { x: number; y: number; z: number; reason?: string }) => {
       setMyPosition(data.x, data.y, data.z)
+      deps.sports.onCorrection(data.reason)
+      deps.skating.onCorrection(data.reason)
+      deps.pool.onCorrection(data.reason)
     })
     room.onMessage('door_error', (data: { message: string }) => {
       deps.roomMessage.value = data.message
     })
 
     room.onMessage('user_joined', (data: RemoteUserPayload) => {
-      if (data.sessionId !== room.sessionId) void remotes.upsert(data.sessionId, data, deps.seats.seatPose(data.seatId))
+      if (data.sessionId !== room.sessionId) void remotes.upsert(data.sessionId, dressed(data), deps.seats.seatPose(data.seatId))
       deps.seats.onSeated({ sessionId: data.sessionId, seatId: data.seatId ?? null }, room.sessionId)
     })
 
@@ -433,11 +573,18 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       'appearance_updated',
       (data: { sessionId: string; slotHexes?: Record<string, string>; bodyModelGlb?: string | null; slotModels?: Record<string, string | null>; character?: unknown }) => {
         if (data.sessionId !== room.sessionId) void remotes.updateAppearance(data.sessionId, data)
-        else if (data.slotModels) deps.onMyShownTop(data.slotModels.top ?? null)
+        else {
+          void ownAvatar.updateAppearance(data.sessionId, data)
+          if (data.slotModels) deps.onMyShownTop(data.slotModels.top ?? null)
+        }
       },
     )
 
-    room.onMessage('user_left', (data: { sessionId: string }) => remotes.remove(data.sessionId))
+    room.onMessage('user_left', (data: { sessionId: string }) => {
+      remotes.remove(data.sessionId)
+      robotCoaches.delete(data.sessionId)
+      forgetSportsLoans(data.sessionId)
+    })
 
     room.onMessage('user_action', (data: UserActionPayload) => {
       if (data.sessionId !== room.sessionId && (data.action === 'eat' || data.action === 'drink')) {
@@ -551,6 +698,146 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('police_cuff_cancelled', (data: PoliceCuffCancelledPayload) => deps.police.onCuffCancelled(data))
     room.onMessage('police_cuffs', (data: PoliceCuffsPayload) => deps.police.onCuffs(data))
     room.onMessage('police_bounty', (data: PoliceBountyPayload) => deps.police.onBounty(data))
+    room.onMessage('sports_pass_state', (data: SportsPassStatePayload) => deps.sports.onPassState(data))
+    room.onMessage('sports_pass_bought', (data: SportsPassBoughtPayload) => deps.sports.onPassBought(data))
+    room.onMessage('sports_pass_error', (data: SportsErrorPayload) => deps.sports.onPassError(data))
+    room.onMessage('sports_lobby', (data: SportsLobbyPayload) => deps.sports.onLobby(data))
+    room.onMessage('sports_lobby_closed', (data: SportsLobbyClosedPayload) => deps.sports.onLobbyClosed(data))
+    room.onMessage('sports_error', (data: SportsErrorPayload) => deps.sports.onError(data))
+    room.onMessage('sports_absence', (data: SportsAbsencePayload) => deps.sports.onAbsence(data))
+    room.onMessage('sports_gear_offer', (data: { gear: string; price: number }) => deps.gearRental.onOffer(data))
+    room.onMessage('sports_gear_rented', (data: { gear: string; cash: number }) => deps.gearRental.onRented(data))
+    room.onMessage('climb_state', (data: ClimbStatePayload) => deps.climbing.onState(data))
+    room.onMessage('climb_error', (data: ClimbErrorPayload) => deps.climbing.onError(data))
+    room.onMessage('sports_run_state', (data: SportsRunStatePayload) => deps.sports.onRunState(data))
+    room.onMessage('sports_run_result', (data: SportsRunResultPayload) => deps.sports.onRunResult(data))
+    room.onMessage('gym_state', (data: GymStatePayload) => deps.gym.onState(data))
+    room.onMessage('gym_event', (data: GymEventPayload) => deps.gym.onEvent(data))
+    room.onMessage('gym_end', (data: GymEndPayload) => deps.gym.onEnd(data))
+    room.onMessage('gym_free', (data: GymFreePayload) => deps.gym.onFree(data))
+    room.onMessage('gym_error', (data: GymErrorPayload) => deps.gym.onError(data))
+    room.onMessage('tennis_state', (data: TennisStatePayload) => deps.sports.onTennisState(data))
+    room.onMessage('tennis_free', (data: TennisFreePayload) => deps.sports.onTennisFree(data))
+    room.onMessage('tennis_stroke', (data: TennisStrokePayload) => {
+      if (data.sessionId !== room.sessionId) remotes.tennisStroke(data.sessionId, data.stroke)
+    })
+    const avatarsOf = (sessionId: string) => (sessionId === room.sessionId ? ownAvatar : remotes)
+    let danceDancers: string[] = []
+    room.onMessage('dance_start', (raw: unknown) => {
+      const start = parseDanceStart(raw)
+      danceDancers = start.dancers.map((d) => d.sessionId)
+      for (const d of start.dancers) avatarsOf(d.sessionId).setDancing(d.sessionId, { clip: RHYTHM_DANCE_CLIP, timeScale: danceTimeScale(start.bpm) })
+      deps.dance.onStart(start)
+    })
+    room.onMessage('dance_judge', (data: DanceJudge) => {
+      if (data.judgement === 'miss') avatarsOf(data.sessionId).stumble(data.sessionId)
+      else avatarsOf(data.sessionId).danceMove(data.sessionId, data.lane)
+      deps.dance.onJudge(data)
+    })
+    room.onMessage('dance_stray', () => deps.dance.onStray())
+    const showEmote = (data: UserEmotePayload) => {
+      if (data.sessionId !== room.sessionId) {
+        const clip = data.emote === null ? null : deps.emotes.clipOf(data.emote)
+        remotes.setDancing(data.sessionId, clip === null ? null : { clip, timeScale: EMOTE_TIME_SCALE })
+      }
+      deps.emotes.onUserEmote(data, room.sessionId)
+    }
+    room.onMessage('user_emote', showEmote)
+    room.onMessage('user_emotes', (data: { emotes: UserEmotePayload[] }) => data.emotes.forEach(showEmote))
+    room.onMessage('emote_list', (data: { unlocked: string[] }) => deps.emotes.onList(data))
+    room.onMessage('emote_error', (data: { message: string }) => deps.emotes.onError(data))
+    room.onMessage('dance_end', (data: DanceEnd) => {
+      for (const d of data.dancers) avatarsOf(d.sessionId).setDancing(d.sessionId, null)
+      danceDancers = []
+      deps.dance.onEnd(data)
+    })
+    room.onMessage('boxing_state', (data: BoxingStatePayload) => {
+      const boxers = new Set(data.boxers.flatMap((b) => (b.sessionId ? [b.sessionId] : [])))
+      for (const sessionId of dressedBoxers) if (!boxers.has(sessionId)) avatarsOf(sessionId).setBoxer(sessionId, false)
+      if (undressTimer) clearTimeout(undressTimer)
+      undressTimer = null
+      for (const b of data.boxers) {
+        if (!b.sessionId || !boxers.has(b.sessionId)) continue
+        avatarsOf(b.sessionId).setBoxer(b.sessionId, true)
+        avatarsOf(b.sessionId).boxerPose(b.sessionId, boxerPose(data, b))
+      }
+      dressedBoxers = boxers
+      if (data.phase === 'over') {
+        undressTimer = setTimeout(() => {
+          for (const sessionId of dressedBoxers) avatarsOf(sessionId).setBoxer(sessionId, false)
+          dressedBoxers = new Set()
+        }, BOXER_UNDRESS_MS)
+      }
+      deps.boxing.onState(data)
+    })
+    room.onMessage('boxing_hit', (data: BoxingHitPayload) => {
+      avatarsOf(data.sessionId).boxerShot(data.sessionId, punchClip(data.kind))
+      if (data.outcome === 'landed' && data.targetSessionId !== room.sessionId) {
+        const from = remotes.positionOf(data.sessionId)
+        const to = remotes.positionOf(data.targetSessionId)
+        const dx = from && to ? to.x - from.x : 0
+        const dz = from && to ? to.z - from.z : 0
+        const len = Math.hypot(dx, dz) || 1
+        remotes.showHit(data.targetSessionId, dx / len, dz / len, data.damage, { delay: 0, hitStop: 0 }, 'glove_hit')
+      }
+      if (data.outcome === 'landed') avatarsOf(data.targetSessionId).boxerShot(data.targetSessionId, 'HitReact')
+      deps.boxing.onHit(data, room.sessionId)
+    })
+    room.onMessage('boxing_charge', (data: BoxingChargePayload) => {
+      avatarsOf(data.sessionId).boxerCharge(data.sessionId, chargeClip(data.hand), data.on)
+    })
+    room.onMessage('boxing_dodged', (data: BoxingDodgedPayload) => {
+      avatarsOf(data.sessionId).boxerShot(data.sessionId, data.side === 'left' ? 'DodgeL' : 'DodgeR')
+      deps.boxing.onDodged(data)
+    })
+    room.onMessage('boxing_tired', () => deps.boxing.onTired())
+    room.onMessage('figure_start', (data: FigureStartPayload) => deps.figure.onStart(data))
+    room.onMessage('figure_state', (data: FigureStatePayload) => deps.figure.onState(data))
+    room.onMessage('figure_event', (data: FigureEventPayload) => deps.figure.onEvent(data))
+    room.onMessage('figure_end', (data: FigureEndPayload) => deps.figure.onEnd(data))
+    room.onMessage('boxing_bag_hit', (data: BoxingBagHitPayload) => {
+      if (data.training) {
+        avatarsOf(data.sessionId).setBoxer(data.sessionId, true)
+        avatarsOf(data.sessionId).boxerShot(data.sessionId, punchClip(data.kind))
+      }
+      deps.boxing.onBagHit(data)
+    })
+    room.onMessage('boxing_bag_round', (data: BoxingBagRoundPayload) => deps.boxing.onBagRound(data))
+    room.onMessage('boxing_bag_end', (data: BoxingBagEndPayload) => {
+      if (!dressedBoxers.has(data.sessionId)) avatarsOf(data.sessionId).setBoxer(data.sessionId, false)
+      deps.boxing.onBagEnd(data, room.sessionId)
+    })
+    room.onMessage('boxing_no_gloves', () => deps.boxing.onNoGloves())
+    room.onMessage('skate_race', (data: SkateRacePayload) => deps.skating.onRace(data))
+    room.onMessage('skate_fall', (data: SkateFallPayload) => {
+      if (data.sessionId === room.sessionId) deps.skating.onFall(data)
+      else remotes.skateMove(data.sessionId, 'fall')
+    })
+    room.onMessage('skate_balance', (data: SkateBalancePayload) => deps.skating.onBalance(data))
+    room.onMessage('skate_move', (data: SkateMovePayload) => {
+      if (data.move === 'push') remotes.skatePushed(data.sessionId)
+      else remotes.skateMove(data.sessionId, data.move)
+    })
+    room.onMessage('skate_bump', (data: SkateBumpPayload) => deps.skating.onBump(data))
+    room.onMessage('skate_result', (data: SkateResultPayload) => deps.skating.onResult(data))
+    room.onMessage('pool_race_start', (data: PoolRaceStart) => deps.pool.onStart(data))
+    room.onMessage('pool_breath', (data: { breathMs: number; maxMs: number }) => deps.poolSwim.onBreath(data))
+    room.onMessage('pool_rescued', () => deps.poolSwim.onRescued())
+    room.onMessage('pool_race_beep', () => deps.pool.onBeep())
+    room.onMessage('pool_race_state', (data: PoolRaceState) => deps.pool.onState(data))
+    room.onMessage('pool_stroke_result', (data: { result: StrokeResult; index: number | null }) => deps.pool.onStrokeResult(data))
+    room.onMessage('pool_race_result', (data: PoolRaceResult) => deps.pool.onResult(data))
+    room.onMessage('pool_dive', (data: PoolDive) => deps.pool.onDive(data))
+    room.onMessage('pool_dive_trick', (data: { sessionId: string; name: string; trick: Trick }) => deps.pool.onTrick(data))
+    room.onMessage('dance_stop', () => {
+      for (const sessionId of danceDancers) remotes.setDancing(sessionId, null)
+      danceDancers = []
+      deps.dance.onStop()
+    })
+    room.onMessage('sports_loans', (data: SportsLoansPayload) => {
+      applySportsLoans(data)
+      if (data.sessionId !== room.sessionId) remotes.refreshLentWear(data.sessionId)
+    })
     room.onMessage('pickpocket_started', (data: PickpocketStartedPayload) => deps.pickpocket.onStarted(data))
     room.onMessage('pickpocket_progress', (data: PickpocketProgressPayload) => deps.pickpocket.onProgress(data))
     room.onMessage('pickpocket_failed', (data: PickpocketFailedPayload) => deps.pickpocket.onFailed(data))
@@ -619,7 +906,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     if (signature === lastSentSignature) return
     lastSentSignature = signature
     deps.onMyOutfit(payload.slotModels)
-    deps.gameRoomRef.value?.send('appearance', payload)
+    const room = deps.gameRoomRef.value
+    if (!room) return
+    room.send('appearance', payload)
+    void ownAvatar.updateAppearance(room.sessionId, payload)
   }
 
   /**
@@ -657,6 +947,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
         deps.gameRoomRef.value = null
       }
       remotes.clear()
+      ownAvatar.clear()
       deps.apartment.detachForRoomSwitch()
       const room: Room = await colyseusClient.joinOrCreate('city', {
         token: auth.token,
@@ -681,13 +972,32 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     connectRealtime,
     sendMyAppearance,
     switchingRoom,
-    clearRemoteUsers: remotes.clear,
+    clearRemoteUsers: () => {
+      remotes.clear()
+      ownAvatar.clear()
+    },
+    ownAvatar,
     tickRemoteAvatars: remotes.tick,
     remotePseudo: remotes.pseudoOf,
     remotePosition: remotes.positionOf,
+    remoteAvatar: remotes.avatarOf,
+    remoteSportsMove: remotes.playSportsMove,
+    setRemoteDribbling: remotes.setDribbling,
+    setRemoteTopOverride: remotes.setTopOverride,
+    setRobotTeam,
+    setRemoteSwimwear: remotes.setSwimwear,
+    setFigurePose: (sessionId: string, pose: FigurePose | null) => (sessionId === deps.gameRoomRef.value?.sessionId ? ownAvatar : remotes).setFigurePose(sessionId, pose),
+    playRemotePoolClip: remotes.playPoolClip,
     setRemoteVoiceState: remotes.setVoiceState,
     remotePlayers: remotes.players,
     remoteAccount: remotes.accountOf,
     setRemoteRacePint: remotes.setRacePint,
+    setRemoteRacePose: remotes.setRacePose,
+    setRemoteHeldTool: remotes.setHeldTool,
+    setRemoteTennis: remotes.setTennis,
+    setRemoteClimbAnimation: remotes.setClimbAnimation,
+    remoteHand: remotes.handOf,
+    playRemotePetanque: remotes.playPetanque,
+    setRemoteCrouching: remotes.setCrouching,
   }
 }

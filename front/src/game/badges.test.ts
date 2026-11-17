@@ -16,3 +16,8 @@ test('New citizen is shown over the head', () => {
   assert.deepEqual(overHeadBadges(['new_citizen']), ['new_citizen'])
   assert.deepEqual(overHeadBadges([]), [])
 })
+
+test('the weekly sports champion badge shows in the player list, never over the head', () => {
+  assert.deepEqual(shownBadges(['new_citizen', 'sports_champion']), ['new_citizen', 'sports_champion'])
+  assert.deepEqual(overHeadBadges(['new_citizen', 'sports_champion']), ['new_citizen'])
+})

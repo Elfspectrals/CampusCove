@@ -226,6 +226,23 @@ def cone(coll, name, gx, gz, y0, r1, r2, h, mat, seg=8):
     return ob
 
 
+def sphere(coll, name, gx, gz, y0, radius, mat, seg=16, rings=10, tile=1.0):
+    me = bpy.data.meshes.new(name)
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=seg, v_segments=rings, radius=radius)
+    for v in bm.verts:
+        v.co.z += radius
+    bm.normal_update()
+    _box_uv(bm, tile)
+    bm.to_mesh(me)
+    bm.free()
+    me.materials.append(mat)
+    ob = bpy.data.objects.new(name, me)
+    ob.location = b(gx, gz, y0)
+    coll.objects.link(ob)
+    return ob
+
+
 def join(coll, name, objs, mat_keep=True):
     """Join `objs` into one object (origin = center-bottom of the union footprint)."""
     bpy.ops.object.select_all(action="DESELECT")
@@ -963,13 +980,13 @@ def import_ai_model(coll, slug, material_name, palette=0):
     return meshes
 
 
-def ship_decor(sc, coll, key, parts, max_materials):
+def ship_decor(sc, coll, key, parts, max_materials, bottom=0.0):
     obj = join(coll, f"Decor_{key}", parts)
     obj.location = (0, 0, 0)
     bpy.context.view_layer.update()
-    obj.location.z -= min((obj.matrix_world @ Vector(c)).z for c in obj.bound_box)
+    obj.location.z += bottom - min((obj.matrix_world @ Vector(c)).z for c in obj.bound_box)
     bpy.context.view_layer.update()
-    bad = check_grounded([obj])
+    bad = check_grounded([obj]) if bottom == 0.0 else []
     if bad:
         raise RuntimeError(f"{key} is not grounded: {bad}")
     if len(obj.data.materials) > max_materials:

@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "sport": "running",
+  "status": "ready",
+  "zone": "sports_athletics",
+  "coachId": "athletics_coach",
+  "coach": {
+    "x": -428,
+    "z": -320.5
+  },
+  "signup": {
+    "teams": false,
+    "settings": [
+      {
+        "key": "distanceM",
+        "label": "Distance",
+        "options": [
+          100,
+          400,
+          1500
+        ]
+      }
+    ]
+  },
+  "track": {
+    "centre": [
+      -474,
+      -369.75
+    ],
+    "straightM": 84.39,
+    "kerbRadiusM": 36.5,
+    "laneWidthM": 1.22,
+    "lanes": 8,
+    "measureOffsetM": 0.3,
+    "chuteM": 100,
+    "runOffM": 17,
+    "gateSpacingM": 25,
+    "gateMarginM": 1
+  },
+  "playArea": {
+    "minX": -563,
+    "maxX": -384.5,
+    "minZ": -417,
+    "maxZ": -323.2
+  },
+  "scoreboard": {
+    "x": -436,
+    "z": -342,
+    "widthM": 6,
+    "heightM": 4.5,
+    "yaw": 0
+  },
+  "distancesM": [
+    100,
+    400,
+    1500
+  ],
+  "minPlayers": 1,
+  "maxPlayers": 8,
+  "setAfterMs": 4000,
+  "startBeepDelayRangeMs": [
+    5000,
+    7000
+  ],
+  "falseStart": "disqualify",
+  "maxRaceMs": {
+    "100": 40000,
+    "400": 150000,
+    "1500": 480000
+  },
+  "stride": {
+    "100": {
+      "goodStepMs": 170,
+      "toleranceMs": 40,
+      "topSpeedMps": 9.5
+    },
+    "400": {
+      "goodStepMs": 200,
+      "toleranceMs": 45,
+      "topSpeedMps": 8.5
+    },
+    "1500": {
+      "goodStepMs": 260,
+      "toleranceMs": 60,
+      "topSpeedMps": 7
+    }
+  },
+  "accelMps2": 4,
+  "decelMps2": 5,
+  "firstStepQuality": 0.6,
+  "tooFastQuality": 0.5,
+  "outOfStepQuality": 0.3,
+  "stallSteps": 2.5,
+  "minStepGapMs": 40,
+  "gear": [
+    "gear_running_spikes"
+  ],
+  "boards": [
+    "run_100",
+    "run_400",
+    "run_1500"
+  ],
+  "tasks": [
+    "races_run",
+    "run_400_time"
+  ]
+}

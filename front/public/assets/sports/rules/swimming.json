@@ -1,0 +1,202 @@
+{
+  "version": 1,
+  "sport": "swimming",
+  "status": "ready",
+  "zone": "sports_pool",
+  "coachId": "pool_lanes",
+  "coachPosition": [
+    -492.7,
+    0,
+    -221.2
+  ],
+  "signup": {
+    "teams": false,
+    "settings": [
+      {
+        "key": "distanceM",
+        "label": "Distance",
+        "options": [
+          25,
+          50,
+          100
+        ]
+      }
+    ]
+  },
+  "pool": {
+    "lengthM": 25,
+    "lanes": 6,
+    "lanePositions": [
+      {
+        "lane": 1,
+        "z": -205.75
+      },
+      {
+        "lane": 2,
+        "z": -208.25
+      },
+      {
+        "lane": 3,
+        "z": -210.75
+      },
+      {
+        "lane": 4,
+        "z": -213.25
+      },
+      {
+        "lane": 5,
+        "z": -215.75
+      },
+      {
+        "lane": 6,
+        "z": -218.25
+      }
+    ],
+    "blockPositions": [
+      [
+        -493.1,
+        0,
+        -205.75
+      ],
+      [
+        -493.1,
+        0,
+        -208.25
+      ],
+      [
+        -493.1,
+        0,
+        -210.75
+      ],
+      [
+        -493.1,
+        0,
+        -213.25
+      ],
+      [
+        -493.1,
+        0,
+        -215.75
+      ],
+      [
+        -493.1,
+        0,
+        -218.25
+      ]
+    ],
+    "waterVolume": [
+      {
+        "minX": -533,
+        "maxX": -520,
+        "minZ": -219.5,
+        "maxZ": -204.5,
+        "floorY": -4.5
+      },
+      {
+        "minX": -519,
+        "maxX": -494,
+        "minZ": -219.5,
+        "maxZ": -204.5,
+        "floorY": -2
+      }
+    ],
+    "depthsM": {
+      "basin": 2,
+      "pit": 4.5
+    },
+    "exits": [
+      {
+        "minX": -495.4,
+        "maxX": -494,
+        "minZ": -219.5,
+        "maxZ": -218.3
+      },
+      {
+        "minX": -519,
+        "maxX": -517.6,
+        "minZ": -219.5,
+        "maxZ": -218.3
+      },
+      {
+        "minX": -533,
+        "maxX": -531.6,
+        "minZ": -219.5,
+        "maxZ": -218.3
+      }
+    ],
+    "startX": -494,
+    "turnX": -519,
+    "waterY": -0.3,
+    "wadeY": -1.3,
+    "deckY": 0
+  },
+  "distancesM": [
+    25,
+    50,
+    100
+  ],
+  "minPlayers": 1,
+  "maxPlayers": 6,
+  "startBeepDelayRangeMs": [
+    1500,
+    3000
+  ],
+  "falseStart": "disqualify",
+  "stroke": {
+    "boostMps": {
+      "perfect": 0.6,
+      "good": 0.45
+    },
+    "missFactor": 0.85,
+    "strayFactor": 0.8,
+    "maxSpeedMps": 2.2,
+    "dragPerS": 0.6
+  },
+  "rhythm": {
+    "leadInMs": 1200,
+    "intervalMs": [
+      560,
+      380
+    ],
+    "fasterPerNoteMs": 4,
+    "breathEvery": 8,
+    "windowsMs": {
+      "perfect": 70,
+      "good": 150
+    },
+    "allowanceMs": 120
+  },
+  "dive": {
+    "glideM": 3,
+    "speedMps": 1.8
+  },
+  "swim": {
+    "speedMps": 2,
+    "fastSpeedMps": 3,
+    "verticalMps": 1.6,
+    "floatEyeAboveWaterM": 0.15,
+    "swimEyeMaxAboveWaterM": 0.5,
+    "underwaterEyeBelowWaterM": 0.05,
+    "minEyeAboveFloorM": 0.3
+  },
+  "breath": {
+    "maxMs": 30000,
+    "refillPerMs": 3,
+    "rescueDamage": 10
+  },
+  "turn": "automatic",
+  "turnBonus": 0,
+  "timeLimitPerLengthMs": 60000,
+  "gear": [
+    "gear_swimsuit"
+  ],
+  "boards": [
+    "swim_25",
+    "swim_50",
+    "swim_100"
+  ],
+  "tasks": [
+    "races_swum",
+    "swim_50_time"
+  ]
+}

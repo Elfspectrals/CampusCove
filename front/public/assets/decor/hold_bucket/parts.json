@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_HoldBucket": {
+      "mask": "parts_DC_HoldBucket.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#a1a2a3"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#d3cfcc"
+        }
+      ]
+    }
+  }
+}

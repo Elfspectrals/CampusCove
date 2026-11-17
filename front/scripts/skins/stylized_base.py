@@ -266,11 +266,24 @@ def build_stylized_headwear(coll, arm, key, head):
     hair_m = mat("W_head_accessory_%s_Hair" % key, "3b2618", rough=0.6)
     tree = rest_tree(head)
     M = Mesh("Wear_head_accessory_" + key)
+    if key.startswith("robot_"):
+        robot_head(key, M, m)
+        ob = M.finish(coll)
+        ob.name = "Wear_head_accessory_" + key
+        weight_rigid(ob, "Head")
+        bind(ob, arm)
+        ob["slot"] = "head_accessory"
+        ob["hides"] = ",".join(spec["hides"])
+        return ob
     if key == "straw_hat":
         c = (0, -0.004, 1.8)
         add_cyl(M, m["main"], c, (0, -0.004, 1.94), 0.114, 0.098, seg=22, sx=0.92)
         add_cyl(M, m["main"], (0, -0.004, 1.795), (0, -0.004, 1.808), 0.21, 0.21, seg=28)
         add_cyl(M, m["accent"], (0, -0.004, 1.808), (0, -0.004, 1.84), 0.1155, 0.113, seg=22, cap=False, sx=0.92)
+    elif key == "beret":
+        add_cyl(M, m["accent"], (0, -0.004, 1.80), (0, -0.004, 1.83), 0.1155, 0.113, seg=22, cap=False, sx=0.92)
+        add_ellipsoid(M, m["main"], (0.014, -0.004, 1.858), (0.136, 0.13, 0.052), rot=(0, 0.14, 0), seg=20, rings=8)
+        add_cyl(M, m["main"], (0.022, -0.004, 1.902), (0.022, -0.004, 1.922), 0.007, 0.004, seg=6)
     elif key == "sheriff_hat":
         sheriff_hat(M, m, head)
     elif key == "bandana":

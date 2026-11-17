@@ -29,9 +29,23 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | `clothes_bought` | one piece of clothing (item kind `cosmetic`) bought in a zone checkout for the first time; buying it again after losing it counts nothing | `PlayerActivityService::basketPaid` |
 | `pub_order_days` | one day (Paris) with at least one drink ordered at the pub counter | `PlayerActivityService::pubOrder` from `PubService::order` |
 | `pub_games` | one finished Drink Fast race or Meter Shot run, at most 5 a day (Paris) and only when the player's drunkenness before the game's drink is 50 or less (0 to 100) | socket `reportPubGame` (`pubGames.ts`), then `POST /tasks/pub-game` (realtime) `{ game: drink_fast | meter_shot, intoxication: int 0-100 }` |
+| `skate_races` | one ice rink race finished in a match the core counts for tasks (`sports_matches.counts_for_tasks`: 2 accounts of 72 h or more, at most 3 counted matches a day per pair, never solo), at most 5 a day (Paris), once per match | socket `skatingRink.ts` after `recordMatch`, with the racer's own token, `POST /tasks/skate-race` (realtime) `{ ref: string 1-64 (the match ref), penaltyMs: int >= 0 }`; Laravel reads the laps and the time from the stored match |
+| `skate_clean_runs` | the same, for a 3-lap race finished in 60 s or less (penalties included) with no penalty | same call |
 | `duels_won` | one darts or Drink Fast game won against other players (placement 1), whoever the opponents are | `PubService::reward` |
 | `secret_room_weeks` | one week (Monday to Sunday, Paris, ISO week) in which the player stood in the pub's secret room | socket `taskTracking.ts` (once a day per account), then `POST /tasks/secret-room` (realtime, no body) |
+| `tennis_matches` | one tennis match won or lost (not a leaver past the grace) in a match the core counts for tasks (`counts_for_tasks`, docs/sports/CORE.md § 4) | `TennisTaskService::matchCounted`, from `POST /sports/matches` (realtime) |
+| `tennis_whitewashes` | one short set won 4–0 (never a tie-break) in a match counted for tasks | `TennisTaskService::matchCounted` |
 | `foods_tasted` | one food or drink tasted for the first time (any group of `FoodCatalog` but `medical`), once per item code | `SurvivalService::consume` |
+| `football_matches` | one structured gym football match recorded with the player not out (`dnf`), whatever the result; every recorded match counts | socket `gym.ts` after `recordMatch`, then `POST /sports/gym/tasks` (realtime) `{ ref, sport: football, players: [{ accountId, goals }] }`; `GymTaskService` reads `sports_match_players`, once per match `ref` (`bumpOncePerKey`) |
+| `basketball_matches` | the same for a gym basketball match | same route, `sport: basketball`, `players: [{ accountId, threes }]` |
+| `hat_tricks` | one gym football match in which the player scored 3 goals or more | same route (`goals` >= 3) |
+| `sharpshooter_matches` | one gym basketball match in which the player scored 5 three-pointers or more | same route (`threes` >= 5) |
+| `songs_danced` | one finished dance song with a score above 0, for each dancer, in a match that counts for tasks (`counts_for_tasks`, `docs/sports/CORE.md` § 4) | `DanceService::recordRuns` (`POST /sports/dance/runs`, realtime) |
+| `full_combo_hard` | one full combo on hard, in a match that counts for tasks | `DanceService::recordRuns` |
+| `climb_lines_topped` | one climbing line topped (free climb or won speed duel), at most once per line and day (Paris), accounts 72 h old or more | socket `climbing.ts` after the climb or duel is recorded, then `POST /tasks/climb-topped` (realtime) `{ ref: the match ref, line: [a-z0-9_]{1,40}, colour: green \| blue \| red \| black }`; Laravel checks the match is climbing, of that line or `climbing_duel`, and that the account finished or won it |
+| `black_lines_topped` | one black line topped, at most once per line and day (Paris) | same call, colour `black` |
+| `petanque_games` | one pétanque coach game played to its end (not a forfeit), at most 5 a day (Paris), counted only when each team has an account aged 72 h or more; a replayed `ref` counts nothing | socket `petanque.ts` once the match is recorded, then `POST /sports/petanque/tally` (realtime) `{ ref: string 1-64, carreaux: int 0-30 }`; `PetanqueTallyService` (409 `petanque_match_unknown`, `petanque_not_in_match`) |
+| `petanque_carreaux` | one carreau thrown in a game that counts for `petanque_games` | the same tally, bumped by its `carreaux` |
 
 ## Tiers
 
@@ -55,8 +69,23 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | `dapper` | `clothes_bought` | 3 / 10 / 25 |
 | `regular` | `pub_order_days` | 3 / 15 / 50 |
 | `pub_games` | `pub_games` | 10 / 50 / 150 |
+| `races_skated` | `skate_races` | one ice rink race finished in a match the core counts for tasks (`sports_matches.counts_for_tasks`: 2 accounts of 72 h or more, at most 3 counted matches a day per pair, never solo), at most 5 a day (Paris), once per match | socket `skatingRink.ts` after `recordMatch`, with the racer's own token, `POST /tasks/skate-race` (realtime) `{ ref: string 1-64 (the match ref), penaltyMs: int >= 0 }`; Laravel reads the laps and the time from the stored match |
+| `skate_3_clean` | `skate_clean_runs` | the same, for a 3-lap race finished in 60 s or less (penalties included) with no penalty | same call |
 | `duellist` | `duels_won` | 1 / 5 / 15 |
 | `insider` | `secret_room_weeks` | 1 / 4 / 12 |
+| `football` | `football_matches` | 5 / 25 / 100 |
+| `basketball` | `basketball_matches` | 10 / 40 / 150 |
+| `hat_trick` | `hat_tricks` | 1 / 10 / 40 |
+| `sharpshooter` | `sharpshooter_matches` | 1 / 5 / 15 |
+| `tennis` | `tennis_matches` | 5 / 25 / 100 |
+| `tennis_whitewash` | `tennis_whitewashes` | 1 / 5 / 15 |
+| `songs_danced` | `songs_danced` | 10 / 50 / 200 |
+| `full_combo_hard` | `full_combo_hard` | 1 / 10 / 50 |
+| `routes_topped` | `climb_lines_topped` | 10 / 50 / 200 |
+| `black_route` | `black_lines_topped` | 1 / 10 / 30 |
+| `boxer` | `boxing_wins` | 1 / 5 / 15 |
+| `petanque` | `petanque_games` | 5 / 25 / 75 |
+| `carreau` | `petanque_carreaux` | 1 / 10 / 50 |
 
 ## Notification
 

@@ -183,6 +183,7 @@ erDiagram
         smallint thirst_per_portion
         int max_uses "outil de métier, voir TOOLS.md"
         bool weapon "outil qui frappe plus fort que le poing"
+        jsonb meta_json "matériel de sport : sport et slot, voir sports/CORE.md"
     }
     ITEM_INSTANCES {
         bigint item_instance_id PK
@@ -229,6 +230,88 @@ erDiagram
         int quantity "1 à 999"
     }
 ```
+
+### Complexe sportif (`docs/sports/CORE.md`)
+
+```mermaid
+erDiagram
+    ACCOUNTS ||--o{ SPORTS_PASS_PURCHASES : "achète un pass"
+    TRANSACTIONS ||--|| SPORTS_PASS_PURCHASES : "débit cash détruit"
+    ACCOUNTS ||--o{ SPORTS_GEAR_RENTALS : "emprunte du matériel"
+    TRANSACTIONS ||--|| SPORTS_GEAR_RENTALS : "débit cash détruit"
+    SPORTS_MATCHES ||--o{ SPORTS_MATCH_PLAYERS : "résultats"
+    ACCOUNTS ||--o{ SPORTS_MATCH_PLAYERS : joue
+    ACCOUNTS ||--o{ SPORTS_BOARD_CHAMPIONS : "champion de la semaine"
+
+    SPORTS_PASS_PURCHASES {
+        bigint id PK
+        bigint account_id FK
+        text ref "unique par compte (idempotence)"
+        text kind "day ou week"
+        timestamptz valid_until "fin du pass après cet achat"
+        bigint cash_after
+    }
+    SPORTS_GEAR_RENTALS {
+        bigint id PK
+        bigint account_id FK
+        text ref "unique par compte (idempotence)"
+        text code "code du matériel prêté"
+        bigint price
+        bigint cash_after
+    }
+    SPORTS_MATCHES {
+        bigint id PK
+        text ref UK "id de match du socket"
+        text sport "un des 11 sports"
+        text venue
+        jsonb settings
+        timestamptz started_at
+        timestamptz ended_at
+        boolean counts_for_tasks "anti-farm : 2 comptes de 72 h, 3 matchs par paire et par jour"
+    }
+    SPORTS_BOARD_CHAMPIONS {
+        text board PK "swim_50, run_400..."
+        char week PK "YYYY-Www, semaine de Paris"
+        bigint account_id FK
+        int value "temps en ms ou score"
+    }
+    SPORTS_MATCH_PLAYERS {
+        bigint sports_match_id FK
+        bigint account_id FK
+        text team "red, blue ou null"
+        text result "win, loss, draw, finished, dnf"
+        smallint place
+        int time_ms
+        int score
+    }
+```
+
+```mermaid
+erDiagram
+    ACCOUNTS ||--o{ DANCE_RUNS : danse
+
+    DANCE_RUNS {
+        bigint id PK
+        text ref "id de match du socket, unique avec account_id"
+        bigint account_id FK
+        text song "harbour_sway, cove_groove, night_sprint"
+        text difficulty "easy, normal, hard"
+        text mode "solo, team, duel"
+        int score
+        bool full_combo
+        bool finished
+        text team_key "ids triés de l'équipe, mode team seulement"
+        int team_score "mode team seulement"
+        text week "semaine ISO à Paris, YYYY-Www"
+        timestamptz ended_at
+    }
+```
+
+Les classements hebdomadaires de danse sont des classements du cœur (`SportsBoardService::BOARDS`), lus dans
+`sports_match_players` ; `dance_runs` garde le combo parfait et sert aux tâches. Contrat : `docs/sports/dance.md`.
+
+Le matériel de sport est un `item_kind` `sports_gear` (pile de 1, jamais usé, pas une arme), qui tombe dans le sac de
+mort avec le cash et n'est jamais volé.
 
 ## 4. Monde & logement
 

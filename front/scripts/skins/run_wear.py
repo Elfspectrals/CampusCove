@@ -30,11 +30,20 @@ body_objs = build_stylized_base(body_coll, arm)
 heads = {sex: build_stylized_head(body_coll, arm, sex) for sex in ("m", "f")}
 faces = {sex: build_face_presets(body_coll, arm, heads[sex], sex) for sex in ("m", "f")}
 woman_top = build_woman_top(body_coll, arm, body_objs)
-sample_actions(arm, {**make_clips(None), "Pick": (90, pose_pick())})
+sample_actions(arm, {**make_clips(None), "Pick": (90, pose_pick()),
+                    "RunSet": (45, pose_run_set()), "RunLean": (24, pose_run_lean()), "Breathless": (60, pose_breathless()),
+                    **tennis_clips(),
+                    "Swim": (30, pose_swim()), "Tread": (48, pose_tread()),
+                    "Dive": (24, pose_dive()), "Somersault": (30, pose_somersault()), "Twist": (30, pose_twist()),
+                    "Cannonball": (30, pose_cannonball())})
 piece_coll = wipe("WEAR_PIECES")
 pieces = {}
+only = next((a.split("=", 1)[1].split(",") for a in argv if a.startswith("only=")), None)
+export_base = not only or "base" in only
 for slot, spec in WEAR.items():
     for key in spec["items"]:
+        if only and "%s/%s" % (slot, key) not in only:
+            continue
         if slot == "hair":
             pieces[(slot, key)] = build_stylized_hair(piece_coll, arm, key, heads["m"])
         elif slot == "head_accessory":
@@ -68,11 +77,12 @@ if "build" not in argv:
         sex = fit.split("_")[0]
         own = body_objs + [heads[sex]] + ([woman_top] if sex == "f" else [])
         bodies = own if fit == REFERENCE_FIT else [fitted_copy(o, arm, fit, body_coll) for o in own]
-        export_piece_glb(OUT_WEAR + "base/model%s.glb" % fit_url_suffix(fit), [arm] + bodies + faces[sex], animations=True)
+        if export_base:
+            export_piece_glb(OUT_WEAR + "base/model%s.glb" % fit_url_suffix(fit), [arm] + bodies + faces[sex], animations=True)
         trees[fit] = body_tree(bodies)
         if fit != REFERENCE_FIT:
             remove_copies(bodies)
-    files = len(FIT_KEYS)
+    files = len(FIT_KEYS) if export_base else 0
     for (slot, key), ob in pieces.items():
         d = OUT_WEAR + "%s/%s/" % (slot, key)
         os.makedirs(d, exist_ok=True)

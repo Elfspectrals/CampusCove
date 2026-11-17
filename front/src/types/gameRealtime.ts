@@ -5,6 +5,8 @@ export interface RemoteUserPayload {
   id: string
   pseudo: string
   badges?: string[]
+  robot?: boolean
+  coach?: string
   color: number
   x: number
   y: number
@@ -851,4 +853,268 @@ export interface StorageOpenedPayload {
   unitId: string | null
   pseudo: string
   contents: StorageLotContent[]
+}
+
+export interface SportsPassStatePayload {
+  validUntil: number | null
+  prices: { day: number; week: number }
+}
+
+export interface SportsPassBoughtPayload {
+  validUntil: number | null
+  cash: number
+}
+
+export interface SportsErrorPayload {
+  code: string
+  message: string
+}
+
+export interface SportsAbsencePayload {
+  venue: string
+  sessionId: string
+  name: string
+  state: 'away' | 'back' | 'out'
+  graceSec: number
+}
+
+export interface SportsLobbyPlayer {
+  sessionId: string
+  name: string
+  team: 'red' | 'blue' | null
+}
+
+export interface SportsLobbyPayload {
+  venue: string
+  coach: string
+  sport: string
+  phase: 'open' | 'countdown' | 'playing'
+  settings: Record<string, string | number>
+  players: SportsLobbyPlayer[]
+  min: number
+  max: number
+  robots?: boolean
+  kickoffAt: number | null
+  serverNow: number
+}
+
+export type TennisTeam = 'red' | 'blue'
+
+export interface TennisBall {
+  x: number
+  y: number
+  z: number
+  vx: number
+  vy: number
+  vz: number
+  t: number
+}
+
+export type TennisTiming = 'smash' | 'perfect' | 'good' | 'early' | 'late'
+
+export interface TennisShot {
+  sessionId: string
+  timing: TennisTiming
+}
+
+export interface TennisStrokePayload {
+  sessionId: string
+  stroke: 'serve' | 'forehand' | 'backhand' | 'lob' | 'celebrate'
+}
+
+export interface TennisFreePayload {
+  court: string
+  geometry: { cx: number; netZ: number; halfWidth: number } | null
+  phase: 'idle' | 'serve_wait' | 'toss' | 'flight' | 'point'
+  ball: TennisBall | null
+  hitter: TennisTeam | null
+  server: string | null
+  bounces: number
+  shot: TennisShot | null
+  call: TennisStatePayload['call']
+  serverNow: number
+}
+
+export interface TennisStatePayload {
+  venue: string
+  court: { cx: number; netZ: number; halfWidth: number }
+  mode: string
+  format: 'short_set_4' | 'tiebreak_7'
+  phase: 'serve_wait' | 'toss' | 'flight' | 'point' | 'ended'
+  games: Record<TennisTeam, number>
+  points: Record<TennisTeam, string>
+  tiebreak: boolean
+  serving: TennisTeam
+  server: string | null
+  ball: TennisBall | null
+  hitter: TennisTeam | null
+  bounces: number
+  shot: TennisShot | null
+  call: 'out' | 'net' | 'double_bounce' | 'missed_toss' | null
+  pointWinner: TennisTeam | null
+  winner: TennisTeam | null
+  players: { sessionId: string; team: TennisTeam }[]
+  serverNow: number
+}
+
+export interface SportsLobbyClosedPayload {
+  venue: string
+  reason: 'kickoff' | 'cancelled' | 'ended'
+}
+
+export interface SportsLoansPayload {
+  sessionId: string
+  loans: string[]
+}
+
+export type SportsRunnerState = 'set' | 'running' | 'finished' | 'dnf'
+type SportsRunDnf = 'false_start' | 'missed_gate' | 'left' | 'knocked_out' | 'time'
+
+export interface SportsRunner {
+  sessionId: string
+  name: string
+  lane: number
+  x: number
+  z: number
+  ry: number
+  speed: number
+  quality: number
+  lastStepAt: number | null
+  state: SportsRunnerState
+  gate: number
+  lap: number
+  next: { x: number; z: number } | null
+  timeMs: number | null
+  dnf: SportsRunDnf | null
+}
+
+export interface SportsRunStatePayload {
+  venue: string
+  distanceM: number
+  laps: number
+  gateCount: number
+  phase: 'marks' | 'set' | 'running'
+  beepAt: number | null
+  endsAt: number | null
+  serverNow: number
+  goodStepMs: number
+  toleranceMs: number
+  runners: SportsRunner[]
+}
+
+interface SportsRunResult {
+  sessionId: string
+  name: string
+  accountId: number
+  result: 'finished' | 'dnf'
+  place?: number
+  timeMs?: number
+  dnf: SportsRunDnf | null
+}
+
+export interface SportsRunResultPayload {
+  venue: string
+  distanceM: number
+  results: SportsRunResult[]
+}
+
+export type GymSport = 'football' | 'basketball'
+export type GymTeam = 'red' | 'blue'
+export type GymShotRelease = 'perfect' | 'good' | 'early' | 'late'
+
+export interface GymStatePayload {
+  venue: string
+  sport: GymSport
+  ball: [number, number, number, number, number, number]
+  owner: string | null
+  score: Record<GymTeam, number>
+  half: number
+  halves: number
+  endsAt: number
+  restartTeam: GymTeam | null
+  players: { sessionId: string; team: GymTeam }[]
+  fire: string | null
+  serverNow: number
+}
+
+export type GymEventPayload =
+  | { venue: string; kind: 'score'; team: GymTeam; points: number; dunk: boolean; scorer: string | null; sessionId: string | null }
+  | { venue: string; kind: 'kick'; shot: boolean; release?: GymShotRelease; dunk?: true; sessionId: string | null }
+  | { venue: string; kind: 'tackle'; won: boolean; slide: boolean; sessionId: string | null }
+  | { venue: string; kind: 'steal'; won: boolean; sessionId: string | null; targetSessionId: string | null }
+  | { venue: string; kind: 'block'; sessionId: string | null }
+  | { venue: string; kind: 'half'; half: number; sessionId: null }
+
+export interface GymEndPayload {
+  venue: string
+  sport: GymSport
+  score: Record<GymTeam, number>
+  winner: GymTeam | null
+  reason: 'finished' | 'forfeit'
+}
+
+export interface GymFreeBall {
+  id: string
+  court: string
+  sport: GymSport
+  lender: string | null
+  ball: [number, number, number, number, number, number]
+  owner: string | null
+}
+
+export interface GymFreePayload {
+  balls: GymFreeBall[]
+  serverNow: number
+}
+
+export interface GymErrorPayload {
+  code: string
+  message: string
+}
+
+interface SkateRacerPayload {
+  sessionId: string
+  name: string
+  lap: number
+  penaltyMs: number
+  finishedMs: number | null
+  dnf: boolean
+}
+
+export interface SkateRacePayload {
+  venue: string
+  phase: 'countdown' | 'racing'
+  laps: number
+  goAt: number
+  serverNow: number
+  racers: SkateRacerPayload[]
+}
+
+export interface SkateFallPayload {
+  sessionId: string
+  until: number
+  serverNow: number
+}
+
+export interface SkateBalancePayload {
+  value: number
+}
+
+export interface SkateMovePayload {
+  sessionId: string
+  move: 'push' | 'brake' | 'stumble'
+}
+
+export interface SkateBumpPayload {
+  sessionId: string
+  dirX: number
+  dirZ: number
+  distance: number
+  serverNow: number
+}
+
+export interface SkateResultPayload {
+  venue: string
+  laps: number
+  results: { sessionId: string; name: string; place: number | null; timeMs: number | null; penaltyMs: number; dnf: boolean }[]
 }

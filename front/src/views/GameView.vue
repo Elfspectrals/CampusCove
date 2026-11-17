@@ -21,8 +21,7 @@ import GamePlacementHud from '../components/game/GamePlacementHud.vue'
 import GamePlayerHotbar from '../components/game/GamePlayerHotbar.vue'
 import GameVitals from '../components/game/GameVitals.vue'
 import GamePlayerInventoryPanel from '../components/game/GamePlayerInventoryPanel.vue'
-import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vue'
-import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
+import GamePauseMenu from '../components/game/GamePauseMenu.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameZoneBuyerMenu from '../components/game/GameZoneBuyerMenu.vue'
 import GameAdminPanel from '../components/game/GameAdminPanel.vue'
@@ -33,11 +32,30 @@ import GameFurnitureStorage from '../components/game/GameFurnitureStorage.vue'
 import GamePubMenu from '../components/game/GamePubMenu.vue'
 import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.vue'
+import GameSportsPassDesk from '../components/game/GameSportsPassDesk.vue'
+import GameSportsSignup from '../components/game/GameSportsSignup.vue'
+import GameRunningHud from '../components/game/GameRunningHud.vue'
+import GameRunningBoard from '../components/game/GameRunningBoard.vue'
+import GameGymMatchHud from '../components/game/GameGymMatchHud.vue'
+import GameGymFreePlay from '../components/game/GameGymFreePlay.vue'
+import GameDance from '../components/game/GameDance.vue'
+import GameEmoteWheel from '../components/game/GameEmoteWheel.vue'
+import GameClimbHud from '../components/game/GameClimbHud.vue'
+import GameClimbBoard from '../components/game/GameClimbBoard.vue'
+import GameBoxingBag from '../components/game/GameBoxingBag.vue'
+import GameFigureSkating from '../components/game/GameFigureSkating.vue'
+import GameBoxingHud from '../components/game/GameBoxingHud.vue'
+import { robotAppearance } from '../game/sports/robotLook'
+import GameSkatingHud from '../components/game/GameSkatingHud.vue'
+import GamePetanque from '../components/game/GamePetanque.vue'
+import GamePetanqueFree from '../components/game/GamePetanqueFree.vue'
+import GamePoolRace from '../components/game/GamePoolRace.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
 import GamePubChallenge from '../components/game/GamePubChallenge.vue'
 import GamePubRaceBoard from '../components/game/GamePubRaceBoard.vue'
+import GameTennisHud from '../components/game/GameTennisHud.vue'
 import GameJail from '../components/game/GameJail.vue'
 import GameCuffed from '../components/game/GameCuffed.vue'
 import GamePickpocket from '../components/game/GamePickpocket.vue'
@@ -56,6 +74,7 @@ import GameWatchMenu from '../components/game/GameWatchMenu.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
 import GameTutorialQuest from '../components/game/GameTutorialQuest.vue'
+import GameBusHud from '../components/game/GameBusHud.vue'
 import GameTutorialMarker from '../components/game/GameTutorialMarker.vue'
 import { useTutorialMarker } from '../composables/game/useTutorialMarker'
 import { useTutorialHints } from '../composables/game/useTutorialHints'
@@ -95,6 +114,29 @@ import { useCashBags } from '../composables/game/useCashBags'
 import { useJailCell } from '../composables/game/useJailCell'
 import { useJail } from '../composables/game/useJail'
 import { usePolice } from '../composables/game/usePolice'
+import { useSportsPass } from '../composables/game/useSportsPass'
+import { useGearRental } from '../composables/game/useGearRental'
+import { passValid } from '../game/sports/sportsPass'
+import { useSportsSignup } from '../composables/game/useSportsSignup'
+import { useRunningRace } from '../composables/game/useRunningRace'
+import { useGymMatch } from '../composables/game/useGymMatch'
+import { FREE_PLAY_COACHES, teamJerseyUrl } from '../game/sports/gymMatch'
+import { useTennis } from '../composables/game/useTennis'
+import { TENNIS_RACKET } from '../game/sports/tennis'
+import { useDance } from '../composables/game/useDance'
+import { useFigureSkating } from '../composables/game/useFigureSkating'
+import { DANCE_LANE_ACTIONS } from '../game/sports/danceHud'
+import { useEmoteWheel } from '../composables/game/useEmoteWheel'
+import { useClimbing } from '../composables/game/useClimbing'
+import { useClimbingBoard } from '../composables/game/useClimbingBoard'
+import { useBoxing } from '../composables/game/useBoxing'
+import { useSkating } from '../composables/game/useSkating'
+import { ICE_SKATES_CODE } from '../game/sports/skating/skateMotion'
+import { usePetanque } from '../composables/game/usePetanque'
+import { usePoolRace } from '../composables/game/usePoolRace'
+import { usePoolSwim } from '../composables/game/usePoolSwim'
+import { useSportsCamera } from '../composables/game/useSportsCamera'
+import { useOwnBody } from '../composables/game/useOwnBody'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -112,6 +154,7 @@ import { usePubQuiz } from '../composables/game/usePubQuiz'
 import { useRenderStats } from '../composables/game/useRenderStats'
 import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
 import { useSeats } from '../composables/game/useSeats'
+import { useTownBus } from '../composables/game/useTownBus'
 import { useSurvival } from '../composables/game/useSurvival'
 import { useTrade } from '../composables/game/useTrade'
 import { useAdminWatch } from '../composables/game/useAdminWatch'
@@ -133,10 +176,11 @@ import { LOCK_RETRY_MS, isLockReleaseEscape } from '../game/pauseMenu'
 import { createGameScene, disposeGameScene, renderGameFrame, resizeViewmodel, type GameScene } from '../game/gameScene'
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
+import { HELD_GEAR_URLS, heldGearUrl } from '../game/sports/heldGear'
 import { COVE_HOME, COVE_THREADS, findHouse, findStore, findWork } from '../game/assets/catalog'
 import { storeBuildings, workBuildings, type WorldBounds, type WorldZone } from '../game/world/worldManifest'
 import type { GearSlot } from '../game/wardrobeSlots'
-import type { PoliceBountyPayload, PoliceCuffCancelledPayload } from '../types/gameRealtime'
+import type { PoliceBountyPayload, PoliceCuffCancelledPayload, SportsErrorPayload } from '../types/gameRealtime'
 import { createSfx } from '../game/sfx'
 import { createAmbientLoop } from '../game/ambientLoop'
 import { MAX_STAMINA } from '../game/stamina'
@@ -441,6 +485,25 @@ const seats = useSeats({
   },
   setLook: (yaw, pitch) => movement.setLook(yaw, pitch),
 })
+
+const townBus = useTownBus({
+  getScene,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  myPosition,
+  promptsHidden: () => inventoryOpen.value,
+  canRide: canUsePub,
+  teleport: (x, y, z) => {
+    Object.assign(myPosition, { x, y, z })
+    getCamera()?.position.set(x, y, z)
+  },
+  playOn: (name, object) => sfx.playOn(name, object),
+  say: (text) => survival.say(text),
+  t: (key, values) => t(key, values ?? {}),
+})
+const busHud = townBus.hud
+const busStops = townBus.stops
 
 /** The drink picked up on the bar goes straight in hand. */
 function selectHotbarItem(code: string): void {
@@ -800,6 +863,281 @@ const { cuffedBy: policeCuffedBy, onDuty: policeOnDuty, confirmOpen: policeConfi
 watch(policeConfirmOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
+function sportsErrorText({ code, message }: SportsErrorPayload): string {
+  const key = `sports.errors.${code}`
+  return te(key) ? t(key) : message
+}
+const gearRental = useGearRental({
+  gameRoomRef,
+  say: (text) => survival.say(text),
+  rentedText: (gear, cash) => {
+    const name = t(`sports.rental.gear.${gear}`)
+    return t('sports.rental.rented', { gear: name.charAt(0).toUpperCase() + name.slice(1), cash })
+  },
+})
+const { offer: gearRentalOffer } = gearRental
+const sportsPass = useSportsPass({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value,
+  desks: () => zoneDecor.sportsPassDesks.value,
+  deskPrompt: ({ validUntil, prices }) => ({
+    action: t('sports.pass.deskAction'),
+    detail: validUntil !== null && passValid(validUntil, Date.now())
+      ? t('sports.pass.deskValid', { end: new Date(validUntil).toLocaleString(locale.value === 'fr' ? 'fr-FR' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' }) })
+      : t('sports.pass.deskDetail', prices),
+  }),
+  errorText: sportsErrorText,
+  noPassText: () => t('sports.noPass'),
+  say: (text) => survival.say(text),
+  onBought: () => {
+    sfx.play('market_bought')
+    survival.say(t('sports.bought'))
+  },
+})
+const { open: sportsPassOpen, state: sportsPassState, buying: sportsPassBuying, error: sportsPassError } = sportsPass
+watch(sportsPassOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
+const runningRace = useRunningRace({
+  gameRoomRef,
+  myPosition,
+  getCamera,
+  canvasRef,
+  setLook: (yaw, pitch) => movement.setLook(yaw, pitch),
+  onFinished: () => sfx.play('out_of_breath'),
+  onStep: (inRhythm) => sfx.play(inRhythm ? 'run_step_good' : 'run_step_off'),
+  setRacePose: (sessionId, pose) => realtime.setRemoteRacePose(sessionId, pose),
+})
+const { state: runState, runner: myRunnerState, result: runResult, clientNow: runClientNow, clockOffset: runClockOffset, lastStepAt: runLastStepAt, gateBearing: runGateBearing, board: runBoard } = runningRace
+const dance = useDance({ gameRoomRef, myPosition, dancerPosition: (sessionId) => realtime.remotePosition(sessionId), isMoveKey: (action, code) => matches(action, code) })
+const { start: danceStart, result: danceResult, boards: danceBoards, boardsFailed: danceBoardsFailed, dancing, notes: danceNotes, songMs: danceSongMs, board: danceBoard, mine: danceMine, teamScore: danceTeamScore, judgementShown: danceJudgement, litLanes: danceLitLanes } = dance
+const figure = useFigureSkating({
+  gameRoomRef,
+  myPosition,
+  mySessionId: () => gameRoomRef.value?.sessionId ?? null,
+  getScene,
+  setLook: (yaw, pitch) => movement.setLook(yaw, pitch),
+  setFigurePose: (sessionId, pose) => realtime.setFigurePose(sessionId, pose),
+})
+const { hud: figureHud, board: figureBoard, active: figureActive } = figure
+const emoteWheel = useEmoteWheel({
+  gameRoomRef,
+  isWheelKey: (code) => matches('emoteWheel', code),
+  blocked: () => dancing.value || gymMatch.playing(),
+  lockedText: () => t('emotes.locked'),
+  say: (text) => survival.say(text),
+})
+const { open: emoteWheelOpen, rows: emoteRows, myEmote } = emoteWheel
+const sportsSignup = useSportsSignup({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value,
+  coaches: () => zoneDecor.sportsCoaches.value,
+  coachPrompt: () => ({ action: t('sports.signup.coachAction'), detail: t('sports.signup.coachDetail') }),
+  errorText: sportsErrorText,
+  closedText: (reason) => t(`sports.signup.closed.${reason}`),
+  absenceText: ({ state, name, graceSec }, mine) => (mine ? (state === 'away' ? t('sports.absence.you', { n: graceSec }) : null) : t(`sports.absence.${state}`, { name, n: graceSec })),
+  say: (text) => survival.say(text),
+  onSignedUp: () => {
+    sfx.play('market_bell')
+    survival.say(t('sports.signedUp'))
+  },
+})
+const tennis = useTennis({
+  gameRoomRef,
+  getScene,
+  getCamera,
+  canvasRef,
+  myPosition,
+  pointerLocked: () => pointerLocked.value,
+  promptsHidden: () => inventoryOpen.value,
+  basketPrompt: () => ({ action: t('sports.tennis.basketAction'), detail: t('sports.tennis.basketDetail') }),
+  onSwing: (swing) => {
+    sfx.play('tennis_swing')
+    arms?.tennisSwing(swing)
+    const me = gameRoomRef.value?.sessionId
+    if (me) realtime.ownAvatar.tennisStroke(me, swing)
+  },
+  onBallHit: (ball) => sfx.playOn('tennis_hit', ball),
+  onBounce: (ball) => sfx.playOn('tennis_bounce', ball),
+  onCall: (call) => sfx.play(call === 'net' ? 'tennis_net' : 'tennis_call'),
+  setRemoteRacket: (sessionId, holding) => {
+    realtime.setRemoteHeldTool(sessionId, holding ? TENNIS_RACKET : null)
+    realtime.setRemoteTennis(sessionId, holding)
+  },
+  setOwnRacket: (holding) => {
+    const me = gameRoomRef.value?.sessionId
+    if (!me) return
+    realtime.ownAvatar.setHeldTool(me, holding ? TENNIS_RACKET : null)
+    realtime.ownAvatar.setTennis(me, holding)
+  },
+  remoteSessions: () => realtime.remotePlayers().map((p) => p.sessionId),
+  remotePosition: (sessionId) => realtime.remotePosition(sessionId),
+})
+const { hud: tennisHud, cue: tennisCue, call: tennisCall, timing: tennisTiming, freePlay: tennisFreePlay } = tennis
+const poolRace = usePoolRace({
+  gameRoomRef,
+  myPosition,
+  setLook: (yaw, pitch) => movement.setLook(yaw, pitch),
+  mySessionId: () => gameRoomRef.value?.sessionId ?? null,
+  getScene,
+  remotePlayers: () => realtime.remotePlayers(),
+  remotePosition: (sessionId) => realtime.remotePosition(sessionId),
+  setRemoteSwimwear: (sessionId, on) => realtime.setRemoteSwimwear(sessionId, on),
+  playRemoteClip: (sessionId, clip) => realtime.playRemotePoolClip(sessionId, clip),
+  say: (text) => survival.say(text),
+  noSwimsuitText: () => t('sports.pool.noSwimsuit'),
+  boardTakenText: () => t('sports.pool.boardTaken'),
+  falseStartText: () => t('sports.pool.falseStart'),
+  marksText: () => t('sports.pool.marks'),
+  trickText: (name, trick) => (name ? t('sports.pool.trickBy', { name, trick: t(`sports.pool.trick.${trick}`) }) : t(`sports.pool.trick.${trick}`)),
+})
+const { hud: poolHud, board: poolBoard, trickLine: poolTrickLine } = poolRace
+const poolSwim = usePoolSwim({
+  rules: () => poolRace.rules.value,
+  myPosition,
+  getScene,
+  getCamera,
+  listener: () => sfx.listener(),
+  remotePlayers: () => realtime.remotePlayers(),
+  remotePosition: (sessionId) => realtime.remotePosition(sessionId),
+  say: (text) => survival.say(text),
+  rescuedText: () => t('sports.pool.rescued'),
+})
+const { breathHud: poolBreath, underwater: poolUnderwater } = poolSwim
+const { open: sportsSignupOpen, choices: sportsVenueChoices, canPickVenue: sportsCanPickVenue, lobby: sportsLobby, spec: sportsSpec, team: sportsTeam, settings: sportsSettings, pending: sportsSignupPending, error: sportsSignupError, clientNow: sportsClientNow, clockOffset: sportsClockOffset } = sportsSignup
+watch(sportsSignupOpen, (open) => {
+  if (open) {
+    gearRental.ask()
+    return
+  }
+  gearRental.clear()
+  if (!document.pointerLockElement) requestPointerLock()
+})
+const isMe = (sessionId: string) => sessionId === gameRoomRef.value?.sessionId
+const gymMatch = useGymMatch({
+  gameRoomRef,
+  pointerLocked,
+  myPosition,
+  getScene,
+  getCamera,
+  canvasRef,
+  avatar: (sessionId) => (isMe(sessionId) ? realtime.ownAvatar.avatarOf(sessionId) : realtime.remoteAvatar(sessionId)),
+  sportsMove: (sessionId, clip) => (isMe(sessionId) ? realtime.ownAvatar.playSportsMove(sessionId, clip) : realtime.remoteSportsMove(sessionId, clip)),
+  setDribbling: (sessionId, dribbling) => (isMe(sessionId) ? realtime.ownAvatar.setDribbling(sessionId, dribbling) : realtime.setRemoteDribbling(sessionId, dribbling)),
+  setTeamLook: (sessionId, team) => {
+    const jersey = team ? teamJerseyUrl(team) : null
+    if (isMe(sessionId)) realtime.ownAvatar.setTopOverride(sessionId, jersey)
+    else if (!realtime.setRobotTeam(sessionId, team)) realtime.setRemoteTopOverride(sessionId, jersey)
+  },
+  ownBodyShown: () => sportsCamera.thirdPerson(),
+  yaw: () => movement.look().yaw,
+  moveFrameYaw: () => sportsCamera.moveFrameYaw(),
+  knockBack: (dirX, dirZ, distance) => movement.knockBack(dirX, dirZ, distance),
+  leap: (velocity, gravity) => movement.leap(velocity, gravity),
+  playOn: (name, object) => sfx.playOn(name, object),
+  play: (name) => sfx.play(name),
+  say: (text) => survival.say(text),
+  errorText: ({ code, message }) => (te(`sports.gym.errors.${code}`) ? t(`sports.gym.errors.${code}`) : message),
+})
+const { hud: gymHud, freeHud: gymFreeHud, banner: gymBanner, rimPop: gymRimPop, releaseLabel: gymReleaseLabel, myBall: gymMyBall } = gymMatch
+const gymFreeSports = computed(() => {
+  if (!sportsSignupOpen.value) return null
+  const coach = sportsVenueChoices.value.find((c) => FREE_PLAY_COACHES[c.lobby.coach])?.lobby.coach
+  return coach ? FREE_PLAY_COACHES[coach]! : null
+})
+const CLIMB_SOUNDS = { hold: 'door_pick_click', miss: 'door_pick_scrape', fall: 'impact', top: 'market_bell' } as const
+const climbing = useClimbing({
+  myPosition,
+  getScene,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value,
+  startPrompt: (line) => ({
+    action: t('climbing.startAction', { name: line.name }),
+    detail: t('climbing.startDetail', { colour: t(`climbing.colours.${line.colour}`), kind: t(`climbing.kinds.${line.kind}`), holds: line.holds.length }),
+  }),
+  resultText: (state) => t(`climbing.results.${state.result ?? 'fell'}`, { time: ((state.timeMs ?? 0) / 1000).toFixed(2) }),
+  errorText: (error) => (te(`climbing.errors.${error.code}`) ? t(`climbing.errors.${error.code}`) : error.message),
+  say: (text) => survival.say(text),
+  play: (sound) => sfx.play(CLIMB_SOUNDS[sound]),
+  animate: (sessionId, pose, move) => realtime.setRemoteClimbAnimation(sessionId, pose, move),
+  animateSelf: (pose, move) => {
+    arms?.setClimbPose(pose)
+    if (move) arms?.climbMove(move)
+  },
+})
+const { hud: climbHud, climbing: climbingNow } = climbing
+const climbingBoard = useClimbingBoard({
+  myPosition,
+  getCamera,
+  canvasRef,
+  spec: climbing.spec,
+  promptsHidden: () => inventoryOpen.value,
+  prompt: () => ({ action: t('climbing.board.action'), detail: t('climbing.board.detail') }),
+})
+const { open: climbingBoardOpen, week: climbingBoardWeek, rows: climbingBoardRows, loading: climbingBoardLoading, error: climbingBoardError } = climbingBoard
+watch(climbingBoardOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
+const boxing = useBoxing({
+  gameRoomRef,
+  pointerLocked: () => pointerLocked.value,
+  arms: () => arms,
+  play: (sound) => sfx.play(sound),
+  playOn: (sound, object) => sfx.playOn(sound, object),
+  say: (text) => survival.say(text),
+  tiredText: () => t('sports.boxing.tired'),
+  noGlovesText: () => t('sports.boxing.noGloves'),
+  comboName: (id) => t(`sports.boxing.combo.${id}`),
+  myPosition,
+  getCamera,
+  getScene,
+  remotePosition: (sessionId) => realtime.remotePosition(sessionId),
+})
+const { view: boxingView, fighting: boxingFighting, bagView: boxingBagView, bagResult: boxingBagResult, bagList: boxingBagList } = boxing
+const SKATING_CORRECTIONS = new Set(['no_skates', 'skate_start', 'skate_fallen'])
+const skating = useSkating({
+  myPosition,
+  gameRoomRef,
+  ownsSkates: () => ICE_SKATES_CODE in itemByCode.value,
+  say: (text) => survival.say(text),
+  correctionText: (reason) => (SKATING_CORRECTIONS.has(reason) ? t(`skating.corrections.${reason}`) : null),
+  onFall: () => movement.kickCamera(),
+  knockBack: (dirX, dirZ, distance) => movement.knockBack(dirX, dirZ, distance),
+  playSound: (name) => sfx.play(name),
+  inRink: () => currentHouseKey.value === 'sports_ice_rink',
+})
+const { balance: skatingBalance, boardShown: skatingBoard, active: skatingActive, speed: skatingSpeed, cue: skatingCue, rhythmZone: skatingWindow, lastPush: skatingLastPush, race: skatingRace, rows: skatingRows, clock: skatingClock, result: skatingResult } = skating
+const petanque = usePetanque({
+  gameRoomRef,
+  getScene,
+  getCamera,
+  myPosition,
+  pointerLocked: () => pointerLocked.value,
+  rightHand: () => arms?.rightHand() ?? null,
+  remoteHand: (sessionId) => realtime.remoteHand(sessionId),
+  throwArms: (mode) => arms?.throwBoule(mode),
+  playRemote: (sessionId, clip) => realtime.playRemotePetanque(sessionId, clip),
+  remotePosition: (sessionId) => realtime.remotePosition(sessionId),
+  setCrouching: (sessionId, crouching) => realtime.setRemoteCrouching(sessionId, crouching),
+  say: (text) => survival.say(text),
+  playSound: (name) => sfx.play(name),
+  playSoundOn: (name, object, delayS) => sfx.playOn(name, object, delayS),
+  closedText: (data) => {
+    if (data.reason === 'forfeit' || !data.score) return t('petanque.closed.forfeit')
+    const team = petanque.myTeam.value
+    const won = team !== null && data.score[team] > data.score[team === 'red' ? 'blue' : 'red']
+    return t(won ? 'petanque.closed.won' : 'petanque.closed.lost', data.score)
+  },
+})
+const { freePlay: petanqueFree, myGame: petanqueGame, myTurn: petanqueMyTurn, standingInCircle: petanqueInCircle, busy: petanqueBusy, mode: petanqueMode, power: petanquePower, carreau: petanqueCarreau, turnSecondsLeft: petanqueSecondsLeft } = petanque
 const PICKPOCKET_ERROR_KEYS = new Set([
   'pickpocket_on_duty',
   'pickpocket_jailed',
@@ -888,7 +1226,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source, jailCell.source, police.source, pickpocket.source, market.source],
+  sources: [townBus.source, pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source, jailCell.source, police.source, pickpocket.source, market.source, sportsPass.source, sportsSignup.source, tennis.source, climbing.source, climbingBoard.source],
 })
 const { doorPrompt } = interactions
 
@@ -910,13 +1248,17 @@ watch(() => selectedItem.value?.code ?? null, () => arms?.equip())
 
 /** Model shown in the right hand: tools and food (a half-eaten item is drawn smaller). */
 const FIRST_PERSON_TOOL_SCALE = 0.6
+const TENNIS_RACKET_URL = HELD_GEAR_URLS[TENNIS_RACKET]!
+const TENNIS_RACKET_GRIP = 0.12
 
 function holdingJobTool(): boolean {
   return heldTool.code.value !== null && heldTool.code.value === selectedItem.value?.code
 }
 
-function heldModel(): { url: string | null; scale: number } {
+function heldModel(): { url: string | null; scale: number; grip?: number } {
   const item = selectedItem.value
+  const gear = heldGearUrl(item?.code)
+  if (gear) return { url: gear, scale: FIRST_PERSON_TOOL_SCALE, ...(item?.code === TENNIS_RACKET ? { grip: TENNIS_RACKET_GRIP } : {}) }
   if (!item || (item.kind !== 'tool' && item.kind !== 'consumable')) return { url: null, scale: 1 }
   if (holdingJobTool()) return { url: item.model_glb, scale: FIRST_PERSON_TOOL_SCALE }
   const eaten = item.portions && item.portions_left ? item.portions_left / item.portions : 1
@@ -1074,7 +1416,7 @@ const clinic = useClinic({
 const { prompt: clinicPrompt } = clinic
 
 /** Key settings opened from the pause screen. */
-const settingsOpen = ref(false)
+const pauseMenuRef = ref<InstanceType<typeof GamePauseMenu> | null>(null)
 
 // ---------------------------------------------------------------- character creator / editor (docs/CHARACTER.md)
 
@@ -1221,6 +1563,8 @@ const environment = useRoomEnvironment({
     jailCell.onTownLoaded(manifest)
     police.onTownLoaded(manifest)
     seats.onTownLoaded(manifest)
+    climbing.onTownLoaded()
+    climbingBoard.onTownLoaded()
     pub.onTownLoaded(manifest)
     pubQuiz.onTownLoaded(manifest)
     pubGames.onTownLoaded(manifest)
@@ -1237,6 +1581,7 @@ const environment = useRoomEnvironment({
       zoneDecor.onTownLoaded(manifest).catch((error: unknown) => console.error('[zones] zone decor failed to load', error)),
     ]).then(() => boot.complete('decor'))
     minimap.onTownLoaded(manifest)
+    townBus.onTownLoaded(manifest).catch((error: unknown) => console.error('[bus] town bus failed to load', error))
     houseFurniture.onTownReady()
   },
   onTownShown: (group) => {
@@ -1325,6 +1670,24 @@ function toggleEscapeMenu(e: KeyboardEvent): void {
     requestPointerLock()
   }
 }
+const inSport = computed(
+  () =>
+    gymHud.value?.team != null ||
+    gymMyBall.value !== null ||
+    tennisHud.value?.myTeam != null ||
+    boxingFighting.value ||
+    dancing.value ||
+    figureActive.value ||
+    poolRace.locked.value ||
+    runningRace.racing.value ||
+    climbingNow.value ||
+    skatingRace.value !== null ||
+    petanqueGame.value !== null,
+)
+function leaveSport(): void {
+  gameRoomRef.value?.send('sports_leave', {})
+  requestPointerLock()
+}
 const pauseMenuOpen = computed(
   () =>
     !pointerLocked.value &&
@@ -1338,16 +1701,18 @@ const pauseMenuOpen = computed(
     !lockpickOpen.value &&
     !storageOpen.value &&
     !marketPanelOpen.value &&
+    !sportsPassOpen.value &&
+    !sportsSignupOpen.value &&
+    !climbingBoardOpen.value &&
     !adminPanelOpen.value &&
     !playerListOpen.value &&
     !tasksOpen.value &&
-    !settingsOpen.value &&
     !creator.value,
 )
 /** Back in the game with the menu closed, but the browser hasn't given the pointer back yet. */
 const resumedWithoutLock = computed(() => pauseMenuOpen.value && pauseDismissed.value)
 
-const { t } = useI18n()
+const { t, te, locale } = useI18n()
 const walletBalances = useWalletBalances()
 
 watch(inventoryOpen, (open) => {
@@ -1388,13 +1753,19 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (watchMenuOpen.value && !isWalkWithWatchKey(e.code)) return true
   // the bouncer's text field and the pub games (Space holds the pint) take the keyboard too
   if (pubSecretOpen.value || pubGamesOpen.value) return true
+  if (dance.onKeyDown(e)) return true
+  if (figure.onKeyDown(e)) return true
+  if (emoteWheel.onKeyDown(e)) return true
   if (pubQuiz.onKeyDown(e)) return true
   // Y / N answer a Drink Fast challenge
   if (pubChallenge.onKeyDown(e)) return true
   // seated at the pub: a step or a jump stands the player up instead of moving
   if (seats.onKeyDown(e)) return true
+  if (climbing.onKeyDown(e)) return true
+  if (poolRace.onKeyDown(e)) return true
   // defaultPrevented: the inventory / cafe menu already used this Esc to close themselves
   if (e.code === 'Escape' && !e.repeat && !e.defaultPrevented && pauseMenuOpen.value && !placementPreviewActive.value) {
+    if (!pauseDismissed.value && pauseMenuRef.value?.back()) return true
     toggleEscapeMenu(e)
     return true
   }
@@ -1404,6 +1775,8 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (houseKeys.onKeyDown(e)) return true
   if (survival.onKeyDown(e)) return true
   if (pickpocket.onKeyDown(e)) return true
+  if (gymMatch.onPress(e.code, e.repeat)) return true
+  if (boxing.onKeyDown(e)) return true
   if (runUseOrPunch(e.code, e.repeat, e.shiftKey)) return true
   if (matches('characterEditor', e.code) && !e.repeat) {
     void openCharacterEditor()
@@ -1428,6 +1801,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
     e.preventDefault()
     return housing.buy() || housing.leave()
   }
+  if (matches('cameraView', e.code) && !e.repeat && sportsCamera.toggle()) return true
   // collision overlay: a developer tool, kept off in production so it never steals a player's key
   if (import.meta.env.DEV && e.code === 'KeyC' && !e.repeat) {
     const scene = getScene()
@@ -1447,6 +1821,22 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   }
   return placement.onKeyDown(e)
 }
+
+const sportsCamera = useSportsCamera({
+  myPosition,
+  pointerLocked: () => pointerLocked.value,
+  getFpHands: () => game?.fpHands ?? null,
+  view: () => dance.cameraView() ?? figure.cameraView() ?? tennis.cameraView() ?? boxing.cameraView() ?? poolSwim.cameraView() ?? gymMatch.cameraView(),
+  onThirdPerson: () => survival.say(t('sports.camera.thirdPerson', { key: actionKeyLabels('cameraView').join(' / ') })),
+})
+const ownBody = useOwnBody({
+  sessionId: () => gameRoomRef.value?.sessionId ?? null,
+  myPosition,
+  avatar: () => realtime.ownAvatar,
+  yaw: () => movement.look().yaw,
+  shown: sportsCamera.thirdPerson,
+  swimming: poolSwim.swimming,
+})
 
 const movement = useGameMovement({
   pointerLocked,
@@ -1471,33 +1861,54 @@ const movement = useGameMovement({
   onHotbarDigit: selectHotbarIndex,
   onHotbarScroll: (step) => {
     if (placement.onWheelStep(step)) return
+    if (petanque.onWheelStep()) return
     selectHotbarIndex((selectedHotbarIndex.value + step + 9) % 9)
   },
   handleExtraKeyDown,
   onCanvasMouseDown: (e) => {
     // furniture placement keeps its own clicks (left: pick / place, right: cancel)
     if (placement.onPointerDown(e)) return true
+    if (runningRace.onMouseDown(e)) return true
+    if (tennis.onPointerDown(e)) return true
+    if (petanque.onPointerDown(e)) return true
     if (adminPanelOpen.value && !pointerLocked.value) {
       requestPointerLock()
       return true
     }
+    if (pointerLocked.value && climbing.onMouseDown(e.button)) return true
+    if (gymMatch.onPress(mouseButtonCode(e.button), false)) return true
+    if (boxing.onPointerDown(e)) return true
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
-  speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
-  movementLocked: () => seats.seated.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze'),
+  speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * gymMatch.speedFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
+  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || gymMatch.down() || boxing.stunned() || runningRace.racing.value || dancing.value || figureActive.value || climbingNow.value || poolRace.locked.value || tennis.serving(),
   flying: () => adminWatch.hasMyPower('fly'),
-  afterCameraPlaced: intoxication.applyToCamera,
+  afterCameraPlaced: (camera, dt) => {
+    intoxication.applyToCamera(camera, dt)
+    sportsCamera.apply(camera, dt)
+  },
+  lockedLook: sportsCamera.lockedLook,
+  moveFrameYaw: sportsCamera.moveFrameYaw,
+  faceSpot: gymMatch.faceSpot,
+  autoRun: tennis.autoRun,
+  skate: skating.step,
+  cameraRoll: skating.cameraRoll,
+  afterSkate: skating.afterMove,
+  swim: poolSwim.swim,
   trySpendJump: () => adminWatch.hasMyPower('endless_stamina') || punch.trySpendJump(),
   trySpendSprint: (dt, wasSprinting) => adminWatch.hasMyPower('endless_stamina') || punch.trySpendSprint(dt, wasSprinting),
   onBeforeRender: (dt) => {
+    townBus.tick()
     if (import.meta.env.DEV) renderStats.tick(dt)
     positionLabel.value = formatPosition()
     realtime.tickRemoteAvatars(dt)
+    ownBody.tick(dt)
     currentHouseKey.value = houseKeyAt(myPosition.x, myPosition.z)
     placement.tick(dt)
     mallCellTemplates.tick(dt, myPosition)
     zoneDecor.tick(dt, myPosition)
     marketCrowd.tick(dt)
+    skating.tick()
     cashBags.tick(dt)
     storageAuction.tick()
     storageWarehouse.tick(dt)
@@ -1510,9 +1921,9 @@ const movement = useGameMovement({
     houseKeys.updateKeyPrompt()
     updateFrontDoors(dt, isBuildingDoorOpen)
     arms?.update(dt, myPosition)
-    const held = heldModel()
-    arms?.setHolding(holdingJobTool())
-    heldItem.update(arms?.rightHand() ?? null, held.url, held.scale)
+    const held = tennis.holdingRacket() ? { url: TENNIS_RACKET_URL, scale: FIRST_PERSON_TOOL_SCALE, grip: TENNIS_RACKET_GRIP } : heldModel()
+    arms?.setHolding(holdingJobTool() || tennis.holdingRacket() || heldGearUrl(selectedItem.value?.code) !== null)
+    heldItem.update(arms?.rightHand() ?? null, held.url, held.scale, 'grip' in held ? held.grip : undefined)
     survival.tick(dt)
     stamina.value = punch.staminaNow()
     for (const { store } of furnitureStores) store.updatePrompt()
@@ -1525,6 +1936,16 @@ const movement = useGameMovement({
     tutorialHints.tick()
     farm.tick()
     police.tick()
+    sportsSignup.tick()
+    runningRace.tick(dt)
+    gymMatch.tick()
+    tennis.tick()
+    dance.tick()
+    figure.tick()
+    climbing.tick()
+    petanque.tick()
+    poolRace.tick(dt)
+    poolSwim.tick(dt)
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
     gps.tick()
@@ -1597,6 +2018,7 @@ const realtime = useGameRealtime({
     onActionError: () => placement.cancelPreview(),
   },
   loadTown,
+  robotAppearance: (coach, team) => robotAppearance(zoneDecor.robotModels.value, coach, team),
   onHousingUnitsSync: housing.applyUnits,
   onHouseFurnitureSync: (houses) => {
     furnishedHouses.value = houses
@@ -1659,6 +2081,35 @@ const realtime = useGameRealtime({
   cashBags: cashBags.handlers,
   jail: { ...jail.handlers, onTray: jailCell.onTray },
   police: police.handlers,
+  gearRental: gearRental.handlers,
+  sports: {
+    onPassState: sportsPass.handlers.onState,
+    onPassBought: sportsPass.handlers.onBought,
+    onPassError: sportsPass.handlers.onError,
+    onCorrection: sportsPass.onCorrection,
+    onLobby: sportsSignup.handlers.onLobby,
+    onLobbyClosed: sportsSignup.handlers.onLobbyClosed,
+    onError: sportsSignup.handlers.onError,
+    onAbsence: sportsSignup.handlers.onAbsence,
+    onRoomJoined: () => {
+      sportsSignup.handlers.onRoomJoined()
+      runningRace.onRoomJoined()
+      gearRental.handlers.onRoomJoined()
+    },
+    onRunState: runningRace.onState,
+    onRunResult: runningRace.onResult,
+    onTennisState: tennis.handlers.onState,
+    onTennisFree: tennis.handlers.onFree,
+  },
+  gym: gymMatch.handlers,
+  dance: dance.handlers,
+  figure: figure.handlers,
+  emotes: { ...emoteWheel.handlers, clipOf: emoteWheel.clipOf },
+  climbing: climbing.handlers,
+  boxing: boxing.handlers,
+  skating: { ...skating.handlers, isOnIce: skating.isOnIce },
+  pool: poolRace.handlers,
+  poolSwim: poolSwim.handlers,
   pickpocket: pickpocket.handlers,
   storageAuction: {
     ...storageAuction.handlers,
@@ -1770,6 +2221,7 @@ let unbindSurvivalInput: (() => void) | null = null
 onMounted(() => {
   void bootGame()
   unbindInput = movement.bindInputListeners()
+  document.addEventListener('mousemove', tennis.onMouseMove)
   unbindSurvivalInput = survival.bindInputListeners()
   window.addEventListener('beforeunload', leaveRoom)
   window.addEventListener('pagehide', leaveRoom)
@@ -1779,8 +2231,10 @@ onUnmounted(() => {
   unmounted = true
   movement.stopRenderLoop()
   unbindInput?.()
+  document.removeEventListener('mousemove', tennis.onMouseMove)
   unbindSurvivalInput?.()
   survival.dispose()
+  poolSwim.dispose()
   window.removeEventListener('beforeunload', leaveRoom)
   window.removeEventListener('pagehide', leaveRoom)
   refreshMyAppearance.value = null
@@ -1874,6 +2328,7 @@ const crosshairClass = computed(() => {
       :y="tutorialHintBubble.y"
       :use-key="interactKeys"
     />
+    <GameBusHud v-if="busHud && !loadingShown" :hud="busHud" :stops="busStops" @alight="townBus.alightAt" />
     <GameTutorialQuest
       v-if="tutorial?.status === 'active' && !loadingShown"
       :step="tutorial.step"
@@ -2018,11 +2473,15 @@ const crosshairClass = computed(() => {
         @outfit="onOutfit"
       />
     </GamePlayerInventoryPanel>
-    <GamePointerLockOverlay
+    <GamePauseMenu
       v-show="pauseMenuOpen && !pauseDismissed"
+      ref="pauseMenuRef"
+      :in-sport="inSport"
+      :reduced-effects="reducedEffects"
       @request-pointer-lock="requestPointerLock"
-      @open-settings="settingsOpen = true"
       @logout="logout"
+      @leave-sport="leaveSport"
+      @toggle-reduced-effects="survival.toggleReducedEffects"
     />
     <!-- the game goes on: only a quiet hint while the browser hasn't given the mouse back yet -->
     <p
@@ -2031,7 +2490,6 @@ const crosshairClass = computed(() => {
     >
       Click to look around
     </p>
-    <GameSettingsDialog v-if="settingsOpen" @close="settingsOpen = false" />
     <GameCharacterCreator
       v-if="creator"
       :mode="creator.mode"
@@ -2107,6 +2565,10 @@ const crosshairClass = computed(() => {
       :followed-session-id="followedSessionId"
       :alarm-alerts="houseAlarms.alerts.value"
       :alarm-unseen="houseAlarms.unseen.value"
+      :sports-pass-until="sportsPassState?.validUntil ?? null"
+      :sports-lobbies="sportsSignup.lobbies.value"
+      :sports-clock-offset="sportsSignup.clockOffset.value"
+      :own-session-id="gameRoomRef?.sessionId ?? ''"
       @alarm-open="houseAlarms.markSeen"
       @request="trade.request"
       @respond="trade.respond"
@@ -2229,6 +2691,132 @@ const crosshairClass = computed(() => {
       @confirm="police.confirmBuy"
       @close="police.closeConfirm"
     />
+    <GameClimbHud v-if="climbHud" :hud="climbHud" />
+    <GameClimbBoard
+      v-if="climbingBoardOpen"
+      :week="climbingBoardWeek"
+      :rows="climbingBoardRows"
+      :loading="climbingBoardLoading"
+      :error="climbingBoardError"
+      @close="climbingBoard.close"
+    />
+    <GamePoolRace v-if="poolHud || poolBoard || poolTrickLine || poolBreath || poolUnderwater" :hud="poolHud" :board="poolBoard" :trick-line="poolTrickLine" :breath="poolBreath" :underwater="poolUnderwater" />
+    <GameSportsPassDesk
+      v-if="sportsPassOpen && sportsPassState"
+      :pass="sportsPassState"
+      :buying="sportsPassBuying"
+      :error="sportsPassError"
+      @buy="sportsPass.buy"
+      @close="sportsPass.close"
+    />
+    <GameRunningHud
+      :state="runState"
+      :runner="myRunnerState"
+      :result="runResult"
+      :client-now="runClientNow"
+      :clock-offset="runClockOffset"
+      :last-step-at="runLastStepAt"
+      :gate-bearing="runGateBearing"
+    />
+    <GameGymMatchHud :hud="gymHud" :free-hud="gymFreeHud" :banner="gymBanner" :rim-pop="gymRimPop" :release-label="gymReleaseLabel" />
+    <GameGymFreePlay v-if="gymFreeSports" :my-ball="gymMyBall" :sports="gymFreeSports" @borrow="gymMatch.borrow" @give-back="gymMatch.giveBack" />
+    <GameEmoteWheel v-if="emoteWheelOpen" :rows="emoteRows" :current="myEmote" />
+    <p v-else-if="myEmote" class="cc-hud pointer-events-none absolute bottom-28 left-1/2 z-[36] m-0 -translate-x-1/2 px-3 py-1 text-sm font-bold text-sun">
+      {{ t('emotes.dancing', { name: t(`emotes.names.${myEmote}`) }) }}
+    </p>
+    <GameDance
+      v-if="danceStart"
+      :mode="danceStart.mode"
+      :song="danceStart.song"
+      :dancing="dancing"
+      :song-ms="danceSongMs"
+      :notes="danceNotes"
+      :board="danceBoard"
+      :mine="danceMine"
+      :team-score="danceTeamScore"
+      :judgement="danceJudgement"
+      :lit-lanes="danceLitLanes"
+      :lane-keys="DANCE_LANE_ACTIONS.map((action) => actionKeyLabels(action)[0] ?? '')"
+      :result="danceResult"
+      :boards="danceBoards"
+      :boards-failed="danceBoardsFailed"
+      :reduced-effects="reducedEffects"
+    />
+    <GamePetanque
+      v-if="petanqueGame"
+      :game="petanqueGame"
+      :my-session-id="gameRoomRef?.sessionId ?? null"
+      :my-turn="petanqueMyTurn"
+      :in-circle="petanqueInCircle"
+      :busy="petanqueBusy"
+      :mode="petanqueMode"
+      :power="petanquePower"
+      :carreau="petanqueCarreau"
+      :seconds-left="petanqueSecondsLeft"
+    />
+    <GamePetanqueFree
+      v-if="petanqueFree && !petanqueGame"
+      :piste="petanqueFree.piste"
+      :kind="petanqueFree.kind"
+      :distances="petanqueFree.distances"
+      :busy="petanqueFree.busy"
+      :mode="petanqueMode"
+      :power="petanquePower"
+    />
+    <GameSportsSignup
+      v-if="sportsSignupOpen"
+      :lobby="sportsLobby"
+      :choices="sportsVenueChoices"
+      :can-pick-venue="sportsCanPickVenue"
+      :spec="sportsSpec"
+      :team="sportsTeam"
+      :settings="sportsSettings"
+      :my-session-id="gameRoomRef?.sessionId ?? null"
+      :pending="sportsSignupPending"
+      :error="sportsSignupError"
+      :client-now="sportsClientNow"
+      :clock-offset="sportsClockOffset"
+      :gear-offer="gearRentalOffer"
+      @rent="gearRental.rent"
+      @pick-team="(side) => (sportsTeam = side)"
+      @set-setting="(key, value) => (sportsSettings = { ...sportsSettings, [key]: value })"
+      @pick-venue="sportsSignup.pickVenue"
+      :can-call-robots="sportsSignup.canCallRobots.value"
+      @sign-up="sportsSignup.signUp"
+      @robots="sportsSignup.callRobots"
+      @leave="sportsSignup.leave"
+      @close="sportsSignup.close"
+    />
+    <GameBoxingHud v-if="boxingView" :view="boxingView" :fighting="boxingFighting" />
+    <GameBoxingBag
+      v-else-if="boxingBagView || boxingBagResult || boxingBagList"
+      :round="boxingBagView"
+      :result="boxingBagResult"
+      :list="boxingBagList"
+      :keys="{ dodgeLeft: actionKeyLabels('moveLeft')[0] ?? '', dodgeRight: actionKeyLabels('moveRight')[0] ?? '', guard: actionKeyLabels('cook')[0] ?? '' }"
+    />
+    <GameFigureSkating
+      v-if="figureHud || figureBoard"
+      :hud="figureHud"
+      :board="figureBoard"
+      :my-session-id="gameRoomRef?.sessionId ?? null"
+      :keys="{ jump: actionKeyLabels('jump')[0] ?? '', spin: `${actionKeyLabels('moveLeft')[0] ?? ''} ${actionKeyLabels('moveRight')[0] ?? ''}`, spiral: actionKeyLabels('moveForward')[0] ?? '' }"
+    />
+    <GameSkatingHud
+      v-if="!figureActive"
+      :active="skatingActive"
+      :speed="skatingSpeed"
+      :cue="skatingCue"
+      :rhythm-window="skatingWindow"
+      :last-push="skatingLastPush"
+      :laps="skatingRace?.laps ?? null"
+      :clock="skatingClock"
+      :rows="skatingRows"
+      :result="skatingResult"
+      :my-session-id="gameRoomRef?.sessionId ?? null"
+      :board="skatingBoard"
+      :balance="skatingBalance"
+    />
     <GamePubSecretDialog
       v-if="pubSecretOpen"
       :greeting="pub.bouncerGreeting"
@@ -2249,6 +2837,8 @@ const crosshairClass = computed(() => {
       @close="closePubRace"
     />
     <GamePubRaceBoard v-if="pubRaceBoard" :board="pubRaceBoard" />
+    <GameRunningBoard v-if="runBoard" :board="runBoard" />
+    <GameTennisHud :hud="tennisHud" :cue="tennisCue" :call="tennisCall" :timing="tennisTiming" :free-play="tennisFreePlay" />
     <GameJail v-if="jailSentence && !knockedOut" :sentence="jailSentence" :error="jailError" :paying="jailPaying" @pay="jail.pay" />
     <GameCuffed v-if="policeCuffedBy && !knockedOut" :officer="realtime.remotePseudo(policeCuffedBy) ?? '…'" />
     <GamePickpocket v-if="!knockedOut" :game="pickpocketGame" :loot="pickpocketLoot" @take="pickpocket.take" />

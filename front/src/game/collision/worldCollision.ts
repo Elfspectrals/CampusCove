@@ -385,6 +385,12 @@ export function cuboidOverlapsPlayer(c: CollisionCuboidJson): boolean {
   )
 }
 
+export function worldRayDistance(origin: { x: number; y: number; z: number }, unitDirection: { x: number; y: number; z: number }, maxDistance: number): number {
+  if (!collidersReady || !world) return maxDistance
+  const hit = world.castRay(new RAPIER.Ray(origin, unitDirection), maxDistance, true, undefined, undefined, playerCollider ?? undefined)
+  return hit ? hit.timeOfImpact : maxDistance
+}
+
 export function getWorldCollisionStats(): Readonly<WorldCollisionStats> {
   return stats
 }

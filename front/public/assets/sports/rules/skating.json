@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "sport": "skating",
+  "status": "ready",
+  "zone": "sports_ice_rink",
+  "coachId": "rink_coach",
+  "signup": {
+    "teams": false,
+    "settings": [
+      {
+        "key": "laps",
+        "label": "Laps",
+        "options": [
+          1,
+          3,
+          5
+        ]
+      }
+    ]
+  },
+  "rink": {
+    "sizeM": [
+      60,
+      30
+    ],
+    "bounds": {
+      "minX": -556.4,
+      "maxX": -496.4,
+      "minZ": -290.5,
+      "maxZ": -260.5
+    },
+    "cornerRadius": 4,
+    "boards": {
+      "height": 1.1,
+      "gates": [
+        {
+          "z": -272.5,
+          "width": 1.6
+        },
+        {
+          "z": -278.5,
+          "width": 1.6
+        }
+      ]
+    },
+    "hockeyMarkings": true
+  },
+  "raceOval": {
+    "a": [
+      -540.4,
+      -275.5
+    ],
+    "b": [
+      -512.4,
+      -275.5
+    ],
+    "radius": 6,
+    "cones": 22,
+    "startLineX": -526.4,
+    "grid": [
+      [
+        -528.4,
+        -268.3
+      ],
+      [
+        -528.4,
+        -266.1
+      ],
+      [
+        -528.4,
+        -263.9
+      ],
+      [
+        -528.4,
+        -261.7
+      ],
+      [
+        -530.4,
+        -268.3
+      ],
+      [
+        -530.4,
+        -266.1
+      ],
+      [
+        -530.4,
+        -263.9
+      ],
+      [
+        -530.4,
+        -261.7
+      ]
+    ]
+  },
+  "lapsChoices": [
+    1,
+    3,
+    5
+  ],
+  "minPlayers": 1,
+  "maxPlayers": 8,
+  "cutPenaltyMs": 2000,
+  "startCountdownMs": 3000,
+  "raceTimeLimitMs": {
+    "base": 60000,
+    "perLap": 40000
+  },
+  "skate": {
+    "pushGain": 1.6,
+    "goodPushGain": 2.6,
+    "earlyPushGain": 0.4,
+    "rhythmMs": 650,
+    "toleranceMs": 150,
+    "serverAllowanceMs": 100,
+    "friction": 0.5,
+    "maxSpeed": 9,
+    "turnRate": {
+      "still": 3.2,
+      "atMaxSpeed": 0.9
+    },
+    "brake": 7,
+    "moveMarginM": 1.5,
+    "grip": {
+      "still": 8,
+      "atMaxSpeed": 2.2
+    }
+  },
+  "crash": {
+    "speedThreshold": 6.5,
+    "contactRadius": 0.9,
+    "fallMs": 1500,
+    "immuneMs": 2000,
+    "bumpDistanceM": 1.0,
+    "bumpSpeedLoss": 0.3,
+    "bumpCooldownMs": 600,
+    "boardMarginM": 0.6
+  },
+  "balance": {
+    "carveLimit": 6,
+    "carveDrainPerUnit": 0.1,
+    "brakeSpeed": 6,
+    "brakeDrainPerS": 0.45,
+    "earlyPushLoss": 0.15,
+    "bumpLoss": 0.3,
+    "recoverPerS": 0.25,
+    "minMoveM": 0.15,
+    "reportStep": 0.05
+  },
+  "gear": [
+    "gear_ice_skates"
+  ],
+  "boards": [
+    "skate_1",
+    "skate_3",
+    "skate_5"
+  ],
+  "tasks": [
+    "races_skated",
+    "skate_3_clean"
+  ]
+}
