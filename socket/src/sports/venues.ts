@@ -77,6 +77,7 @@ export interface SportsRoomState {
   matches: Map<string, Match>
   resume: Map<number, MatchResume>
   robots: Map<string, Player>
+  robotViews: Map<string, unknown>
   nextRobot: number
 }
 
@@ -102,7 +103,7 @@ function warn(context: string, error: unknown): void {
 }
 
 export function newSportsState(): SportsRoomState {
-  return { lobbies: new Map(), matches: new Map(), resume: new Map(), robots: new Map(), nextRobot: 1 }
+  return { lobbies: new Map(), matches: new Map(), resume: new Map(), robots: new Map(), robotViews: new Map(), nextRobot: 1 }
 }
 
 function addCoach(coach: CoachSpec): void {
@@ -389,7 +390,7 @@ function fillWithRobots(room: GameRoom, venue: VenueSpec, lobby: Lobby, level: R
   const seats: (Team | null)[] = venue.teams ? TEAMS.flatMap((team) => new Array<Team>(Math.max(0, lobby.range.max / 2 - lobby.entrants.filter((e) => e.team === team).length)).fill(team)) : new Array<null>(lobby.range.max - lobby.entrants.length).fill(null)
   lobby.robots = level
   for (const team of seats) {
-    const robot = addRobot(room, { x: at.x, y: at.y, z: at.z })
+    const robot = addRobot(room, { x: venue.coach.x, y: at.y, z: venue.coach.z }, lobby.coach)
     joinLobby(lobby, { sessionId: robot.sessionId, accountId: robot.accountId, name: robot.pseudo, team }, now)
   }
 }

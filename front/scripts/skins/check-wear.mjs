@@ -7,12 +7,13 @@ import draco3d from 'draco3dgltf'
 
 const WEAR = join(resolve(dirname(fileURLToPath(import.meta.url)), '..', '..'), 'public', 'assets', 'wear')
 const REGIONS = ['head', 'chest', 'hips', 'upper_arms', 'forearms', 'hands', 'thighs', 'shins', 'feet']
+const ROBOT_KINDS = ['robot_droid', 'robot_tin', 'robot_android', 'robot_dummy', 'robot_mascot']
 const PIECES = {
   hair: ['basic', 'short', 'long', 'curly', 'buzz', 'ponytail'],
-  head_accessory: ['gamer', 'studio', 'cat_ear', 'neon', 'pilot', 'straw_hat', 'beret', 'bandana', 'sheriff_hat'],
-  top: ['basic', 'tee', 'tank', 'hoodie', 'varsity', 'sweater', 'track_jacket', 'jersey', 'sports_bra', 'plaid_shirt', 'farm_apron', 'flannel_jacket', 'staff_polo', 'newcomer', 'sheriff_shirt', 'team_jersey_red', 'team_jersey_blue', 'tracksuit'],
-  bottom: ['basic', 'jeans', 'joggers', 'cargo', 'shorts', 'skirt', 'track_pants', 'basketball_shorts', 'leggings', 'dungarees', 'newcomer', 'tracksuit', 'swimsuit'],
-  shoes: ['basic', 'sneakers', 'high_tops', 'boots', 'slides', 'runners', 'rubber_boots', 'newcomer', 'ice_skates', 'climbing_shoes'],
+  head_accessory: ['gamer', 'studio', 'cat_ear', 'neon', 'pilot', 'straw_hat', 'beret', 'bandana', 'sheriff_hat', ...ROBOT_KINDS],
+  top: ['basic', 'tee', 'tank', 'hoodie', 'varsity', 'sweater', 'track_jacket', 'jersey', 'sports_bra', 'plaid_shirt', 'farm_apron', 'flannel_jacket', 'staff_polo', 'newcomer', 'sheriff_shirt', 'team_jersey_red', 'team_jersey_blue', 'tracksuit', ...ROBOT_KINDS],
+  bottom: ['basic', 'jeans', 'joggers', 'cargo', 'shorts', 'skirt', 'track_pants', 'basketball_shorts', 'leggings', 'dungarees', 'newcomer', 'tracksuit', 'swimsuit', 'robot'],
+  shoes: ['basic', 'sneakers', 'high_tops', 'boots', 'slides', 'runners', 'rubber_boots', 'newcomer', 'ice_skates', 'climbing_shoes', 'robot'],
 }
 /** Body fits (front/scripts/skins/fit.py): m_normal is model.glb, the others model_<fit>.glb, for the base and these slots. */
 const FITS = ['m_slim', 'm_normal', 'm_broad', 'f_slim', 'f_normal', 'f_broad']
@@ -96,7 +97,7 @@ for (const [slot, keys] of Object.entries(PIECES)) {
       try {
         statSync(join(WEAR, slot, key, 'preview.png'))
         // the game loads the first-person arms of whatever top is worn (catalog.ts wearTopFpArmsUrl)
-        if (slot === 'top') statSync(join(WEAR, slot, key, 'fp_arms.glb'))
+        if (slot === 'top' && !ROBOT_KINDS.includes(key)) statSync(join(WEAR, slot, key, 'fp_arms.glb'))
         const root = (await io.read(join(WEAR, slot, key, fileOf(fit)))).getRoot()
         const nodes = meshNodes(root)
         if (nodes.length !== 1) fail(id, `expected one skinned mesh, found ${nodes.length}`)

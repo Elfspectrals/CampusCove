@@ -69,7 +69,6 @@ import {
   normalizeSlotModels,
   normalizeCharacter,
   publicPlayer,
-  robotView,
   spawnNear
 } from './players.ts'
 import {
@@ -142,6 +141,7 @@ import {
   onSportsMatchLeave,
   onSportsRobots,
   onSportsSignupLeave,
+  robotViews,
   useRobotFactory,
   tickSports
 } from './sports/index.ts'
@@ -456,7 +456,7 @@ export class CityRoom extends Room implements GameRoom {
 
   otherPlayers(client: GameClient) {
     const humans = [...this.players.values()].filter((u) => u.sessionId !== client.sessionId && !hasPower(u, 'invisible')).map(publicPlayer)
-    return [...humans, ...[...this.sports.robots.values()].map(robotView)]
+    return [...humans, ...robotViews(this)]
   }
 
   // ------------------------------------------------------------ presence

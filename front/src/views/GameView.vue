@@ -46,6 +46,7 @@ import GameClimbBoard from '../components/game/GameClimbBoard.vue'
 import GameBoxingBag from '../components/game/GameBoxingBag.vue'
 import GameFigureSkating from '../components/game/GameFigureSkating.vue'
 import GameBoxingHud from '../components/game/GameBoxingHud.vue'
+import { robotAppearance } from '../game/sports/robotLook'
 import GameSkatingHud from '../components/game/GameSkatingHud.vue'
 import GamePetanque from '../components/game/GamePetanque.vue'
 import GamePetanqueFree from '../components/game/GamePetanqueFree.vue'
@@ -120,7 +121,7 @@ import { passValid } from '../game/sports/sportsPass'
 import { useSportsSignup } from '../composables/game/useSportsSignup'
 import { useRunningRace } from '../composables/game/useRunningRace'
 import { useGymMatch } from '../composables/game/useGymMatch'
-import { FREE_PLAY_COACHES } from '../game/sports/gymMatch'
+import { FREE_PLAY_COACHES, teamJerseyUrl } from '../game/sports/gymMatch'
 import { useTennis } from '../composables/game/useTennis'
 import { TENNIS_RACKET } from '../game/sports/tennis'
 import { useDance } from '../composables/game/useDance'
@@ -1030,7 +1031,11 @@ const gymMatch = useGymMatch({
   avatar: (sessionId) => (isMe(sessionId) ? realtime.ownAvatar.avatarOf(sessionId) : realtime.remoteAvatar(sessionId)),
   sportsMove: (sessionId, clip) => (isMe(sessionId) ? realtime.ownAvatar.playSportsMove(sessionId, clip) : realtime.remoteSportsMove(sessionId, clip)),
   setDribbling: (sessionId, dribbling) => (isMe(sessionId) ? realtime.ownAvatar.setDribbling(sessionId, dribbling) : realtime.setRemoteDribbling(sessionId, dribbling)),
-  setTopOverride: (sessionId, top) => (isMe(sessionId) ? realtime.ownAvatar.setTopOverride(sessionId, top) : realtime.setRemoteTopOverride(sessionId, top)),
+  setTeamLook: (sessionId, team) => {
+    const jersey = team ? teamJerseyUrl(team) : null
+    if (isMe(sessionId)) realtime.ownAvatar.setTopOverride(sessionId, jersey)
+    else if (!realtime.setRobotTeam(sessionId, team)) realtime.setRemoteTopOverride(sessionId, jersey)
+  },
   ownBodyShown: () => sportsCamera.thirdPerson(),
   yaw: () => movement.look().yaw,
   moveFrameYaw: () => sportsCamera.moveFrameYaw(),
@@ -2014,6 +2019,7 @@ const realtime = useGameRealtime({
     onActionError: () => placement.cancelPreview(),
   },
   loadTown,
+  robotAppearance: (coach, team) => robotAppearance(zoneDecor.robotModels.value, coach, team),
   onHousingUnitsSync: housing.applyUnits,
   onHouseFurnitureSync: (houses) => {
     furnishedHouses.value = houses

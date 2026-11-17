@@ -218,8 +218,12 @@ function sportsNpcFields(sportsPassDesk: unknown, coach: unknown, path: string, 
 }
 
 function zoneNpcAt(raw: unknown, path: string, zone: string): NpcProp {
-  const { role, sportsPassDesk, coach, ...rest } = raw as Record<string, unknown>
-  const npc: NpcProp = { ...(propAt(rest, path) as NpcProp), ...sportsNpcFields(sportsPassDesk, coach, path, zone) }
+  const { role, sportsPassDesk, coach, robotOf, ...rest } = raw as Record<string, unknown>
+  const npc: NpcProp = {
+    ...(propAt(rest, path) as NpcProp),
+    ...sportsNpcFields(sportsPassDesk, coach, path, zone),
+    ...(robotOf === undefined ? {} : { robotOf: stringAt(robotOf, `${path}.robotOf`, TEMPLATE_KEY) }),
+  }
   if (role === undefined) return npc
   if (!STAFF_ROLES.includes(role as StaffRole)) throw new TemplateError(`${path}.role`, `expected one of ${STAFF_ROLES.join(', ')}`)
   const staff = role as StaffRole

@@ -198,6 +198,13 @@ registerVenue({
    removed when the match ends, and a match with no human left ends with no winner. Robots are left out of the
    record sent to Laravel, so the humans' results count for the tasks like any match, with no daily limit (decided
    2026-11-17), and nothing reaches a board.
+   **Robot look** (2026-11-17): a robot wears ordinary wear pieces (`front/scripts/skins/wear.py`): five heads and
+   five torsos, `robot_droid`, `robot_tin`, `robot_android`, `robot_dummy`, `robot_mascot` (slots `head_accessory`
+   and `top`), and one `robot` pair of legs and feet (slots `bottom` and `shoes`); each piece takes the colour of its
+   slot. The look of a coach's robots is a figure in the zone: an NPC prop with `robotOf: "<coach id>"`, dressed and
+   coloured in `/admin/editor` like any NPC ("Robot model" in its details), standing in the venue. `user_joined`
+   carries `coach` for a robot, and the front dresses the robot from that figure (`robotAppearance` in
+   `front/src/game/sports/robotLook.ts`, the default droid when a coach has no model). The pieces can be mixed.
 8. Dropping under the minimum stops the countdown; the 5-minute cancel counts from the last sign-up while under the
    minimum; the lobby is cancelled when its last player leaves. Settings must hold exactly the spec's keys, each value
    one of its options.

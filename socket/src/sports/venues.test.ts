@@ -231,9 +231,10 @@ test('the first player signed up calls the robots: the empty places of both team
   const match = room.sports.matches.get('test_robot_court') as Match
   assert.deepEqual([match.robots, match.startedAt], ['hard', NOW + 4000])
   assert.deepEqual(match.players.map((p) => [p.team, p.accountId < 0, p.awaySince]), [['red', false, null], ['red', false, null], ['blue', true, null], ['blue', true, null]])
-  const shown = sentOf(clientOf(room, a), 'user_joined') as { sessionId: string, robot: boolean, pseudo: string }[]
-  assert.deepEqual(shown.map((u) => [u.sessionId, u.robot, u.pseudo]), [['robot:1', true, 'Robot 1'], ['robot:2', true, 'Robot 2']])
+  const shown = sentOf(clientOf(room, a), 'user_joined') as { sessionId: string, robot: boolean, pseudo: string, coach: string }[]
+  assert.deepEqual(shown.map((u) => [u.sessionId, u.robot, u.pseudo, u.coach]), [['robot:1', true, 'Robot 1', 'test_robot_coach'], ['robot:2', true, 'Robot 2', 'test_robot_coach']])
   assert.equal(room.sports.robots.size, 2)
+  assert.deepEqual([...room.sports.robots.values()].map((r) => [r.x, r.z]), [[COACH.x, COACH.z], [COACH.x, COACH.z]])
 })
 
 test('a robot match ends when its last human leaves, the robots go with it, and the record names humans only', async () => {

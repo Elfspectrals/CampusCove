@@ -6,6 +6,7 @@ export interface RemoteUserPayload {
   pseudo: string
   badges?: string[]
   robot?: boolean
+  coach?: string
   color: number
   x: number
   y: number

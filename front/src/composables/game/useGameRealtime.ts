@@ -1,3 +1,4 @@
+import type { RobotAppearance, RobotTeam } from '../../game/sports/robotLook'
 import { ADMIN_KICK_CLOSE_CODE } from '../../game/gameRoomConstants'
 import { ref, type Ref, type ShallowRef } from 'vue'
 import type { Router } from 'vue-router'
@@ -194,6 +195,7 @@ export interface GameRealtimeDeps {
     onActionError: () => void
   }
   loadTown: () => void
+  robotAppearance: (coach: string | undefined, team: RobotTeam | null) => RobotAppearance
   onHousingUnitsSync: (units: HousingUnitPayload[]) => void
   onHouseFurnitureSync: (houses: HouseFurniturePayload[]) => void
   onDoorsSync: (openDoorIds: string[]) => void
@@ -488,6 +490,20 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     deps.inventory.applyServerPayload(items)
   }
 
+  const robotCoaches = new Map<string, string | undefined>()
+
+  function dressed(user: RemoteUserPayload): RemoteUserPayload {
+    if (!user.robot) return user
+    robotCoaches.set(user.sessionId, user.coach)
+    return { ...user, ...deps.robotAppearance(user.coach, null) }
+  }
+
+  function setRobotTeam(sessionId: string, team: RobotTeam | null): boolean {
+    if (!robotCoaches.has(sessionId)) return false
+    void remotes.updateAppearance(sessionId, deps.robotAppearance(robotCoaches.get(sessionId), team))
+    return true
+  }
+
   function bindRoomEvents(room: Room) {
     room.onMessage('init', (payload: RoomInitPayload) => {
       remotes.clear()
@@ -498,7 +514,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       setMyPosition(payload.me.x, payload.me.y, payload.me.z)
       void ownAvatar.upsert(room.sessionId, payload.me)
       for (const u of payload.users) {
-        if (u.sessionId !== room.sessionId) void remotes.upsert(u.sessionId, u, deps.seats.seatPose(u.seatId))
+        if (u.sessionId !== room.sessionId) void remotes.upsert(u.sessionId, dressed(u), deps.seats.seatPose(u.seatId))
         deps.seats.onSeated({ sessionId: u.sessionId, seatId: u.seatId ?? null }, room.sessionId)
       }
       if (payload.housingUnits !== undefined) syncHousingUnits(payload.housingUnits)
@@ -532,7 +548,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     })
 
     room.onMessage('user_joined', (data: RemoteUserPayload) => {
-      if (data.sessionId !== room.sessionId) void remotes.upsert(data.sessionId, data, deps.seats.seatPose(data.seatId))
+      if (data.sessionId !== room.sessionId) void remotes.upsert(data.sessionId, dressed(data), deps.seats.seatPose(data.seatId))
       deps.seats.onSeated({ sessionId: data.sessionId, seatId: data.seatId ?? null }, room.sessionId)
     })
 
@@ -566,6 +582,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
 
     room.onMessage('user_left', (data: { sessionId: string }) => {
       remotes.remove(data.sessionId)
+      robotCoaches.delete(data.sessionId)
       forgetSportsLoans(data.sessionId)
     })
 
@@ -967,6 +984,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     remoteSportsMove: remotes.playSportsMove,
     setRemoteDribbling: remotes.setDribbling,
     setRemoteTopOverride: remotes.setTopOverride,
+    setRobotTeam,
     setRemoteSwimwear: remotes.setSwimwear,
     setFigurePose: (sessionId: string, pose: FigurePose | null) => (sessionId === deps.gameRoomRef.value?.sessionId ? ownAvatar : remotes).setFigurePose(sessionId, pose),
     playRemotePoolClip: remotes.playPoolClip,

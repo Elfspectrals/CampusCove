@@ -181,13 +181,9 @@ function createRobot(number: number, at: Vec3): Player {
   return createPlayer(client, {}, number, at)
 }
 
-export function robotView(robot: Player) {
-  return { ...publicPlayer(robot), robot: true }
-}
-
-export function makeRobot(number: number, at: Vec3): { robot: Player, view: unknown } {
+export function makeRobot(number: number, at: Vec3, coach: string): { robot: Player, view: unknown } {
   const robot = createRobot(number, at)
-  return { robot, view: robotView(robot) }
+  return { robot, view: { ...publicPlayer(robot), robot: true, coach } }
 }
 
 export function publicPlayer(player: Player) {

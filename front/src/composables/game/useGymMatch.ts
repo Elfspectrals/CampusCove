@@ -29,7 +29,6 @@ import {
   hoopAhead,
   lobFill,
   nearestFreeBall,
-  teamJerseyUrl,
   type HoopSpot,
   parseGymCourtView,
   parseGymHudRules,
@@ -52,7 +51,7 @@ export interface GymMatchDeps {
   avatar: (sessionId: string) => THREE.Object3D | null
   sportsMove: (sessionId: string, clip: SportsMoveClip) => void
   setDribbling: (sessionId: string, dribbling: boolean) => void
-  setTopOverride: (sessionId: string, top: string | null) => void
+  setTeamLook: (sessionId: string, team: GymTeam | null) => void
   ownBodyShown: () => boolean
   yaw: () => number
   moveFrameYaw: () => number | null
@@ -137,7 +136,7 @@ export function useGymMatch(deps: GymMatchDeps) {
     new THREE.RingGeometry(TARGET_RING_RADII[0], TARGET_RING_RADII[1], 32).rotateX(-Math.PI / 2),
     new THREE.MeshBasicMaterial({ color: TARGET_RING_COLOUR, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide }),
   )
-  let jerseys = new Map<string, string>()
+  let jerseys = new Map<string, GymTeam>()
   let screen: { mesh: THREE.Mesh; canvas: HTMLCanvasElement; texture: THREE.CanvasTexture; text: string } | null = null
   const anchor = new THREE.Vector3()
   const forward = new THREE.Vector3()
@@ -543,10 +542,10 @@ export function useGymMatch(deps: GymMatchDeps) {
   }
 
   function updateJerseys(): void {
-    const next = new Map<string, string>()
-    for (const p of state.value?.players ?? []) next.set(p.sessionId, teamJerseyUrl(p.team))
-    for (const id of jerseys.keys()) if (!next.has(id)) deps.setTopOverride(id, null)
-    for (const [id, url] of next) if (jerseys.get(id) !== url) deps.setTopOverride(id, url)
+    const next = new Map<string, GymTeam>()
+    for (const p of state.value?.players ?? []) next.set(p.sessionId, p.team)
+    for (const id of jerseys.keys()) if (!next.has(id)) deps.setTeamLook(id, null)
+    for (const [id, team] of next) if (jerseys.get(id) !== team) deps.setTeamLook(id, team)
     jerseys = next
   }
 

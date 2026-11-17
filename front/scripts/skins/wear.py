@@ -254,7 +254,9 @@ def tracksuit_top(M, m):
 
 
 def build_top(key, M, m):
-    if key == "plaid_shirt":
+    if key.startswith("robot_"):
+        robot_torso(key, M, m)
+    elif key == "plaid_shirt":
         plaid_shirt(M, m)
     elif key == "sheriff_shirt":
         sheriff_shirt(M, m)
@@ -375,7 +377,9 @@ def legs(M, m, upto, puff=1.0, flare=1.0):
 
 
 def build_bottom(key, M, m):
-    if key in ("basic", "jeans"):
+    if key == "robot":
+        robot_legs(M, m)
+    elif key in ("basic", "jeans"):
         waist(M, m["main"])
         legs(M, m["main"], 4)
         add_sweep(M, m["accent"], [(0, 0, 1.02), (0, 0, 1.05)], [(0.172, 0.121), (0.172, 0.121)], seg=18, per=1)
@@ -486,6 +490,10 @@ def build_shoes(key, M, m):
         if key == "climbing_shoes":
             climbing_shoe(M, m, sg)
             continue
+        if key == "robot":
+            shoe(M, m, sg, collar_z=0.16, sole_h=0.04, toe_cap=True)
+            add_ellipsoid(M, m["joint"], S((0.10, 0.012, 0.15), sg), (0.05, 0.054, 0.04), seg=10, rings=6)
+            continue
         if key in ("basic", "sneakers", "newcomer"):
             shoe(M, m, sg, toe_cap=key != "basic")
             if key != "basic":
@@ -520,6 +528,122 @@ def build_shoes(key, M, m):
                       [(0.004, 0.014)] * 3, seg=6, per=2, ref=(1, 0, 0))
 
 
+ROBOT_HEAD_C = (0, -0.012, 1.75)
+ROBOT_JOINT = dict(color="55585f", rough=0.5, metal=0.4)
+ROBOT_GLASS = dict(color="14161c", rough=0.15, metal=0.2)
+ROBOT_LIGHT = dict(color="f4f2ec", rough=0.6)
+ROBOT_TORSO_Z = [1.06, 1.2, 1.36, 1.5, 1.56]
+ROBOT_TORSO_R = {
+    "robot_droid": [(0.185, 0.13), (0.2, 0.14), (0.225, 0.152), (0.205, 0.14), (0.12, 0.1)],
+    "robot_android": [(0.17, 0.118), (0.185, 0.128), (0.212, 0.143), (0.195, 0.132), (0.11, 0.095)],
+    "robot_dummy": [(0.2, 0.15), (0.215, 0.16), (0.24, 0.17), (0.215, 0.15), (0.12, 0.1)],
+    "robot_mascot": [(0.175, 0.125), (0.19, 0.135), (0.205, 0.142), (0.19, 0.13), (0.11, 0.095)],
+}
+
+
+def robot_glow(color):
+    return dict(color=color, rough=0.3, emit=color, estr=1.0)
+
+
+def robot_head(key, M, m):
+    x, y, z = ROBOT_HEAD_C
+    add_cyl(M, m["joint"], (x, y + 0.004, 1.585), (x, y + 0.004, 1.66), 0.042, 0.042, seg=12)
+    if key == "robot_droid":
+        add_ellipsoid(M, m["main"], (x, y, z + 0.005), (0.128, 0.128, 0.128), seg=20, rings=12)
+        add_ellipsoid(M, m["glass"], (x, y - 0.062, z + 0.005), (0.092, 0.075, 0.078), seg=18, rings=10)
+        for sg in (1, -1):
+            add_ellipsoid(M, m["glow"], S((0.032, y - 0.133, z + 0.012), sg), (0.012, 0.006, 0.016), seg=8, rings=6)
+            add_cyl(M, m["accent"], S((0.122, y, z), sg), S((0.142, y, z), sg), 0.04, 0.036, seg=16)
+            add_cyl(M, m["accent"], S((0.05, y, z + 0.118), sg), S((0.075, y, z + 0.185), sg), 0.006, 0.006, seg=6)
+            add_ellipsoid(M, m["accent"], S((0.075, y, z + 0.19), sg), (0.014, 0.014, 0.014), seg=8, rings=6)
+    elif key == "robot_tin":
+        add_box(M, m["main"], (x, y, z + 0.005), (0.27, 0.22, 0.22), bevel=0.02)
+        add_box(M, m["glass"], (x, y - 0.111, z - 0.045), (0.12, 0.006, 0.014), bevel=0.002)
+        for sg in (1, -1):
+            add_cyl(M, m["accent"], S((0.062, y - 0.108, z + 0.03), sg), S((0.062, y - 0.12, z + 0.03), sg), 0.036, 0.036, seg=16)
+            add_cyl(M, m["glass"], S((0.062, y - 0.12, z + 0.03), sg), S((0.062, y - 0.126, z + 0.03), sg), 0.022, 0.022, seg=12)
+            add_cyl(M, m["accent"], S((0.135, y, z + 0.01), sg), S((0.152, y, z + 0.01), sg), 0.042, 0.042, seg=16)
+            for rivet_z in (0.085, -0.075):
+                add_ellipsoid(M, m["joint"], S((0.112, y - 0.112, z + rivet_z), sg), (0.007, 0.004, 0.007), seg=6, rings=4)
+    elif key == "robot_android":
+        add_ellipsoid(M, m["main"], (x, y, z + 0.002), (0.1, 0.112, 0.128), seg=20, rings=12)
+        add_box(M, m["glow"], (x, y - 0.088, z + 0.02), (0.176, 0.07, 0.04), bevel=0.012)
+        for sg in (1, -1):
+            add_cyl(M, m["accent"], S((0.094, y + 0.01, z + 0.005), sg), S((0.11, y + 0.01, z + 0.005), sg), 0.034, 0.03, seg=14)
+    elif key == "robot_dummy":
+        add_cyl(M, m["main"], (x, y, z - 0.115), (x, y, z + 0.125), 0.102, 0.102, seg=22)
+        add_cyl(M, m["accent"], (x, y - 0.096, z + 0.03), (x, y - 0.112, z + 0.03), 0.046, 0.046, seg=18)
+        add_cyl(M, m["glass"], (x, y - 0.112, z + 0.03), (x, y - 0.118, z + 0.03), 0.028, 0.028, seg=14)
+    elif key == "robot_mascot":
+        add_ellipsoid(M, m["main"], (x, y, z + 0.01), (0.138, 0.134, 0.134), seg=20, rings=12)
+        add_ellipsoid(M, m["glass"], (x, y - 0.07, z + 0.008), (0.1, 0.075, 0.078), seg=18, rings=10)
+        for sg in (1, -1):
+            add_ellipsoid(M, m["glow"], S((0.034, y - 0.142, z + 0.022), sg), (0.009, 0.005, 0.014), seg=8, rings=6)
+            add_cyl(M, m["accent"], S((0.132, y, z + 0.005), sg), S((0.165, y, z + 0.005), sg), 0.055, 0.05, seg=18)
+        smile = [(0.034 * math.sin(math.radians(a)), y - 0.137 - 0.006 * math.cos(math.radians(a)), z - 0.02 - 0.014 * math.cos(math.radians(a))) for a in range(-70, 71, 20)]
+        add_sweep(M, m["glow"], smile, [(0.0035, 0.0035)] * len(smile), seg=6, per=1)
+        band = [(0.156 * math.cos(math.radians(a)), y, z + 0.005 + 0.158 * math.sin(math.radians(a))) for a in range(0, 181, 15)]
+        add_sweep(M, m["joint"], band, [(0.008, 0.02)] * len(band), seg=8, per=1, power=2.4)
+    else:
+        raise RuntimeError("Unknown robot head %s" % key)
+
+
+def robot_arms(M, m, forearm="main", pad=1.0):
+    for sg in (1, -1):
+        add_ellipsoid(M, m["accent"], S((0.205, 0, 1.49), sg), (0.07, 0.066, 0.066), seg=12, rings=8)
+        add_sweep(M, m["main"], SP([(0.235, 0, 1.43), (0.30, 0, 1.30), (0.33, 0, 1.245)], sg), [(0.08, 0.084), (0.076, 0.08), (0.072, 0.076)], seg=12, per=2)
+        add_ellipsoid(M, m["joint"], S((0.345, 0, 1.21), sg), (0.05, 0.05, 0.05), seg=10, rings=6)
+        add_sweep(M, m[forearm], SP([(0.36, 0, 1.18), (0.395, 0, 1.10), (0.425, 0, 0.99)], sg),
+                  [(0.07 * pad, 0.074 * pad), (0.068 * pad, 0.07 * pad), (0.06 * pad, 0.062 * pad)], seg=12, per=2)
+        add_ellipsoid(M, m["joint"], S((0.432, 0, 0.965), sg), (0.036, 0.036, 0.03), seg=8, rings=6)
+        add_ellipsoid(M, m["accent"], S((0.447, -0.005, 0.912), sg), (0.04, 0.05, 0.06), seg=10, rings=8)
+
+
+def robot_torso(key, M, m):
+    if key == "robot_tin":
+        add_box(M, m["main"], (0, 0, 1.31), (0.4, 0.25, 0.5), bevel=0.02)
+        add_cyl(M, m["light"], (-0.09, -0.125, 1.43), (-0.09, -0.137, 1.43), 0.044, 0.044, seg=16)
+        add_box(M, m["glass"], (-0.09, -0.14, 1.445), (0.005, 0.004, 0.034), bevel=0.001)
+        add_cyl(M, m["accent"], (0.03, -0.125, 1.45), (0.03, -0.136, 1.45), 0.016, 0.016, seg=10)
+        add_box(M, m["accent"], (0.035, -0.128, 1.405), (0.036, 0.012, 0.03), bevel=0.006)
+        add_box(M, m["light"], (0, -0.127, 1.24), (0.2, 0.008, 0.15), bevel=0.004)
+        for slat in range(5):
+            add_box(M, m["glass"], (0, -0.132, 1.185 + slat * 0.0275), (0.17, 0.004, 0.012), bevel=0.001)
+        for sg in (1, -1):
+            for rivet_z in (1.52, 1.1):
+                add_ellipsoid(M, m["joint"], S((0.17, -0.126, rivet_z), sg), (0.008, 0.004, 0.008), seg=6, rings=4)
+        robot_arms(M, m)
+        return
+    if key not in ROBOT_TORSO_R:
+        raise RuntimeError("Unknown robot torso %s" % key)
+    add_sweep(M, m["main"], [(0, 0, z) for z in ROBOT_TORSO_Z], ROBOT_TORSO_R[key], seg=18, per=3, power=2.4)
+    add_sweep(M, m["accent"], [(0, 0, 1.555), (0, 0, 1.585)], [(0.1, 0.09), (0.085, 0.08)], seg=14, per=1)
+    if key == "robot_droid":
+        add_cyl(M, m["glow"], (0, -0.146, 1.42), (0, -0.154, 1.42), 0.022, 0.022, seg=12)
+        robot_arms(M, m, forearm="accent")
+    elif key == "robot_android":
+        add_sweep(M, m["accent"], [(0, 0, 1.16), (0, 0, 1.2)], [(0.187, 0.13), (0.189, 0.131)], seg=18, per=1, power=2.4)
+        add_box(M, m["glow"], (0, -0.143, 1.4), (0.09, 0.008, 0.022), bevel=0.003)
+        robot_arms(M, m)
+    elif key == "robot_dummy":
+        for sg in (1, -1):
+            add_cyl(M, m["accent"], S((0.088, -0.158, 1.41), sg), S((0.088, -0.174, 1.41), sg), 0.052, 0.052, seg=18)
+            add_cyl(M, m["light"], S((0.088, -0.174, 1.41), sg), S((0.088, -0.178, 1.41), sg), 0.028, 0.028, seg=14)
+            add_box(M, m["accent"], S((0.095, -0.152, 1.2), sg), (0.08, 0.024, 0.045), bevel=0.01)
+        robot_arms(M, m, forearm="accent", pad=1.22)
+    else:
+        robot_arms(M, m)
+
+
+def robot_legs(M, m):
+    add_sweep(M, m["accent"], [(0, 0, 0.88), (0, 0, 0.95), (0, 0, 1.03), (0, 0, 1.07)], [(0.15, 0.112), (0.185, 0.13), (0.185, 0.13), (0.17, 0.12)], seg=18, per=3)
+    for sg in (1, -1):
+        add_ellipsoid(M, m["joint"], S((0.1, 0, 0.875), sg), (0.07, 0.07, 0.06), seg=10, rings=6)
+        add_sweep(M, m["main"], SP([(0.10, 0, 0.84), (0.10, 0, 0.70), (0.10, -0.003, 0.58)], sg), [(0.1, 0.104), (0.094, 0.098), (0.082, 0.086)], seg=14, per=2)
+        add_ellipsoid(M, m["joint"], S((0.10, -0.004, 0.515), sg), (0.066, 0.068, 0.06), seg=10, rings=6)
+        add_sweep(M, m["main"], SP([(0.10, 0, 0.46), (0.10, 0.003, 0.30), (0.10, 0.008, 0.15)], sg), [(0.082, 0.086), (0.08, 0.086), (0.07, 0.074)], seg=14, per=2)
+
+
 SHERIFF_BADGE = dict(color="d9a93a", metal=0.7, rough=0.35)
 
 TOP_BONES = ['Hips', 'Spine', 'Chest', 'Neck', 'Shoulder.L', 'Shoulder.R', 'UpperArm.L', 'UpperArm.R', 'LowerArm.L', 'LowerArm.R', 'Hand.L', 'Hand.R']
@@ -543,6 +667,11 @@ WEAR = {
         "beret": dict(main="1f2230", accent="3b2a1f", builder=build_beret, hides=[]),
         "bandana": dict(main="c8322f", accent="f2f0ea", builder=build_bandana, hides=[]),
         "sheriff_hat": dict(main="d8c39a", accent="6b4a2e", extra={"badge": SHERIFF_BADGE}, hides=[]),
+        "robot_droid": dict(main="f4f6f4", accent="9fe3c0", extra={"joint": ROBOT_JOINT, "glass": ROBOT_GLASS, "light": ROBOT_LIGHT, "glow": robot_glow("bfeee0")}, hides=["head"]),
+        "robot_tin": dict(main="8fd9c8", accent="f29a6b", extra={"joint": ROBOT_JOINT, "glass": ROBOT_GLASS, "light": ROBOT_LIGHT, "glow": robot_glow("ffd27a")}, hides=["head"]),
+        "robot_android": dict(main="b9c9da", accent="eef2f6", extra={"joint": ROBOT_JOINT, "glass": ROBOT_GLASS, "light": ROBOT_LIGHT, "glow": robot_glow("5ff0d0")}, hides=["head"]),
+        "robot_dummy": dict(main="f1ead0", accent="f08a7a", extra={"joint": ROBOT_JOINT, "glass": ROBOT_GLASS, "light": ROBOT_LIGHT, "glow": robot_glow("f4f2ec")}, hides=["head"]),
+        "robot_mascot": dict(main="f7f7f5", accent="f7c948", extra={"joint": ROBOT_JOINT, "glass": ROBOT_GLASS, "light": ROBOT_LIGHT, "glow": robot_glow("e8eef2")}, hides=["head"]),
     }),
     "top": dict(builder=build_top, bones=TOP_BONES, items={
         "basic": dict(main="6f8fb8", accent="5a789c", hides=["chest"]),
@@ -563,6 +692,11 @@ WEAR = {
         "team_jersey_red": dict(main="d62a2a", accent="f4f2ec", hides=["chest"]),
         "team_jersey_blue": dict(main="2457c5", accent="f4f2ec", hides=["chest"]),
         "tracksuit": dict(main="1d5c50", accent="f2ede0", extra={"trim": dict(color="e07a35", rough=0.6)}, hides=["chest", "upper_arms", "forearms"]),
+        "robot_droid": dict(main="f4f6f4", accent="9fe3c0", extra={"joint": ROBOT_JOINT, "glass": ROBOT_GLASS, "light": ROBOT_LIGHT, "glow": robot_glow("bfeee0")}, hides=["chest", "upper_arms", "forearms", "hands"]),
+        "robot_tin": dict(main="8fd9c8", accent="f29a6b", extra={"joint": ROBOT_JOINT, "glass": ROBOT_GLASS, "light": ROBOT_LIGHT, "glow": robot_glow("ffd27a")}, hides=["chest", "upper_arms", "forearms", "hands"]),
+        "robot_android": dict(main="b9c9da", accent="eef2f6", extra={"joint": ROBOT_JOINT, "glass": ROBOT_GLASS, "light": ROBOT_LIGHT, "glow": robot_glow("5ff0d0")}, hides=["chest", "upper_arms", "forearms", "hands"]),
+        "robot_dummy": dict(main="f1ead0", accent="f08a7a", extra={"joint": ROBOT_JOINT, "glass": ROBOT_GLASS, "light": ROBOT_LIGHT, "glow": robot_glow("f4f2ec")}, hides=["chest", "upper_arms", "forearms", "hands"]),
+        "robot_mascot": dict(main="f7c948", accent="f7f7f5", extra={"joint": ROBOT_JOINT, "glass": ROBOT_GLASS, "light": ROBOT_LIGHT, "glow": robot_glow("e8eef2")}, hides=["chest", "upper_arms", "forearms", "hands"]),
     }),
     "bottom": dict(builder=build_bottom, bones=['Hips', 'Spine', 'UpperLeg.L', 'UpperLeg.R', 'LowerLeg.L', 'LowerLeg.R'], items={
         "basic": dict(main="4b5669", accent="3a4352", hides=["hips", "thighs", "shins"]),
@@ -578,6 +712,7 @@ WEAR = {
         "newcomer": dict(main="2f8f9c", accent="f7c948", hides=["hips", "thighs", "shins"]),
         "tracksuit": dict(main="1d5c50", accent="f2ede0", extra={"trim": dict(color="e07a35", rough=0.6)}, hides=["hips", "thighs", "shins"]),
         "swimsuit": dict(main="1d3f8f", accent="e0534f", hides=["hips", "thighs"]),
+        "robot": dict(main="f4f6f4", accent="9fe3c0", extra={"joint": ROBOT_JOINT}, hides=["hips", "thighs", "shins"]),
     }),
     "shoes": dict(builder=build_shoes, bones=['LowerLeg.L', 'LowerLeg.R', 'Foot.L', 'Foot.R', 'Toe.L', 'Toe.R'], items={
         "basic": dict(main="e9e6df", accent="9a9ca4", hides=["feet"]),
@@ -591,6 +726,7 @@ WEAR = {
         "ice_skates": dict(main="f4f4f2", accent="d8dbe0", hides=["feet"], extra={"blade": dict(color="c9ccd2", metal=0.8, rough=0.25)}),
         "newcomer": dict(main="f4f2ec", accent="f7c948", hides=["feet"]),
         "climbing_shoes": dict(main="e2683c", accent="26272b", extra={"strap": dict(color="2f3e57", rough=0.7)}, hides=["feet"]),
+        "robot": dict(main="9fe3c0", accent="55585f", extra={"joint": ROBOT_JOINT}, hides=["feet"]),
     }),
 }
 

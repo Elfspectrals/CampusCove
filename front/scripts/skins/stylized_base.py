@@ -266,6 +266,15 @@ def build_stylized_headwear(coll, arm, key, head):
     hair_m = mat("W_head_accessory_%s_Hair" % key, "3b2618", rough=0.6)
     tree = rest_tree(head)
     M = Mesh("Wear_head_accessory_" + key)
+    if key.startswith("robot_"):
+        robot_head(key, M, m)
+        ob = M.finish(coll)
+        ob.name = "Wear_head_accessory_" + key
+        weight_rigid(ob, "Head")
+        bind(ob, arm)
+        ob["slot"] = "head_accessory"
+        ob["hides"] = ",".join(spec["hides"])
+        return ob
     if key == "straw_hat":
         c = (0, -0.004, 1.8)
         add_cyl(M, m["main"], c, (0, -0.004, 1.94), 0.114, 0.098, seg=22, sx=0.92)

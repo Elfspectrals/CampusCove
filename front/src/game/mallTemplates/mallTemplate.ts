@@ -106,6 +106,7 @@ export interface NpcProp extends PropBase {
   role?: StaffRole
   sportsPassDesk?: true
   coach?: string
+  robotOf?: string
 }
 
 export interface MannequinPiece extends OutfitPiece {

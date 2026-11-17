@@ -4,7 +4,7 @@ export const ROBOT_LEVELS = ['easy', 'normal', 'hard'] as const
 export type RobotLevel = typeof ROBOT_LEVELS[number]
 
 type RobotRoom = Pick<GameRoom, 'sports' | 'forEachClient'>
-type RobotFactory = (number: number, at: Vec3) => { robot: Player, view: unknown }
+type RobotFactory = (number: number, at: Vec3, coach: string) => { robot: Player, view: unknown }
 
 let factory: RobotFactory | null = null
 
@@ -24,18 +24,24 @@ export function sportsPlayer(room: Pick<GameRoom, 'players' | 'sports'>, session
   return room.players.get(sessionId) ?? room.sports.robots.get(sessionId)
 }
 
-export function addRobot(room: RobotRoom, at: Vec3): Player {
+export function robotViews(room: Pick<GameRoom, 'sports'>): unknown[] {
+  return [...room.sports.robotViews.values()]
+}
+
+export function addRobot(room: RobotRoom, at: Vec3, coach: string): Player {
   const number = room.sports.nextRobot
   room.sports.nextRobot += 1
   if (!factory) throw new Error('sports robots: useRobotFactory was not called')
-  const { robot, view } = factory(number, at)
+  const { robot, view } = factory(number, at, coach)
   room.sports.robots.set(robot.sessionId, robot)
+  room.sports.robotViews.set(robot.sessionId, view)
   room.forEachClient((c) => c.send('user_joined', view))
   return robot
 }
 
 export function removeRobot(room: RobotRoom, sessionId: string): void {
   if (!room.sports.robots.delete(sessionId)) return
+  room.sports.robotViews.delete(sessionId)
   room.forEachClient((c) => c.send('user_left', { sessionId }))
 }
 

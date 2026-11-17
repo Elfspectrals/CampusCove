@@ -97,7 +97,7 @@ export async function createModularCharacter(models: WearModels, colors: SlotHex
   for (const mesh of body) {
     const extras = nodeExtras(mesh)
     const region = extras.region as string
-    mesh.visible = region === 'face' ? extras.face === face : !hidden.has(region)
+    mesh.visible = region === 'face' ? extras.face === face && !hidden.has('head') : !hidden.has(region)
   }
   const tinted = new Map<THREE.Material, THREE.Material>()
   for (const mesh of [...body, ...worn]) tint(mesh, colors, defaults, tinted)
