@@ -88,6 +88,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
   /** Height of the feet above the ground while jumping, and its vertical speed. */
   let airY = 0
   let airVelocity = 0
+  let airGravity = GRAVITY
   let swimVy = 0
   let wasSwimming = false
   const direction = new THREE.Vector3(0, 0, -1)
@@ -209,9 +210,12 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     const intoWater = !water && !locked && !flying && (deps.swim?.waterAt(myPosition.x, myPosition.z, feetY) ?? null) !== null
     if (!locked && !flying && !water && !intoWater) {
       if (airY > 0 || airVelocity > 0) {
-        airVelocity -= GRAVITY * dt
+        airVelocity -= airGravity * dt
         airY = Math.max(0, airY + airVelocity * dt)
-        if (airY === 0) airVelocity = 0
+        if (airY === 0) {
+          airVelocity = 0
+          airGravity = GRAVITY
+        }
       }
       myPosition.y = EYE_HEIGHT + airY + (buildingFloorAt(myPosition.x, myPosition.z, feetY) ?? terrainHeightAt(myPosition.x, myPosition.z))
     }
@@ -418,5 +422,9 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     freezeCamera,
     joltCamera,
     knockBack: knockback.push,
+    leap(velocity: number, gravity: number): void {
+      airVelocity = velocity
+      airGravity = gravity
+    },
   }
 }

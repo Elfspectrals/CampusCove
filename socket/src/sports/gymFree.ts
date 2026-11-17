@@ -103,6 +103,7 @@ function freeView(room: GameRoom, free: FreeRoom, now: number) {
 
 function eventView(room: GameRoom, event: GymEvent) {
   if (event.kind === 'score') throw new Error('gym free play: a free ball never scores')
+  if (event.kind === 'steal') return { venue: 'gym_free', kind: 'steal', won: event.won, sessionId: sessionOf(room, event.accountId), targetSessionId: sessionOf(room, event.target) }
   const { accountId, ...rest } = event
   return { venue: 'gym_free', ...rest, sessionId: sessionOf(room, accountId) }
 }

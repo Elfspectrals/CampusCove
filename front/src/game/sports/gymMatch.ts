@@ -6,20 +6,16 @@ export function teamJerseyUrl(team: GymTeam): string {
   return `/assets/wear/top/team_jersey_${team}/model.glb`
 }
 
-interface ShotContest {
-  reachM: number
-  tightM: number
-  minShare: number
+export interface GymMeter {
+  chargeMs: number
+  overFrom: number
 }
-
-export type GymMeter =
-  | { kind: 'charge'; chargeMs: number; overFrom: number }
-  | { kind: 'bounce'; riseMs: number; windowNear: number; windowFar: number; farDistanceM: number; contest: ShotContest }
 
 export interface GymHudRules {
   sport: GymSport
   ballRadius: number
-  meter: GymMeter
+  meter: GymMeter | null
+  shotJumpMs: number | null
   lob: { holdMs: number; chargeMs: number } | null
   defendCooldownMs: number
   standingCooldownMs: number | null
@@ -46,30 +42,24 @@ export function parseGymHudRules(sport: GymSport, raw: unknown): GymHudRules {
     return {
       sport,
       ballRadius,
-      meter: { kind: 'charge', chargeMs: positive(r.shotChargeMs, 'football.shotChargeMs'), overFrom: positive(block(r, 'overcharge', sport).from, 'football.overcharge.from') },
+      meter: { chargeMs: positive(r.shotChargeMs, 'football.shotChargeMs'), overFrom: positive(block(r, 'overcharge', sport).from, 'football.overcharge.from') },
+      shotJumpMs: null,
       lob: { holdMs: positive(block(r, 'lob', sport).holdMs, 'football.lob.holdMs'), chargeMs: positive(block(r, 'lob', sport).chargeMs, 'football.lob.chargeMs') },
       defendCooldownMs: positive(block(r, 'tackle', sport).cooldownMs, 'football.tackle.cooldownMs'),
       standingCooldownMs: positive(block(r, 'standingTackle', sport).cooldownMs, 'football.standingTackle.cooldownMs'),
       downMs: positive(block(r, 'tackle', sport).groundMs, 'football.tackle.groundMs'),
     }
   }
-  const m = block(r, 'shotMeter', sport)
-  const c = block(r, 'contest', sport)
+  const shove = block(r, 'shove', sport)
   return {
     sport,
     ballRadius,
-    meter: {
-      kind: 'bounce',
-      riseMs: positive(m.riseMs, 'basketball.shotMeter.riseMs'),
-      windowNear: positive(m.windowNear, 'basketball.shotMeter.windowNear'),
-      windowFar: positive(m.windowFar, 'basketball.shotMeter.windowFar'),
-      farDistanceM: positive(m.farDistanceM, 'basketball.shotMeter.farDistanceM'),
-      contest: { reachM: positive(c.reachM, 'basketball.contest.reachM'), tightM: positive(c.tightM, 'basketball.contest.tightM'), minShare: positive(c.minShare, 'basketball.contest.minShare') },
-    },
+    meter: null,
+    shotJumpMs: positive(block(r, 'shotMeter', sport).riseMs, 'basketball.shotMeter.riseMs'),
     lob: null,
-    defendCooldownMs: positive(block(r, 'steal', sport).cooldownMs, 'basketball.steal.cooldownMs'),
+    defendCooldownMs: positive(shove.cooldownMs, 'basketball.shove.cooldownMs'),
     standingCooldownMs: null,
-    downMs: null,
+    downMs: positive(shove.downMs, 'basketball.shove.downMs'),
   }
 }
 
@@ -79,25 +69,16 @@ export function clockText(remainingMs: number): string {
 }
 
 export function meterFill(meter: GymMeter, heldMs: number): number {
-  const held = Math.max(0, heldMs)
-  if (meter.kind === 'charge') return Math.min(1, held / meter.chargeMs)
-  const phase = held / meter.riseMs
-  return phase <= 1 ? phase : Math.max(0, 2 - phase)
+  return Math.min(1, Math.max(0, heldMs) / meter.chargeMs)
 }
 
-function contestShare(contest: ShotContest, defenderM: number | null): number {
-  if (defenderM === null || defenderM >= contest.reachM) return 1
-  return contest.minShare + (1 - contest.minShare) * Math.max(0, (defenderM - contest.tightM) / (contest.reachM - contest.tightM))
-}
+export const SHOT_JUMP_M = 0.9
+export const DUNK_LEAP = { apexMs: 350, heightM: 1.5 } as const
 
-export function goodWindowStart(meter: GymMeter, distanceM: number, defenderM: number | null = null): number | null {
-  if (meter.kind === 'charge') return null
-  const t = Math.min(1, Math.max(0, distanceM / meter.farDistanceM))
-  return 1 - (meter.windowNear + (meter.windowFar - meter.windowNear) * t) * contestShare(meter.contest, defenderM)
-}
-
-export function overchargeStart(meter: GymMeter): number | null {
-  return meter.kind === 'charge' ? meter.overFrom : null
+export function leapLaunch(apexMs: number, heightM: number): { velocity: number; gravity: number } {
+  const apexS = apexMs / 1000
+  const gravity = (2 * heightM) / (apexS * apexS)
+  return { velocity: gravity * apexS, gravity }
 }
 
 export function lobFill(lob: { holdMs: number; chargeMs: number } | null, heldMs: number): number | null {

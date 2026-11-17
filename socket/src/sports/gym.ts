@@ -85,6 +85,7 @@ function stateView(match: Match, live: Live, now: number) {
     halves: live.halves,
     endsAt: match.startedAt + live.durationMs,
     restartTeam: game.restart?.team ?? null,
+    fire: sessionOf(match, game.fire?.accountId ?? null),
     players: match.players.filter((p) => !p.out).map(({ sessionId, team }) => ({ sessionId, team })),
     serverNow: now
   }
@@ -95,6 +96,7 @@ function eventView(match: Match, event: GymEvent) {
     const scorer = event.scorer === null ? null : match.players.find((p) => p.accountId === event.scorer) ?? null
     return { venue: match.venue, kind: 'score', team: event.team, points: event.points, dunk: event.dunk, scorer: scorer?.name ?? null, sessionId: scorer?.sessionId ?? null }
   }
+  if (event.kind === 'steal') return { venue: match.venue, kind: 'steal', won: event.won, sessionId: sessionOf(match, event.accountId), targetSessionId: sessionOf(match, event.target) }
   const { accountId, ...rest } = event
   return { venue: match.venue, ...rest, sessionId: sessionOf(match, accountId) }
 }
@@ -228,9 +230,13 @@ function parseKind(payload: ClientPayload): GymActionKind | null {
   return typeof kind === 'string' && (GYM_ACTIONS as readonly string[]).includes(kind) ? kind as GymActionKind : null
 }
 
-function lockIfDown(player: Player, game: GymGame, events: readonly GymEvent[]): void {
-  if (!events.some((e) => e.kind === 'tackle' && !e.won && e.accountId === player.accountId)) return
-  player.sportsDownUntil = game.groundedUntil.get(player.accountId) ?? 0
+function lockIfDown(room: GameRoom, player: Player, game: GymGame, events: readonly GymEvent[]): void {
+  if (events.some((e) => e.kind === 'tackle' && !e.won && e.accountId === player.accountId)) player.sportsDownUntil = game.groundedUntil.get(player.accountId) ?? 0
+  for (const event of events) {
+    if (event.kind !== 'steal' || event.target === null) continue
+    const shoved = [...room.players.values()].find((p) => p.accountId === event.target)
+    if (shoved) shoved.sportsDownUntil = game.groundedUntil.get(shoved.accountId) ?? 0
+  }
 }
 
 export function gymAreaBusy(room: GameRoom, playAreaId: string): boolean {
@@ -251,12 +257,12 @@ export function onGymAction(room: GameRoom, client: GameClient, payload: ClientP
     const actor = athletes.find((a) => a.accountId === player.accountId && match.players.some((p) => p.accountId === a.accountId && p.sessionId === client.sessionId))
     if (!actor) continue
     const events = actGym(live.game, live.rules, actor, athletes, kind, now, Math.random)
-    lockIfDown(player, live.game, events)
+    lockIfDown(room, player, live.game, events)
     broadcastEvents(room, match, events)
     return
   }
   const free = freeAction(room, player, kind, now)
-  if (free) lockIfDown(player, free.game, free.events)
+  if (free) lockIfDown(room, player, free.game, free.events)
 }
 
 export function onGymBall(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {

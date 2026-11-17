@@ -1022,14 +1022,15 @@ export interface GymStatePayload {
   endsAt: number
   restartTeam: GymTeam | null
   players: { sessionId: string; team: GymTeam }[]
+  fire: string | null
   serverNow: number
 }
 
 export type GymEventPayload =
   | { venue: string; kind: 'score'; team: GymTeam; points: number; dunk: boolean; scorer: string | null; sessionId: string | null }
-  | { venue: string; kind: 'kick'; shot: boolean; release?: GymShotRelease; sessionId: string | null }
+  | { venue: string; kind: 'kick'; shot: boolean; release?: GymShotRelease; dunk?: true; sessionId: string | null }
   | { venue: string; kind: 'tackle'; won: boolean; slide: boolean; sessionId: string | null }
-  | { venue: string; kind: 'steal'; won: boolean; sessionId: string | null }
+  | { venue: string; kind: 'steal'; won: boolean; sessionId: string | null; targetSessionId: string | null }
   | { venue: string; kind: 'block'; sessionId: string | null }
   | { venue: string; kind: 'half'; half: number; sessionId: null }
 

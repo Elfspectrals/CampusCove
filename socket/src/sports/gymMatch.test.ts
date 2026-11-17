@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { type Ball, bounceBody, droppedThroughRim, launchToward, stepBall } from './gymBall.ts'
 import { type GymCourt, basketsOf, courtObstacles, parseGymCourt } from './gymCourt.ts'
-import { type Athlete, type GymEvent, type GymGame, actGym, carryAhead, chargeOf, contestShare, goodWindow, meterOf, newGymGame, outcomeFor, passTarget, releaseOf, stepGym } from './gymMatch.ts'
+import { type Athlete, type GymEvent, type GymGame, actGym, carryAhead, chargeOf, contestShare, dunkRange, goodWindow, meterOf, newGymGame, outcomeFor, passTarget, releaseOf, stepGym } from './gymMatch.ts'
 import { type BasketballRules, type FootballRules, gymPlayerRules, halvesOf, parseBasketballRules, parseFootballRules } from './gymRules.ts'
 
 const rulesFile = (sport: string) => JSON.parse(readFileSync(new URL(`../../../front/public/assets/sports/rules/${sport}.json`, import.meta.url), 'utf8'))
@@ -64,7 +64,7 @@ test('the shipped rules files parse, and the 2 x 4 min length has two halves', (
   assert.equal(halvesOf(BASKETBALL, 240), 1)
   assert.deepEqual(gymPlayerRules(rulesFile('football'), 'football'), { minPlayers: 4, rejoinGraceMs: 30_000, coachId: 'gym_coach' })
   assert.throws(() => parseFootballRules({ ...rulesFile('football'), passPower: null }), /passPower/)
-  assert.throws(() => parseBasketballRules({ ...rulesFile('basketball'), steal: { reachM: 1, chance: 1.4, cooldownMs: 10 } }), /chance/)
+  assert.throws(() => parseBasketballRules({ ...rulesFile('basketball'), shove: { ...rulesFile('basketball').shove, reachM: -1 } }), /shove.reachM/)
 })
 
 test('the shipped court contract parses and red attacks east', () => {
@@ -333,6 +333,8 @@ test('basketball: the meter rises then falls, and the good window narrows with d
   assert.equal(goodWindow(BASKETBALL, 50), BASKETBALL.shotMeter.windowFar)
 })
 
+const TOP = BASKETBALL.shotMeter.riseMs
+
 function shoot(x: number, heldMs: number, ry = EAST) {
   const game = freshGame(BASKETBALL)
   const a = athlete(5, 'red', x, 0, ry)
@@ -344,43 +346,116 @@ function shoot(x: number, heldMs: number, ry = EAST) {
 }
 
 test('basketball: a well-timed shot scores 2 inside the arc and 3 beyond it', () => {
-  assert.deepEqual(shoot(16, 900).events, [{ kind: 'score', team: 'red', scorer: 5, points: 2, dunk: false }])
-  const three = shoot(12.5, 880)
+  assert.equal(TOP, 450)
+  assert.deepEqual(shoot(16, TOP).events, [{ kind: 'score', team: 'red', scorer: 5, points: 2, dunk: false }])
+  const three = shoot(12.5, TOP - 10)
   assert.deepEqual(three.events, [{ kind: 'score', team: 'red', scorer: 5, points: 3, dunk: false }])
   assert.equal(three.game.threes.get(5), 1)
 })
 
 test('basketball: good timing corrects a small aim error, bad timing misses', () => {
-  assert.equal(shoot(16, 900, EAST + 0.05).events.length, 1)
-  assert.equal(shoot(16, 300).events.length, 0)
+  assert.equal(shoot(16, TOP, EAST + 0.05).events.length, 1)
+  assert.equal(shoot(16, TOP / 3).events.length, 0)
 })
 
 test('basketball: the shot never follows the look, with the back to the basket a good release scores and a bad one stays on the line to the rim', () => {
-  assert.equal(shoot(16, 900, WEST).events.length, 1)
+  assert.equal(shoot(16, TOP, WEST).events.length, 1)
   const game = freshGame(BASKETBALL)
   const sideways = athlete(5, 'red', 16, 0, 0)
   game.owner = 5
   actGym(game, BASKETBALL, sideways, [sideways], 'shot_start', T0, () => 1)
-  assert.deepEqual(actGym(game, BASKETBALL, sideways, [sideways], 'shot_release', T0 + 300, () => 1), [{ kind: 'kick', accountId: 5, shot: true, release: 'early' }])
+  assert.deepEqual(actGym(game, BASKETBALL, sideways, [sideways], 'shot_release', T0 + TOP / 3, () => 1), [{ kind: 'kick', accountId: 5, shot: true, release: 'early' }])
   assert.ok(game.ball.vx > 0)
   assert.ok(Math.abs(Math.atan2(game.ball.vz, game.ball.vx)) <= 0.05 + 1e-9, `off the line by ${Math.atan2(game.ball.vz, game.ball.vx)} rad`)
 })
 
 test('basketball: after a basket the other team restarts under it', () => {
-  const { game } = shoot(16, 900)
+  const { game } = shoot(16, TOP)
   assert.equal(game.restart?.team, 'blue')
   assert.ok(Math.abs(game.ball.x - (basketsOf(COURT).red.x - 1.2)) < 1e-9)
 })
 
-test('basketball: a steal is rolled by the server and has a cooldown', () => {
+test('basketball: a shove from the front within 1.6 m knocks the carrier down 0.7 s and frees the ball; it has a 2.5 s cooldown', () => {
   const game = freshGame(BASKETBALL)
   const carrier = athlete(1, 'red', 0, 0)
   const defender = athlete(2, 'blue', 1, 0, WEST)
   game.owner = 1
-  assert.deepEqual(actGym(game, BASKETBALL, defender, [carrier, defender], 'tackle', T0, () => 0.9), [{ kind: 'steal', accountId: 2, won: false }])
-  assert.deepEqual(actGym(game, BASKETBALL, defender, [carrier, defender], 'tackle', T0 + 1000, () => 0.1), [])
-  assert.deepEqual(actGym(game, BASKETBALL, defender, [carrier, defender], 'tackle', T0 + 2100, () => 0.1), [{ kind: 'steal', accountId: 2, won: true }])
-  assert.equal(game.owner, 2)
+  game.restart = null
+  assert.deepEqual(actGym(game, BASKETBALL, defender, [carrier, defender], 'tackle', T0, () => 0.9), [{ kind: 'steal', accountId: 2, won: true, target: 1 }])
+  assert.equal(game.owner, null)
+  assert.equal(game.groundedUntil.get(1), T0 + 700)
+  assert.ok(game.ball.vx < 0 && game.ball.x < 0)
+  stepGym(game, BASKETBALL, [carrier], 1 / 60, T0 + 100)
+  assert.equal(game.owner, null)
+  assert.deepEqual(actGym(game, BASKETBALL, defender, [carrier, defender], 'tackle', T0 + 2499, () => 0.1), [])
+  assert.deepEqual(actGym(game, BASKETBALL, defender, [carrier, defender], 'tackle', T0 + 2500, () => 0.1), [{ kind: 'steal', accountId: 2, won: false, target: null }])
+})
+
+test('basketball: a shove misses from too far, from behind, on a team-mate, and while the ball is protected after a basket', () => {
+  const shoved = (defender: Athlete, restart = false) => {
+    const game = freshGame(BASKETBALL)
+    const carrier = athlete(1, 'red', 0, 0)
+    game.owner = 1
+    game.restart = restart ? { team: 'red', until: T0 + 3000 } : null
+    return { events: actGym(game, BASKETBALL, defender, [carrier, defender], 'tackle', T0, () => 0.5), game }
+  }
+  const missed = (id: number) => [{ kind: 'steal', accountId: id, won: false, target: null }]
+  assert.equal((shoved(athlete(2, 'blue', 1.59, 0, WEST)).events[0] as { won: boolean }).won, true)
+  assert.deepEqual(shoved(athlete(2, 'blue', 1.61, 0, WEST)).events, missed(2))
+  assert.deepEqual(shoved(athlete(2, 'blue', 1, 0, EAST)).events, missed(2))
+  assert.deepEqual(shoved(athlete(3, 'red', 1, 0, WEST)).events, missed(3))
+  const protectedBall = shoved(athlete(2, 'blue', 1, 0, WEST), true)
+  assert.deepEqual(protectedBall.events, missed(2))
+  assert.equal(protectedBall.game.owner, 1)
+})
+
+test('basketball: a player on the floor after a shove cannot shoot or pass', () => {
+  const game = freshGame(BASKETBALL)
+  const a = athlete(1, 'red', 16, 0)
+  game.owner = 1
+  game.groundedUntil.set(1, T0 + 700)
+  assert.deepEqual(actGym(game, BASKETBALL, a, [a], 'pass', T0 + 100, () => 0.5), [])
+  actGym(game, BASKETBALL, a, [a], 'shot_start', T0 + 100, () => 0.5)
+  assert.equal(game.shotStartedAt.size, 0)
+  assert.equal(actGym(game, BASKETBALL, a, [a], 'pass', T0 + 700, () => 0.5).length, 1)
+})
+
+test('basketball: the dunk reaches 3 m from 4 m/s and 4.5 m at a sprint of 7 m/s or more, and is told as a dunk', () => {
+  assert.deepEqual([3.9, 4, 6.9, 7, 9].map((speed) => dunkRange(BASKETBALL, speed)), [0, 3, 3, 4.5, 4.5])
+  const rim = basketsOf(COURT).red.x
+  const dunked = (metres: number, speed: number, roll: number) => {
+    const game = newGymGame(COURT, BASKETBALL, T0, 'free')
+    const a = athlete(1, null, rim - metres, 0, EAST, speed)
+    game.owner = 1
+    actGym(game, BASKETBALL, a, [a], 'shot_start', T0, () => roll)
+    return actGym(game, BASKETBALL, a, [a], 'shot_release', T0 + 100, () => roll)
+  }
+  assert.deepEqual(dunked(4.4, 7, 0.5), [{ kind: 'kick', accountId: 1, shot: true, dunk: true }])
+  assert.deepEqual(dunked(4.4, 7, 0.99), [{ kind: 'kick', accountId: 1, shot: true, dunk: true }])
+  assert.equal((dunked(4.4, 6.9, 0.5)[0] as { dunk?: boolean }).dunk, undefined)
+  assert.equal((dunked(2.9, 4, 0.5)[0] as { dunk?: boolean }).dunk, true)
+})
+
+test('basketball: three baskets in a row by one player set them on fire, which doubles their green window, until the other team scores', () => {
+  const game = freshGame(BASKETBALL)
+  const red = athlete(1, 'red', basketsOf(COURT).red.x - 1, 0, EAST, 6)
+  const blue = athlete(2, 'blue', basketsOf(COURT).blue.x + 1, 0, WEST, -6)
+  const dunk = (a: Athlete, at: number) => {
+    game.owner = a.accountId
+    game.restart = null
+    actGym(game, BASKETBALL, a, [red, blue], 'shot_start', at, () => 0)
+    return actGym(game, BASKETBALL, a, [red, blue], 'shot_release', at + 100, () => 0)
+  }
+  dunk(red, T0)
+  dunk(red, T0 + 5000)
+  assert.equal(game.fire, null)
+  dunk(red, T0 + 10_000)
+  assert.deepEqual(game.fire, { accountId: 1, team: 'red' })
+  assert.equal(releaseOf(BASKETBALL, TOP * 0.8, 12), 'early')
+  assert.equal(releaseOf(BASKETBALL, TOP * 0.8, 12, BASKETBALL.fire.windowFactor), 'good')
+  dunk(blue, T0 + 15_000)
+  assert.equal(game.fire, null)
+  assert.deepEqual(game.streak, { accountId: 2, count: 1 })
 })
 
 test('basketball: a defender who jumps with the release blocks the shot', () => {
@@ -389,8 +464,8 @@ test('basketball: a defender who jumps with the release blocks the shot', () => 
   const defender = athlete(2, 'blue', 15, 0, WEST)
   game.owner = 1
   actGym(game, BASKETBALL, shooter, [shooter, defender], 'shot_start', T0, () => 0.5)
-  actGym(game, BASKETBALL, defender, [shooter, defender], 'jump', T0 + 700, () => 0.5)
-  assert.deepEqual(actGym(game, BASKETBALL, shooter, [shooter, defender], 'shot_release', T0 + 900, () => 0.5), [{ kind: 'block', accountId: 2 }])
+  actGym(game, BASKETBALL, defender, [shooter, defender], 'jump', T0 + TOP - 200, () => 0.5)
+  assert.deepEqual(actGym(game, BASKETBALL, shooter, [shooter, defender], 'shot_release', T0 + TOP, () => 0.5), [{ kind: 'block', accountId: 2 }])
   assert.equal(game.lastShot, null)
 })
 
@@ -407,19 +482,19 @@ test('basketball: a defender within 2 m narrows the good window, down to 45 % of
     near(contestShare(BASKETBALL, distance), share, `defender at ${distance}`)
   }
   near(goodWindow(BASKETBALL, 0, 0.45), BASKETBALL.shotMeter.windowNear * 0.45, 'guarded window')
-  assert.equal(releaseOf(BASKETBALL, 720, 4.425), 'good')
-  assert.equal(releaseOf(BASKETBALL, 720, 4.425, 0.45), 'early')
+  assert.equal(releaseOf(BASKETBALL, TOP * 0.8, 4.425), 'good')
+  assert.equal(releaseOf(BASKETBALL, TOP * 0.8, 4.425, 0.45), 'early')
   const game = freshGame(BASKETBALL)
   const shooter = athlete(1, 'red', 16, 0)
   const guard = athlete(2, 'blue', 16.5, 0, WEST)
   const mate = athlete(3, 'red', 16.2, 0.2)
   game.owner = 1
   actGym(game, BASKETBALL, shooter, [shooter, guard, mate], 'shot_start', T0, () => 0.5)
-  assert.deepEqual(actGym(game, BASKETBALL, shooter, [shooter, guard, mate], 'shot_release', T0 + 720, () => 0.5), [{ kind: 'kick', accountId: 1, shot: true, release: 'early' }])
+  assert.deepEqual(actGym(game, BASKETBALL, shooter, [shooter, guard, mate], 'shot_release', T0 + TOP * 0.8, () => 0.5), [{ kind: 'kick', accountId: 1, shot: true, release: 'early' }])
   const open = freshGame(BASKETBALL)
   open.owner = 1
   actGym(open, BASKETBALL, shooter, [shooter, mate], 'shot_start', T0, () => 0.5)
-  assert.deepEqual(actGym(open, BASKETBALL, shooter, [shooter, mate], 'shot_release', T0 + 720, () => 0.5), [{ kind: 'kick', accountId: 1, shot: true, release: 'good' }])
+  assert.deepEqual(actGym(open, BASKETBALL, shooter, [shooter, mate], 'shot_release', T0 + TOP * 0.8, () => 0.5), [{ kind: 'kick', accountId: 1, shot: true, release: 'good' }])
 })
 
 test('basketball: a moving release within 3.5 m of the rim is a lay-up, 85 % open and 50 % under a tight defender, whatever the meter', () => {
@@ -515,7 +590,7 @@ test('free play: anyone takes the ball, a goal or a basket counts nothing, a ste
   const carrier = athlete(2, null, 0, 0)
   const thief = athlete(3, null, 1, 0, WEST)
   basketball.owner = 2
-  assert.deepEqual(actGym(basketball, BASKETBALL, thief, [carrier, thief], 'tackle', T0, () => 0.1), [{ kind: 'steal', accountId: 3, won: true }])
+  assert.deepEqual(actGym(basketball, BASKETBALL, thief, [carrier, thief], 'tackle', T0, () => 0.1), [{ kind: 'steal', accountId: 3, won: true, target: 2 }])
 })
 
 test('free play basketball: a shot goes to the hoop the player faces, side hoops included', () => {
@@ -523,13 +598,13 @@ test('free play basketball: a shot goes to the hoop the player faces, side hoops
   const a = athlete(4, null, -8, 8, Math.PI)
   game.owner = 4
   actGym(game, BASKETBALL, a, [a], 'shot_start', T0, () => 0.5)
-  actGym(game, BASKETBALL, a, [a], 'shot_release', T0 + 900, () => 0.5)
+  actGym(game, BASKETBALL, a, [a], 'shot_release', T0 + TOP, () => 0.5)
   assert.ok(game.ball.vz > 0 && Math.abs(game.ball.vx) < 0.5)
   a.x = 20
   let through = false
   for (let i = 0; i < 180 && !through; i++) {
     const before = { ...game.ball }
-    stepGym(game, BASKETBALL, [a], 1 / 60, T0 + 900 + i * 16)
+    stepGym(game, BASKETBALL, [a], 1 / 60, T0 + TOP + i * 16)
     through = droppedThroughRim(before, game.ball, { x: SIDE_HOOP.x, y: SIDE_HOOP.y, z: SIDE_HOOP.z, radius: SIDE_HOOP.rimRadius })
   }
   assert.ok(through)
@@ -537,21 +612,21 @@ test('free play basketball: a shot goes to the hoop the player faces, side hoops
 
 test('basketball: a release in the green window always scores, even from deep with the aim off', () => {
   for (const [x, aimOff] of [[12, 0.2], [10, -0.25], [17, 0.1]] as const) {
-    const { events } = shoot(x, 900, EAST + aimOff)
+    const { events } = shoot(x, TOP, EAST + aimOff)
     assert.equal(events.length, 1, `from ${20.425 - x} m, aim off ${aimOff}`)
   }
 })
 
 test('basketball: the release is perfect at the top of the window, good below, early or late outside', () => {
-  assert.equal(releaseOf(BASKETBALL, 900, 5), 'perfect')
-  assert.equal(releaseOf(BASKETBALL, 900 * 0.8, 5), 'good')
-  assert.equal(releaseOf(BASKETBALL, 300, 5), 'early')
-  assert.equal(releaseOf(BASKETBALL, 1500, 5), 'late')
+  assert.equal(releaseOf(BASKETBALL, TOP, 5), 'perfect')
+  assert.equal(releaseOf(BASKETBALL, TOP * 0.8, 5), 'good')
+  assert.equal(releaseOf(BASKETBALL, TOP / 3, 5), 'early')
+  assert.equal(releaseOf(BASKETBALL, (TOP * 5) / 3, 5), 'late')
   const game = freshGame(BASKETBALL)
   const a = athlete(9, 'red', 16, 0)
   game.owner = 9
   actGym(game, BASKETBALL, a, [a], 'shot_start', T0, () => 0.5)
-  assert.deepEqual(actGym(game, BASKETBALL, a, [a], 'shot_release', T0 + 900, () => 0.5), [{ kind: 'kick', accountId: 9, shot: true, release: 'perfect' }])
+  assert.deepEqual(actGym(game, BASKETBALL, a, [a], 'shot_release', T0 + TOP, () => 0.5), [{ kind: 'kick', accountId: 9, shot: true, release: 'perfect' }])
 })
 
 const PITCH: GymCourt = parseGymCourt(JSON.parse(readFileSync(new URL('../../../front/public/assets/sports/athletics/pitch.json', import.meta.url), 'utf8')))

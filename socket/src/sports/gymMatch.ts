@@ -20,9 +20,9 @@ export const GYM_ACTIONS: readonly GymActionKind[] = ['pass', 'pass_start', 'pas
 
 export type GymEvent =
   | { kind: 'score', team: Team, scorer: number | null, points: number, dunk: boolean }
-  | { kind: 'kick', accountId: number, shot: boolean, release?: ShotRelease }
+  | { kind: 'kick', accountId: number, shot: boolean, release?: ShotRelease, dunk?: true }
   | { kind: 'tackle', accountId: number, won: boolean, slide: boolean }
-  | { kind: 'steal', accountId: number, won: boolean }
+  | { kind: 'steal', accountId: number, won: boolean, target: number | null }
   | { kind: 'block', accountId: number }
 
 interface Shot {
@@ -52,6 +52,8 @@ export interface GymGame {
   passStartedAt: Map<number, number>
   jumpedAt: Map<number, number>
   lastShot: Shot | null
+  streak: { accountId: number, count: number } | null
+  fire: { accountId: number, team: Team } | null
 }
 
 export type Rng = () => number
@@ -90,7 +92,9 @@ export function newGymGame(court: GymCourt, rules: GymRules, now: number, mode: 
     shotStartedAt: new Map(),
     passStartedAt: new Map(),
     jumpedAt: new Map(),
-    lastShot: null
+    lastShot: null,
+    streak: null,
+    fire: null
   }
 }
 
@@ -115,6 +119,12 @@ export function restartHalf(game: GymGame, rules: GymRules, team: Team, now: num
   kickoff(game, rules, game.court.centre.x, game.court.centre.z, team, now)
 }
 
+function heatUp(game: GymGame, rules: BasketballRules, team: Team, scorer: number | null): void {
+  if (game.fire && game.fire.team !== team) game.fire = null
+  game.streak = scorer === null ? null : { accountId: scorer, count: game.streak?.accountId === scorer ? game.streak.count + 1 : 1 }
+  if (game.streak && game.streak.count >= rules.fire.baskets) game.fire = { accountId: game.streak.accountId, team }
+}
+
 function tally(map: Map<number, number>, accountId: number, add: number): void {
   map.set(accountId, (map.get(accountId) ?? 0) + add)
 }
@@ -130,6 +140,7 @@ function award(game: GymGame, rules: GymRules, team: Team, scorer: number | null
     const basket = basketsOf(game.court)[team]
     const inward = Math.sign(game.court.centre.x - basket.x)
     kickoff(game, rules, basket.x + inward * 1.2, basket.z, conceding, now)
+    heatUp(game, rules, team, scorer)
   }
   return { kind: 'score', team, scorer, points, dunk }
 }
@@ -432,10 +443,15 @@ export function meterOf(heldMs: number, riseMs: number): { value: number, rising
   return phase <= 1 ? { value: phase, rising: true } : { value: Math.max(0, 2 - phase), rising: false }
 }
 
-export function goodWindow(rules: BasketballRules, distance: number, contestShare = 1): number {
+export function goodWindow(rules: BasketballRules, distance: number, share = 1): number {
   const { windowNear, windowFar, farDistanceM } = rules.shotMeter
   const t = Math.min(1, Math.max(0, distance / farDistanceM))
-  return (windowNear + (windowFar - windowNear) * t) * contestShare
+  return Math.min(1, (windowNear + (windowFar - windowNear) * t) * share)
+}
+
+export function dunkRange(rules: BasketballRules, speed: number): number {
+  if (speed < rules.dunkSpeed) return 0
+  return speed >= rules.turboDunk.speedMps ? rules.turboDunk.rangeM : rules.dunkRangeM
 }
 
 export function contestShare(rules: BasketballRules, defenderDistance: number | null): number {
@@ -472,10 +488,10 @@ function finishAtRim(game: GymGame, rules: BasketballRules, a: Athlete, basket: 
   if (made && game.mode === 'match' && a.team) return [award(game, rules, a.team, a.accountId, DUNK_POINTS, dunked, now)]
   if (made) {
     game.ball = { x: basket.x, y: basket.y + 0.15, z: basket.z, vx: 0, vy: -2, vz: 0 }
-    return [{ kind: 'kick', accountId: a.accountId, shot: true }]
+    return [{ kind: 'kick', accountId: a.accountId, shot: true, ...(dunked ? { dunk: true as const } : {}) }]
   }
   game.ball = { x: basket.x, y: basket.y + 0.3, z: basket.z, vx: (rng() - 0.5) * 3, vy: 2.5, vz: (rng() - 0.5) * 3 }
-  return [{ kind: 'kick', accountId: a.accountId, shot: true }]
+  return [{ kind: 'kick', accountId: a.accountId, shot: true, ...(dunked ? { dunk: true as const } : {}) }]
 }
 
 function blocker(game: GymGame, rules: BasketballRules, a: Athlete, athletes: readonly Athlete[], now: number): Athlete | null {
@@ -531,17 +547,21 @@ function basketballAction(game: GymGame, rules: BasketballRules, a: Athlete, ath
     return []
   }
   if (kind === 'tackle') {
-    if ((game.cooldownUntil.get(a.accountId) ?? 0) > now) return []
+    if ((game.cooldownUntil.get(a.accountId) ?? 0) > now || grounded(game, a.accountId, now)) return []
+    game.cooldownUntil.set(a.accountId, now + rules.shove.cooldownMs)
     const holder = owned(game, athletes)
-    if (!holder || holder.accountId === a.accountId || (holder.team !== null && holder.team === a.team) || flatDistance(holder.x, holder.z, a.x, a.z) > rules.steal.reachM) return []
-    game.cooldownUntil.set(a.accountId, now + rules.steal.cooldownMs)
-    if (rng() >= rules.steal.chance) return [{ kind: 'steal', accountId: a.accountId, won: false }]
-    game.owner = a.accountId
-    game.lastTouch = { accountId: a.accountId, team: a.team }
+    const shoved = holder && holder.accountId !== a.accountId && (holder.team === null || holder.team !== a.team) && !(game.restart && now < game.restart.until) &&
+      inCone(a, holder.x, holder.z, rules.shove.reachM, rules.shove.coneDeg)
+    if (!holder || !shoved) return [{ kind: 'steal', accountId: a.accountId, won: false, target: null }]
+    const f = facing(a)
+    game.groundedUntil.set(holder.accountId, now + rules.shove.downMs)
     game.shotStartedAt.delete(holder.accountId)
-    return [{ kind: 'steal', accountId: a.accountId, won: true }]
+    game.owner = null
+    game.lastTouch = { accountId: a.accountId, team: a.team }
+    game.ball = { x: holder.x + f.x * 0.5, y: game.court.floorY + rules.carryHeightM, z: holder.z + f.z * 0.5, vx: f.x * rules.shove.ballSpeed, vy: 1.5, vz: f.z * rules.shove.ballSpeed }
+    return [{ kind: 'steal', accountId: a.accountId, won: true, target: holder.accountId }]
   }
-  if (game.owner !== a.accountId) {
+  if (game.owner !== a.accountId || grounded(game, a.accountId, now)) {
     if (kind === 'shot_release') game.shotStartedAt.delete(a.accountId)
     return []
   }
@@ -566,10 +586,10 @@ function basketballAction(game: GymGame, rules: BasketballRules, a: Athlete, ath
   if (started === undefined || now - started > MAX_SHOT_HOLD_MS) return []
   const basket = targetHoop(game, a)
   const toRim = flatDistance(a.x, a.z, basket.x, basket.z)
-  const contest = contestShare(rules, nearestDefender(a, athletes))
-  if (toRim <= rules.dunkRangeM && speedOf(a) >= rules.dunkSpeed) return finishAtRim(game, rules, a, basket, now, rng, rules.dunkChance, true)
+  const contest = contestShare(rules, nearestDefender(a, athletes)) * (game.fire?.accountId === a.accountId ? rules.fire.windowFactor : 1)
+  if (toRim <= dunkRange(rules, speedOf(a))) return finishAtRim(game, rules, a, basket, now, rng, rules.dunkChance, true)
   if (toRim <= rules.layup.rangeM && speedOf(a) >= rules.layup.speedMps) {
-    const open = (contest - rules.contest.minShare) / (1 - rules.contest.minShare)
+    const open = Math.min(1, (contest - rules.contest.minShare) / (1 - rules.contest.minShare))
     return finishAtRim(game, rules, a, basket, now, rng, rules.layup.contestedChance + (rules.layup.chance - rules.layup.contestedChance) * open, false)
   }
   const block = blocker(game, rules, a, athletes, now)

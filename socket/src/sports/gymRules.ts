@@ -52,7 +52,9 @@ export interface BasketballRules {
   passAssist: PassAssist
   contest: { reachM: number, tightM: number, minShare: number }
   layup: { rangeM: number, speedMps: number, chance: number, contestedChance: number }
-  steal: { reachM: number, chance: number, cooldownMs: number }
+  turboDunk: { rangeM: number, speedMps: number }
+  shove: { reachM: number, coneDeg: number, downMs: number, cooldownMs: number, ballSpeed: number }
+  fire: { baskets: number, windowFactor: number }
   blockReachM: number
   blockWindowMs: number
   kickIgnoreMs: number
@@ -169,7 +171,9 @@ export function parseFootballRules(raw: unknown): FootballRules {
 export function parseBasketballRules(raw: unknown): BasketballRules {
   const r = (raw ?? {}) as Raw
   const meter = block(r, 'shotMeter', 'basketball')
-  const steal = block(r, 'steal', 'basketball')
+  const shove = block(r, 'shove', 'basketball')
+  const turboDunk = block(r, 'turboDunk', 'basketball')
+  const fire = block(r, 'fire', 'basketball')
   const contest = block(r, 'contest', 'basketball')
   const layup = block(r, 'layup', 'basketball')
   const contestReachM = positive(contest.reachM, 'basketball.contest.reachM')
@@ -207,10 +211,14 @@ export function parseBasketballRules(raw: unknown): BasketballRules {
       chance: fraction(layup.chance, 'basketball.layup.chance'),
       contestedChance: fraction(layup.contestedChance, 'basketball.layup.contestedChance')
     },
-    steal: {
-      reachM: positive(steal.reachM, 'basketball.steal.reachM'),
-      chance: fraction(steal.chance, 'basketball.steal.chance'),
-      cooldownMs: positive(steal.cooldownMs, 'basketball.steal.cooldownMs')
+    turboDunk: { rangeM: positive(turboDunk.rangeM, 'basketball.turboDunk.rangeM'), speedMps: positive(turboDunk.speedMps, 'basketball.turboDunk.speedMps') },
+    fire: { baskets: positive(fire.baskets, 'basketball.fire.baskets'), windowFactor: positive(fire.windowFactor, 'basketball.fire.windowFactor') },
+    shove: {
+      reachM: positive(shove.reachM, 'basketball.shove.reachM'),
+      coneDeg: positive(shove.coneDeg, 'basketball.shove.coneDeg'),
+      downMs: positive(shove.downMs, 'basketball.shove.downMs'),
+      cooldownMs: positive(shove.cooldownMs, 'basketball.shove.cooldownMs'),
+      ballSpeed: positive(shove.ballSpeed, 'basketball.shove.ballSpeed')
     },
     blockReachM: positive(r.blockReachM, 'basketball.blockReachM'),
     blockWindowMs: positive(r.blockWindowMs, 'basketball.blockWindowMs'),

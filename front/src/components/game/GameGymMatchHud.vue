@@ -13,11 +13,12 @@ const props = defineProps<{
     half: number
     halves: number
     team: GymTeam | null
-    meter: { fill: number; goodFrom: number | null; overFrom: number | null } | null
+    meter: { fill: number; overFrom: number } | null
     lob: number | null
     cooldown: number | null
+    fire: { team: GymTeam; mine: boolean } | null
   } | null
-  freeHud: { sport: GymSport; meter: { fill: number; goodFrom: number | null; overFrom: number | null } | null; lob: number | null } | null
+  freeHud: { sport: GymSport; meter: { fill: number; overFrom: number } | null; lob: number | null } | null
   banner: GymBanner | null
   rimPop: GymRimPop | null
   releaseLabel: GymShotRelease | null
@@ -76,11 +77,13 @@ const hint = computed(() => {
       <span class="text-sm text-fog">{{ hud.clock }}</span>
       <span class="text-pool">{{ hud.score.blue }} {{ teamName('blue') }}</span>
     </p>
+    <p v-if="hud.fire" class="m-0 font-display text-sm uppercase tracking-[0.12em]" :class="TEAM_TEXT[hud.fire.team]" role="status" aria-live="polite">
+      {{ hud.fire.mine ? t('sports.gym.fire.mine') : t('sports.gym.fire.team', { team: teamName(hud.fire.team) }) }}
+    </p>
     <div v-if="hud.meter" class="flex w-48 flex-col gap-0.5">
       <span class="text-[10px] font-bold uppercase tracking-[0.14em] text-mist">{{ t('sports.gym.shoot') }}</span>
       <span class="relative block h-2 overflow-hidden rounded-full bg-ink-950/70">
-        <span v-if="hud.meter.goodFrom !== null" class="absolute inset-y-0 right-0 bg-mint/50" :style="{ left: `${hud.meter.goodFrom * 100}%` }" />
-        <span v-if="hud.meter.overFrom !== null" class="absolute inset-y-0 right-0 bg-coral/60" :style="{ left: `${hud.meter.overFrom * 100}%` }" />
+        <span class="absolute inset-y-0 right-0 bg-coral/60" :style="{ left: `${hud.meter.overFrom * 100}%` }" />
         <span class="relative block h-full rounded-full bg-sun" :style="{ width: `${hud.meter.fill * 100}%` }" />
       </span>
     </div>
@@ -101,8 +104,7 @@ const hint = computed(() => {
   <section v-if="!hud && freeHud" class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 flex -translate-x-1/2 flex-col items-center gap-1 px-4 py-2" :aria-label="t('sports.gym.free.title')">
     <p class="m-0 font-display text-[11px] uppercase tracking-[0.16em] text-mint">{{ t(`sports.sports.${freeHud.sport}`) }} · {{ t('sports.gym.free.title') }}</p>
     <span v-if="freeHud.meter" class="relative block h-2 w-48 overflow-hidden rounded-full bg-ink-950/70">
-      <span v-if="freeHud.meter.goodFrom !== null" class="absolute inset-y-0 right-0 bg-mint/50" :style="{ left: `${freeHud.meter.goodFrom * 100}%` }" />
-      <span v-if="freeHud.meter.overFrom !== null" class="absolute inset-y-0 right-0 bg-coral/60" :style="{ left: `${freeHud.meter.overFrom * 100}%` }" />
+      <span class="absolute inset-y-0 right-0 bg-coral/60" :style="{ left: `${freeHud.meter.overFrom * 100}%` }" />
       <span class="relative block h-full rounded-full bg-sun" :style="{ width: `${freeHud.meter.fill * 100}%` }" />
     </span>
     <span v-if="freeHud.lob !== null" class="block h-2 w-48 overflow-hidden rounded-full bg-ink-950/70">

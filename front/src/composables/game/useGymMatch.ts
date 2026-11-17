@@ -6,6 +6,8 @@ import type { SportsMoveClip } from '../../avatar/glbCharacter'
 import type { SfxName } from '../../game/sfx'
 import {
   COURT_FILES,
+  DUNK_LEAP,
+  SHOT_JUMP_M,
   type GymCourtView,
   type GymHudRules,
   type GymScreen,
@@ -20,14 +22,13 @@ import {
   clockText,
   dribbleMove,
   insideArea,
-  goodWindowStart,
+  leapLaunch,
   meterFill,
   myTeam,
   courtHoops,
   hoopAhead,
   lobFill,
   nearestFreeBall,
-  overchargeStart,
   teamJerseyUrl,
   type HoopSpot,
   parseGymCourtView,
@@ -56,6 +57,7 @@ export interface GymMatchDeps {
   yaw: () => number
   moveFrameYaw: () => number | null
   knockBack: (dirX: number, dirZ: number, distance: number) => void
+  leap: (velocity: number, gravity: number) => void
   playOn: (name: SfxName, object: THREE.Object3D) => void
   play: (name: SfxName) => void
   say: (text: string) => void
@@ -81,7 +83,7 @@ const END_BANNER_MS = 6000
 const RIM_POP_MS = 1600
 const RELEASE_LABEL_MS = 1200
 const MARKER_RADII: readonly [number, number] = [0.45, 0.6]
-const MARKER_COLOURS = { red: 0xe0604a, blue: 0x3f8fd1, free: 0xf2c230 } as const
+const MARKER_COLOURS = { red: 0xe0604a, blue: 0x3f8fd1, free: 0xf2c230, fire: 0xff6a1f } as const
 const RIM_POP_RISE_M = 0.8
 const FREE_REACH_M = 2
 const MY_FOOT_AHEAD_M = 0.6
@@ -256,7 +258,7 @@ export function useGymMatch(deps: GymMatchDeps) {
 
   function moveFor(data: GymEventPayload, sport: GymSport): SportsMoveClip | null {
     if (data.kind === 'score') return data.dunk ? 'Dunk' : sport === 'football' ? 'Celebrate' : null
-    if (data.kind === 'kick') return sport === 'football' ? (data.shot ? 'Shot' : 'Kick') : data.shot ? 'JumpShot' : null
+    if (data.kind === 'kick') return sport === 'football' ? (data.shot ? 'Shot' : 'Kick') : data.dunk ? 'Dunk' : data.shot ? 'JumpShot' : null
     if (data.kind === 'tackle') return data.slide ? 'Tackle' : 'Steal'
     if (data.kind === 'steal') return 'Steal'
     if (data.kind === 'block') return 'Block'
@@ -273,6 +275,7 @@ export function useGymMatch(deps: GymMatchDeps) {
     const mine = data.sessionId !== null && data.sessionId === mySessionId()
     const move = data.sessionId ? moveFor(data, sportOfEvent(data)) : null
     if (move && data.sessionId) deps.sportsMove(data.sessionId, move)
+    if (mine && (data.kind === 'score' || data.kind === 'kick') && data.dunk) leap(DUNK_LEAP.apexMs, DUNK_LEAP.heightM)
     if (data.kind === 'score') {
       const sport = state.value?.sport ?? 'football'
       show({ kind: 'score', team: data.team, points: data.points, dunk: data.dunk, scorer: data.scorer, sport })
@@ -295,6 +298,10 @@ export function useGymMatch(deps: GymMatchDeps) {
         cooldownUntil.value = Date.now() + cooldownMs.value
       }
       if (mine && data.kind === 'tackle' && data.slide && !data.won && sportRules?.downMs) downUntil.value = Date.now() + sportRules.downMs
+      if (data.kind === 'steal' && data.won && data.targetSessionId) {
+        deps.sportsMove(data.targetSessionId, 'Tackle')
+        if (data.targetSessionId === mySessionId() && sportRules?.downMs) downUntil.value = Date.now() + sportRules.downMs
+      }
       if (data.kind === 'block' || data.won) {
         show({ kind: data.kind, mine })
         soundAtBalls('impact')
@@ -343,6 +350,8 @@ export function useGymMatch(deps: GymMatchDeps) {
       if (!repeat && holdStartedAt.value === null) {
         holdStartedAt.value = Date.now()
         send('shot_start')
+        const jumpMs = shotJumpMs()
+        if (jumpMs !== null && holdingBall()) leap(jumpMs, SHOT_JUMP_M)
       }
       return true
     }
@@ -364,6 +373,27 @@ export function useGymMatch(deps: GymMatchDeps) {
     }
     if (matches('jump', code) && !repeat) send('jump')
     return false
+  }
+
+  function leap(apexMs: number, heightM: number): void {
+    const { velocity, gravity } = leapLaunch(apexMs, heightM)
+    deps.leap(velocity, gravity)
+  }
+
+  function shotJumpMs(): number | null {
+    const sport = actingSport()
+    return sport ? (rules.value[sport]?.shotJumpMs ?? null) : null
+  }
+
+  function releaseShot(): void {
+    holdStartedAt.value = null
+    send('shot_release')
+  }
+
+  function landWithTheBall(now: number): void {
+    const startedAt = holdStartedAt.value
+    const jumpMs = startedAt === null ? null : shotJumpMs()
+    if (startedAt !== null && jumpMs !== null && now - startedAt >= 2 * jumpMs) releaseShot()
   }
 
   function hop(): void {
@@ -389,25 +419,11 @@ export function useGymMatch(deps: GymMatchDeps) {
       passStartedAt.value = null
       send('pass_release')
     }
-    if (holdStartedAt.value === null || !matches('interact', code)) return
-    holdStartedAt.value = null
-    send('shot_release')
+    if (holdStartedAt.value !== null && matches('interact', code)) releaseShot()
   }
 
   function actingSport(): GymSport | null {
     return state.value?.sport ?? freeBallNearMe()?.sport ?? null
-  }
-
-  function nearestRival(): number | null {
-    const mine = team.value
-    let nearest: number | null = null
-    for (const p of state.value?.players ?? []) {
-      const at = p.team === mine ? null : deps.avatar(p.sessionId)?.position
-      if (!at) continue
-      const d = Math.hypot(at.x - deps.myPosition.x, at.z - deps.myPosition.z)
-      if (nearest === null || d < nearest) nearest = d
-    }
-    return nearest
   }
 
   function borrow(sport: GymSport): void {
@@ -588,6 +604,7 @@ export function useGymMatch(deps: GymMatchDeps) {
     if (free.value && now - freeReceivedAt > STALE_MS) free.value = null
     updateRimPop(now)
     holdOnCourt()
+    landWithTheBall(now)
     const scene = deps.getScene()
     const shown = new Set<THREE.Object3D>()
     const seconds = now / 1000
@@ -601,7 +618,9 @@ export function useGymMatch(deps: GymMatchDeps) {
         shown.add(mesh)
       }
       const ownerTeam = current.players.find((p) => p.sessionId === current.owner)?.team ?? null
-      placeMarker(shown, current.owner, ownerTeam ?? 'free', `match:${ownerTeam ?? 'free'}`, matchCourt)
+      const ownerTone = current.owner !== null && current.owner === current.fire ? 'fire' : (ownerTeam ?? 'free')
+      placeMarker(shown, current.owner, ownerTone, `match:${ownerTone}`, matchCourt)
+      if (current.fire !== current.owner) placeMarker(shown, current.fire, 'fire', 'match:fire', matchCourt)
     }
     for (const ball of free.value?.balls ?? []) {
       const r = rules.value[ball.sport]
@@ -629,9 +648,8 @@ export function useGymMatch(deps: GymMatchDeps) {
     const remaining = current.endsAt - (clientNow.value + clockOffset)
     const r = rules.value[current.sport]
     const held = holdStartedAt.value
-    const basket = shotTarget()
-    const distance = basket ? Math.hypot(deps.myPosition.x - basket.x, deps.myPosition.z - basket.z) : 0
-    const meter = r && held !== null ? { fill: meterFill(r.meter, clientNow.value - held), goodFrom: goodWindowStart(r.meter, distance, nearestRival()), overFrom: overchargeStart(r.meter) } : null
+    const meter = r?.meter && held !== null ? { fill: meterFill(r.meter, clientNow.value - held), overFrom: r.meter.overFrom } : null
+    const fireTeam = current.players.find((p) => p.sessionId === current.fire)?.team ?? null
     const passHeld = passStartedAt.value
     const lob = r && passHeld !== null ? lobFill(r.lob, clientNow.value - passHeld) : null
     const cooldown = cooldownUntil.value > clientNow.value ? (cooldownUntil.value - clientNow.value) / cooldownMs.value : null
@@ -645,6 +663,7 @@ export function useGymMatch(deps: GymMatchDeps) {
       meter,
       lob,
       cooldown,
+      fire: fireTeam ? { team: fireTeam, mine: current.fire === mySessionId() } : null,
     }
   })
 
@@ -655,12 +674,10 @@ export function useGymMatch(deps: GymMatchDeps) {
     if (!ball) return null
     const r = rules.value[ball.sport]
     const held = holdStartedAt.value
-    const basket = shotTarget()
-    const goodFrom = r && basket ? goodWindowStart(r.meter, Math.hypot(deps.myPosition.x - basket.x, deps.myPosition.z - basket.z)) : null
     const passHeld = passStartedAt.value
     return {
       sport: ball.sport,
-      meter: r && held !== null ? { fill: meterFill(r.meter, clientNow.value - held), goodFrom, overFrom: overchargeStart(r.meter) } : null,
+      meter: r?.meter && held !== null ? { fill: meterFill(r.meter, clientNow.value - held), overFrom: r.meter.overFrom } : null,
       lob: r && passHeld !== null ? lobFill(r.lob, clientNow.value - passHeld) : null,
     }
   })
@@ -743,5 +760,5 @@ export function useGymMatch(deps: GymMatchDeps) {
     return played?.court ? { kind: 'broadcast', sport: 'gym', optional: true, court: played.court.court, focusX: played.x, focusZ: played.z, fallback: behind } : behind
   }
 
-  return { hud, freeHud, banner, rimPop, releaseLabel, myBall, handlers: { onState, onEvent, onEnd, onFree, onError }, onPress, borrow, giveBack, down, faceSpot, speedFactor, tick, cameraView }
+  return { hud, freeHud, banner, rimPop, releaseLabel, myBall, handlers: { onState, onEvent, onEnd, onFree, onError }, onPress, playing, borrow, giveBack, down, faceSpot, speedFactor, tick, cameraView }
 }

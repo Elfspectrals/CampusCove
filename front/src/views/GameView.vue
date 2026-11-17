@@ -926,7 +926,7 @@ const { hud: figureHud, board: figureBoard, active: figureActive } = figure
 const emoteWheel = useEmoteWheel({
   gameRoomRef,
   isWheelKey: (code) => matches('emoteWheel', code),
-  blocked: () => dancing.value,
+  blocked: () => dancing.value || gymMatch.playing(),
   lockedText: () => t('emotes.locked'),
   say: (text) => survival.say(text),
 })
@@ -1034,6 +1034,7 @@ const gymMatch = useGymMatch({
   yaw: () => movement.look().yaw,
   moveFrameYaw: () => sportsCamera.moveFrameYaw(),
   knockBack: (dirX, dirZ, distance) => movement.knockBack(dirX, dirZ, distance),
+  leap: (velocity, gravity) => movement.leap(velocity, gravity),
   playOn: (name, object) => sfx.playOn(name, object),
   play: (name) => sfx.play(name),
   say: (text) => survival.say(text),

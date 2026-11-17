@@ -79,7 +79,7 @@
   "passPower": 9,
   "passLift": 2.0,
   "shotMeter": {
-    "riseMs": 900,
+    "riseMs": 450,
     "windowNear": 0.3,
     "windowFar": 0.15,
     "farDistanceM": 12,
@@ -89,14 +89,9 @@
   "aimAssistMax": 1,
   "missAimAssist": 1,
   "missReachError": 0.25,
-  "dunkRangeM": 1.5,
+  "dunkRangeM": 3.0,
   "dunkSpeed": 4,
   "dunkChance": 0.95,
-  "steal": {
-    "reachM": 1.5,
-    "chance": 0.4,
-    "cooldownMs": 2000
-  },
   "blockReachM": 1.6,
   "blockWindowMs": 350,
   "kickIgnoreMs": 350,
@@ -122,5 +117,20 @@
     "speedMps": 2.5,
     "chance": 0.85,
     "contestedChance": 0.5
+  },
+  "turboDunk": {
+    "rangeM": 4.5,
+    "speedMps": 7
+  },
+  "shove": {
+    "reachM": 1.6,
+    "coneDeg": 100,
+    "downMs": 700,
+    "cooldownMs": 2500,
+    "ballSpeed": 3
+  },
+  "fire": {
+    "baskets": 3,
+    "windowFactor": 2
   }
 }

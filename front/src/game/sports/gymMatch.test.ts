@@ -2,23 +2,25 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import type { GymStatePayload } from '../../types/gameRealtime.ts'
-import { COURT_FILES, FREE_PLAY_COACHES, carriedSpot, clampToArea, clockText, courtHoops, courtUrlOf, dribbleBeat, dribbleHeight, dribbleMove, goodWindowStart, hoopAhead, insideArea, lobFill, meterFill, myTeam, nearestFreeBall, parseGymCourtView, overchargeStart, parseGymHudRules, predictBall, scoreboardLines } from './gymMatch.ts'
+import { COURT_FILES, FREE_PLAY_COACHES, carriedSpot, clampToArea, clockText, courtHoops, courtUrlOf, dribbleBeat, dribbleHeight, dribbleMove, hoopAhead, insideArea, leapLaunch, lobFill, meterFill, myTeam, nearestFreeBall, parseGymCourtView, parseGymHudRules, predictBall, scoreboardLines } from './gymMatch.ts'
 
 const rules = (sport: string) => JSON.parse(readFileSync(new URL(`../../../public/assets/sports/rules/${sport}.json`, import.meta.url), 'utf8'))
 
 test('the HUD reads its numbers from the shipped rules files', () => {
   const football = parseGymHudRules('football', rules('football'))
-  assert.deepEqual(football.meter, { kind: 'charge', chargeMs: 1000, overFrom: 0.9 })
+  assert.deepEqual(football.meter, { chargeMs: 1000, overFrom: 0.9 })
+  assert.equal(football.shotJumpMs, null)
   assert.deepEqual(football.lob, { holdMs: 250, chargeMs: 750 })
   assert.equal(football.defendCooldownMs, 3000)
   assert.equal(football.standingCooldownMs, 1000)
   assert.equal(football.downMs, 800)
   const basketball = parseGymHudRules('basketball', rules('basketball'))
-  assert.equal(basketball.meter.kind, 'bounce')
-  assert.deepEqual(basketball.meter.kind === 'bounce' && basketball.meter.contest, { reachM: 2, tightM: 0.8, minShare: 0.45 })
+  assert.equal(basketball.meter, null)
+  assert.equal(basketball.shotJumpMs, 450)
   assert.equal(basketball.lob, null)
-  assert.equal(basketball.defendCooldownMs, 2000)
+  assert.equal(basketball.defendCooldownMs, 2500)
   assert.equal(basketball.standingCooldownMs, null)
+  assert.equal(basketball.downMs, 700)
   assert.throws(() => parseGymHudRules('football', { ...rules('football'), shotChargeMs: 0 }), /shotChargeMs/)
 })
 
@@ -28,22 +30,21 @@ test('the match clock counts down in m:ss and never shows a negative time', () =
   assert.equal(clockText(-500), '0:00')
 })
 
-test('the football meter fills and holds; the basketball meter rises then falls, its good window narrows with distance', () => {
-  const charge = { kind: 'charge', chargeMs: 1000, overFrom: 0.9 } as const
+test('the football meter fills and holds', () => {
+  const charge = { chargeMs: 1000, overFrom: 0.9 }
+  assert.equal(meterFill(charge, -20), 0)
   assert.equal(meterFill(charge, 500), 0.5)
   assert.equal(meterFill(charge, 3000), 1)
-  const bounce = { kind: 'bounce', riseMs: 900, windowNear: 0.18, windowFar: 0.07, farDistanceM: 12, contest: { reachM: 2, tightM: 0.8, minShare: 0.45 } } as const
-  assert.equal(meterFill(bounce, 450), 0.5)
-  assert.equal(meterFill(bounce, 1350), 0.5)
-  assert.equal(meterFill(bounce, 2000), 0)
-  assert.equal(goodWindowStart(charge, 5), null)
-  assert.ok(Math.abs((goodWindowStart(bounce, 0) ?? 0) - 0.82) < 1e-9)
-  assert.ok(Math.abs((goodWindowStart(bounce, 24) ?? 0) - 0.93) < 1e-9)
-  assert.ok(Math.abs((goodWindowStart(bounce, 0, 2) ?? 0) - 0.82) < 1e-9)
-  assert.ok(Math.abs((goodWindowStart(bounce, 0, 1.4) ?? 0) - (1 - 0.18 * 0.725)) < 1e-9)
-  assert.ok(Math.abs((goodWindowStart(bounce, 0, 0.5) ?? 0) - (1 - 0.18 * 0.45)) < 1e-9)
-  assert.equal(overchargeStart(charge), 0.9)
-  assert.equal(overchargeStart(bounce), null)
+})
+
+test('a leap reaches its height exactly at its apex time: the basketball shot jump tops out 0.9 m up after 450 ms', () => {
+  const { velocity, gravity } = leapLaunch(450, 0.9)
+  assert.ok(Math.abs(velocity - 4) < 1e-9)
+  const heightAt = (s: number) => velocity * s - (gravity * s * s) / 2
+  assert.ok(Math.abs(heightAt(0.45) - 0.9) < 1e-9)
+  assert.ok(Math.abs(velocity - gravity * 0.45) < 1e-9)
+  assert.ok(Math.abs(heightAt(0.9)) < 1e-9)
+  assert.ok(heightAt(0.3) < 0.9 && heightAt(0.6) < 0.9)
 })
 
 test('the lob meter starts once the pass button is held 250 ms and fills in 750 ms', () => {

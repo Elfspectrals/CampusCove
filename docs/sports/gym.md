@@ -55,8 +55,8 @@ the rules are read over HTTP. Logic: `gymBall.ts` (ball physics, exact parabolic
 | Message | Direction | Payload |
 |---|---|---|
 | `gym_action` | client → server | `{ kind: 'pass' \| 'pass_start' \| 'pass_release' \| 'through' \| 'shot_start' \| 'shot_release' \| 'tackle' \| 'jump' }` (`pass` is the basketball pass, `pass_start` / `pass_release` the football one); ignored unless the sender is an active player of the running gym match; at most one every 60 ms (a release always passes) |
-| `gym_state` | server → players and everyone in `sports_gym`, every 100 ms | `{ venue, sport, ball: [x, y, z, vx, vy, vz], owner: sessionId \| null, score: { red, blue }, half, halves, endsAt, restartTeam, players: [{ sessionId, team }], serverNow }` |
-| `gym_event` | same | `{ venue, kind: 'score', team, points, dunk, scorer: name \| null, sessionId }`, `{ kind: 'kick', shot }`, `{ kind: 'tackle', won, slide }`, `{ kind: 'steal', won }`, `{ kind: 'block' }`, `{ kind: 'half', half }` (each with `sessionId` of the player) |
+| `gym_state` | server → players and everyone in `sports_gym`, every 100 ms | `{ venue, sport, ball: [x, y, z, vx, vy, vz], owner: sessionId \| null, score: { red, blue }, half, halves, endsAt, restartTeam, players: [{ sessionId, team }], fire: sessionId \| null, serverNow }` (`fire`: the basketball player on fire) |
+| `gym_event` | same | `{ venue, kind: 'score', team, points, dunk, scorer: name \| null, sessionId }`, `{ kind: 'kick', shot, release?, dunk? }`, `{ kind: 'tackle', won, slide }`, `{ kind: 'steal', won, targetSessionId }` (a basketball shove; `targetSessionId` is the player knocked down, null on a miss), `{ kind: 'block' }`, `{ kind: 'half', half }` (each with `sessionId` of the player) |
 | `gym_end` | same | `{ venue, sport, score, winner: team \| null, reason: 'finished' \| 'forfeit' }` |
 | `gym_ball` | client → server | `{ sport: 'football' \| 'basketball' }` within 3 m of the coach and while no gym match runs: lends one free-play ball (core loan `gym_ball`, area `sports_gym`), replacing the player's previous one; it appears on the court in front of the coach |
 | `gym_ball_return` | client → server | `{}`: gives the player's ball back |
@@ -67,11 +67,11 @@ Free play is a list of courts (`addGymFreeCourt`: id, court, sports lent, zone, 
 
 Ball physics: walls, floor and ceiling, goal posts, bar and nets, backboards and rims, and every player as a 0.35 m cylinder up to 1.9 m (the kicker is ignored for 350 ms). The ball sub-steps so it never moves more than half its radius per step.
 
-A missed tackle puts the player down: the socket refuses their moves for the tackle's `groundMs` (move rejection `tackled`) and the front freezes them for the same time.
+A missed tackle puts the player down: the socket refuses their moves for the tackle's `groundMs` (move rejection `tackled`) and the front freezes them for the same time. A basketball shove does the same to the shoved carrier for `shove.downMs`.
 
 The client never sends a direction, a power or a time: the aim is the player's `ry` known to the socket, shot power
-and the basketball meter come from the socket clock between `shot_start` and `shot_release` (held over 5 s is ignored),
-steals and dunks are rolled by the socket. Results go to `POST /api/sports/matches` through `recordMatch` with
+and the basketball shot timing come from the socket clock between `shot_start` and `shot_release` (held over 5 s is ignored),
+dunks are rolled by the socket and shoves are judged on its positions. Results go to `POST /api/sports/matches` through `recordMatch` with
 `score` = goals (football) or points (basketball) per player; a player out of the match records `dnf`. No coins.
 Then the socket sends the feats to `POST /api/sports/gym/tasks` (tasks in [../TASKS.md](../TASKS.md)): matches played, hat tricks (3 goals or more), sharpshooter matches (5 three-pointers or more), once per match `ref`.
 The gym tasks count every recorded match and ignore the core's `counts_for_tasks` anti-farm flag (decided 2026-11-14).
@@ -82,14 +82,14 @@ The gym tasks count every recorded match and ignore the core's `counts_for_tasks
   `football.json` sign-up lists only these until the outdoor pitch gets its own options.
 - 2 × 4 min is `durationSec: 480` with `halvesByDurationSec: { "480": 2 }`: blue kicks off the second half from the centre.
 - A tackle takes the ball when it is within 1.8 m in a 70° cone in front, else the tackler is down 0.8 s; cooldown 3 s.
-- Only a free ball is picked up by running into it; an owned football is only won by a tackle, an owned basketball by a steal.
-- Basketball shot, forgiving on purpose (after the first test, 2026-11-14, in the spirit of NBA 2K): the meter rises over
-  0.9 s then falls. A release in the good window (30 % of the meter near the rim, 15 % at 12 m) always scores: the socket
+- Only a free ball is picked up by running into it; an owned football is only won by a tackle, an owned basketball by a shove.
+- Basketball shot, forgiving on purpose (arcade since 2026-11-15, see [basketball.md](basketball.md)): the shot key is a
+  jump that tops out after 0.45 s, with no meter. A release in the good window (30 % of the rise near the rim, 15 % at 12 m) always scores: the socket
   removes all of the aim error and all timing error. The top 40 % of the window is "Perfect", the rest "Good"; outside it
   is "Early" or "Late", and the socket then removes half the aim error and lets the ball land short or long by a quarter
   of the timing error. The rim is softer (restitution 0.4). The shooter sees the label after each shot.
-- A block is an opponent within 1.6 m who jumped in the last 350 ms before the release. A dunk is a release within 1.5 m
-  of the rim while moving at 4 m/s or more, 95 % success.
+- A block is an opponent within 1.6 m who jumped in the last 350 ms before the release. A dunk is a release within 3 m
+  of the rim while moving at 4 m/s or more (4.5 m at 7 m/s or more), 95 % success.
 - Football (after the first test): the ball is 0.18 m in radius (bigger than a real futsal ball, to see who has it), a
   pass leaves at 8 m/s and a shot at 8 to 17 m/s. A coloured ring on the floor marks whoever holds a ball: the team
   colour in a match, yellow in free play.
