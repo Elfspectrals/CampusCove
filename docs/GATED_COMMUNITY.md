@@ -420,9 +420,10 @@ executive homes `cove_home_b0N`. Sources: the style catalog, floor plans and des
 | A-04 | Skyline Residence | `cove_villa_a04` | 32 000 | built (7.2c.7, skyline plan, walkable garage terrace) |
 | B-01 | Tidewater House | `cove_home_b01` | 14 000 | built (7.2c.8, tidewater plan, walkable two-tier gallery, back door) |
 | B-02 | Maison Lavande | `cove_home_b02` | 15 500 | built (7.2c.9, lavande plan 7.2d.4, slate hip roof with dormers and Juliet balconets, perron entry), not walked in game |
-| B-03 … B-12 | see 7.2c.2 | `cove_home_b03` … `b12` | 7.2c.2 | not designed (next: B-03 Nantucket Cape) |
+| B-03 | Nantucket Cape | `cove_home_b03` | 11 500 | built (7.2c.10, nantucket plan 7.2d.5): Cape Cod with a habitable loft, real gable dormers, wing +x, first east-facing house, not walked in game |
+| B-04 … B-12 | see 7.2c.2 | `cove_home_b04` … `b12` | 7.2c.2 | not designed (next: B-04 Oak Park Prairie) |
 
-None of the six houses has been walked in the game yet: buying one, the walkable terrace and gallery, the back door and
+None of the seven houses has been walked in the game yet: buying one, the walkable terrace and gallery, the back door and
 the lock are only checked by tests and Blender renders. That playtest needs the housing seeder run on a dev database
 (`make seed`) and the dev stack serving this branch.
 
@@ -549,7 +550,8 @@ door); the garage centre sits on the driveway, which bounds the main width: W �
 
 R1 widths (decided 2026-11-12): B-01 keeps W 11.0; every later B lot whose row says W 11.0 (B-04, B-05, B-08, B-09,
 B-12) changes W by at least 0.4 m when it is designed, and its row is updated then. B-02 has no wing, so its W max is the
-envelope (16.0); it takes W 14.4 because A-01 already uses 14.0 × −5.6 (7.2c.9, decided 2026-11-18).
+envelope (16.0); it takes W 14.4 because A-01 already uses 14.0 × −5.6 (7.2c.9, decided 2026-11-18). B-03 keeps W 12.0 × −5.0 (no built house uses it); B-07, planned at 12.0 × −5.6, changes
+its width by at least 0.4 m when it is designed (7.2c.10).
 
 Notes: the duplex plan works from W ≈ 9 m; the cottage plan needs **W ≥ 11.0** (its bedroom partition at −xi + 4.4 must
 clear the 1.2 m door), which is why the narrow B-11 lot (d = 4) is two-storey. On A-01 and A-04 the v1 driveway lies
@@ -2101,6 +2103,253 @@ is 0.08 (the newel size), not 0.12.
 | Stone chimneypieces, kitchen, island, hood, baths, wardrobes, beams | existing `lib_interior.py` builders and `build_kitchen` | reused as they are |
 | Lot dressing: gravel court, hornbeam rows, lavender runs, lamps | existing `lib_site.py` builders (`rect`, `hedge_run`, `street_lamp`), three new `HM` materials | same estate furniture as the villas |
 
+#### 7.2c.10 Nantucket Cape on B-03 [built: cove_home_b03, for sale 11 500]
+
+**Why B-03.** It is the first single-storey house of the west band, a quiet counterweight to the 14.4 m French hip two lots
+away across the pocket garden: grey-blue cedar shingles against greige limestone, a charcoal side gable at rise 3.6 against a
+slate hip at 4.2, a red door against a French-blue one, and a ridge only 6.95 m high against 10.53 m. It is also the first
+house that faces east (rotationY π/2), the first with a **habitable loft** under the roof (two bedrooms-sized rooms reached by a
+stair and lit by two real gable dormers) and the first **garage wing on a house with a single-storey eave line**. Its
+luxury is the Cape itself: a five-bay facade, twin dormers, flower boxes and blue hydrangeas, a hearth with a brick stack
+over the ridge line, and the cheapest price of the programme (11 500, the top of the single-storey band of 7.2c.2).
+
+Sources: [`notes/traditional_styles.md`](research/luxury-suburban-houses/notes/traditional_styles.md) covers Cape Cod. Cited
+there: 1.5 storeys, small and boxy, symmetrical facade of three or five bays, steep side gable with end gables, dormers
+common, side chimney; pitch 8:12 to 12:12 (34 to 45°). Inferences there and used here: two windows each side of the door
+(five bays), shutters on every main window, a shallow hood over the door and no deep porch, a chimney in the centre of the
+ridge or at the end, 2 to 3 gabled dormers. Not followed on purpose: tight 0.15 to 0.25 m eaves (the `gable_x` roof has the
+fixed `EAVE` 0.6 m, so the house keeps 0.6). The body is 1.5 storeys as in the sources (decision 1). The sources disagree on
+chimney placement, which this spec uses (an off-centre stack, below).
+
+**Rule check** (adjacent: B-04 across the lot line z −233; visible pair: B-02 across the SW pocket garden)
+
+| Rule | B-03 | B-04 (adjacent) | B-02 (visible pair) | Result |
+|------|------|-----------------|---------------------|--------|
+| R1 | key `cove_home_b03`, palette `cape`, plan `nantucket`, W 12.0 × back −5.0 | W 11.0 × −5.0 (7.2c.3; not designed, must change by 0.4) | W 14.4 × −5.6 | unique among the built houses (A-01 14.0 × −5.6, A-02 13.0 × −5.0, A-03 13.0 × −6.0, A-04 14.0 × −6.4, B-01 11.0 × −5.6, B-02 14.4 × −5.6); B-07 is planned at 12.0 × −5.6, so it changes W when it is designed (note under 7.2c.3) |
+| R2 | Vernacular | Modern | Classical | ok |
+| R3 | B (grey-blue shingles `#9fb3c2`), door red `#a33a33` | N | S | ok; B is on this one lot; no other door is red |
+| R4 | `gable_x`, charcoal `#4b4f55`; secondary element: twin gable dormers and the brick stack | low hip, bronze `#5e5148` | slate hip `#5d6670` | ok; charcoal and slate are close but B-02 is a visible pair, not adjacent, and 10 m of garden apart |
+| R5 | **1.5-storey massing, single-storey eave line**: eaves 3.35 m (two-storey houses 6.15 m), ridge 6.95 m, the loft lives in the roof | 2 storeys (eaves 6.15 m) | | the band rhythm is read from the eave line, not from the room count: west band 1-2-2-2 stands, and B-03 stays the low house the rule asks for (B-01 and B-12 keep the gateway at two storeys) |
+| R6 | facade setback 5.0 | 4.0 | 5.0 | stagger 1.0 m with B-04 (≥ 0.6) |
+| R7 | single wing +x, flush, white carriage door; frontage 2.6 m of 20 m (13 %); garage face 5.0 m behind the front line (the minimum) | recessed 1.0 m low-hip wing, flush walnut door | none | ok; B-03 and B-04 are not a forced garage pair |
+| R8 | entry type **bracketed canopy** with two steps (`porch="canopy"`, unique among the Cove Heights houses); projection 1.43 m, 3.57 m left to the front line | not designed | perron | ok |
+| R9 | shutters (Vernacular) navy-black `#2f3b46`, **white frames** (trim) | bronze frames | bronze frames | ok; both neighbours are bronze |
+| R10 | postbox (v1), 0.40 m lot hedges (v1), cobble driveway (v1), one 2.6 m lot lamp | | | ok |
+| R11 | main block plan x 107.39 → 118.0, z −215.0 → −227.0; wing z −227.0 → −231.0; the north face and the wing sit exactly on the 2.0 m side setback; back face 4.39 m from the rear line (≥ 3.5); 38.8 % | | | ok |
+
+**Placement**
+
+```
+Lot B-03: x 103–123, z −213 … −233, faces E (street at x 123), envelope x 106.5 … 119.0, z −215 … −231 (u −8 … +8)
+Rotation:      rotationY π/2: house +x → plan −z, house +z (front) → plan +x (east); plan = origin + (z, −x)
+Lot point:     plan (114.0, −221.0) = world (−317.0, −203.0)    (lot centre (113, −223) + R(π/2)·(u₀, v₀) = (1.0, +2.0))
+               world = plan − (431, −18)  (as B-02: plan (140, −204) = world (−291, −186))
+Facade:        plan x 118.0 (setback 5.0 m; B-04 is at 4.0 → R6 stagger 1.0 m)
+Main block:    house x −6.0 → 6.0, z 4.0 → −6.61 = plan x 118.0 → 107.39, z −215.0 → −227.0 (12.0 × 10.61)
+Wing +x:       house x 6.0 → 10.0, z 4.0 → −3.0 = plan x 118.0 → 111.0, z −227.0 → −231.0 (4.0 × 7.0, flush);
+               door centred at house x 8.0 = plan z −229.0; door edges plan z −227.7 → −230.3
+Driveway (v1): plan x 118 → 123, z −228.3 → −230.7 (axis −229.5, 0.5 m off the door axis; the door's north edge is 0.6 m outside
+               the slab: a flare apron, below)
+Canopy:        door at house x 0 = plan z −221.0; canopy slab 2.6 × 1.2, steps to house z 5.425 = plan x 119.425
+Door point:    world (−312.2, 1.25, −203.0)  (= origin + R(π/2)·(0, ZF + 0.8) = plan (118.8, −221.0))
+interiorOffset [0, 0.2, −1.405]  (house frame, unchanged by the rotation)
+Seeder bounds: minX −5.795, maxX 9.795, minZ −5.0, maxZ 5.2, maxY 5.4 · price 11 500 · colour '#9FB3C2'
+Coverage:      12.0 × 10.61 + 4.0 × 7.0 = 155.3 m² (38.8 %); GFA 155.3 m² + loft 2 × 18.9 m² + 2 niches = 197.4 m²; rear garden 4.39 m deep
+```
+
+Derived generator values (T 0.2, GAP 0.005, FY 0.2): x_out = W/2 − T − GAP = 5.795, xi = 5.595, OZ = ZF − T − GAP − 5.2 = −1.405,
+ZB = OZ + back − GAP − T = −6.61, DEPTH = 10.61, ZC = −1.305, H_SHELL = FY + L0_H + 0.3 = 3.30, y_eave 3.35; interior zi_f 5.0,
+zi_b −4.8. Wing (east, flush, r = 0): x_in 6.0, x_ext 10.0, xo 9.795, xi 9.595, interior zf 5.0, zb −1.19, zc 1.905, shell 3.30;
+`Sky_East` stays at 13. Main roof (`gable_x`, rise 3.6, eave 0.6): t = rise / (DEPTH / 2) = 3.6 / 5.305 = 0.6786 (34.2°, the
+bottom of the 8:12 to 12:12 range), ridge cap y 7.03 → 7.15, gable vents at y 4.90, the front slab's top at the drip line
+y 3.140 (z 4.6). Loft (interior frame, y from the ground floor): floor 3.0, ceiling underside 5.2 (height 2.2), strip z −2.1 → 2.3 about the ridge (interior z 0.1): the ceiling underside 5.4 (world frame) is under the roof's underside 5.46 at the strip's edges (6.953 − 0.6786 × 2.2), which the plan asserts. Wing roof (`gable_z`, rise 1.6, ridge 4.95): its west slope stops at the main wall.
+
+**HOUSES entry** (new keys marked in the feature map; everything else exists):
+
+```python
+"cove_home_b03": dict(name="Nantucket Cape", W=12.0, ZF=4.0, back=-5.0, floors=1, mirror=False, palette="cape",
+                      roof="gable_x", rise=3.6, cross=None, windows="classic", flowers=True,
+                      chimney=(-2.5, 0.4), chimney_top=8.1,
+                      porch="canopy",
+                      dormers=dict(xs=(-4.6, 4.6), w=1.4, z=3.4, win_h=1.0, sill=0.3, rise=0.55, real=True, hole=(0.95, 3.3)),
+                      wing=dict(w=4.0, d=7.0, rise=1.6, side="east", doors=1, door_w=2.6, door_h=2.3, door_style="carriage"),
+                      loft=dict(height=2.2, back=-2.1, front=2.3, hole=3.0),
+                      interior=dict(plan="nantucket", style="nantucket",
+                                    lines=dict(hall_x=1.25, front_z=0.4, bath_z=-2.6, kitchen_x=1.31, stair_top=-0.84,
+                                               fireplace_x=-2.5, hood_x=1.9),
+                                    windows=[...])),   # the window list of 7.2d.5
+```
+The chimney dz 0.4 is the hearth's z in the exterior frame: the living-room fireplace stands on the wall at interior z 0.46
+(7.2d.5), its stack at interior z 0.5 = house z −0.905, 0.4 m forward of the ridge (ZC). `flat_edges` is not set (the interior is
+under budget). The window list is written inline like B-01's.
+
+**Palette** (`PALETTES["cape"]`; `box` and `flower` are two new optional keys, N3):
+
+```python
+"cape": dict(wall="#9fb3c2", wall_pat="shakes", wall_acc="#869cac", trim="#f7f6f1", roof="#4b4f55", roof_acc="#3e4248",
+             shutter="#2f3b46", door="#a33a33", in_wall="#f6f2e8", in_bed="#e6ecef", floor="#c2955f", floor_acc="#a77d49",
+             cabinet="#eef0ee", worktop="#e9e5da", ridge="#3e4248", box="#f7f6f1", flower="#d8453f"),
+```
+Grey-blue shingles (`shakes`, A-03's pattern, 1.5 × 1.5 UV), white trim and window frames (no `frame` key), charcoal tile
+roof, navy-black shutters, red door, white garage door (the shared `EX_GarageDoor`), brick chimney (the shared `EX_Chimney`,
+no `chimney` key), white flower boxes with red geraniums.
+
+**Feature map**
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Single-storey shell (eave line 3.35), cut, glass, casings | exists | W 12.0, back −5.0, `floors=1`; the loft is interior-only: `P.levels` gets an L1 but the exterior ignores it |
+| Side gable `gable_x`, ridge cap, gable vents, brick chimney with `chimney_top` | exists | rise 3.6 (F1 of 7.2c.9 for `chimney_top`) |
+| `wall_pat="shakes"`, `flowers=True` (a box under each front window), `porch="canopy"` | exists | A-03; town houses |
+| Garage wing +x, `door_style="carriage"`, walk-in garage room, `Sky_East` | exists | H1 and the wing defaults |
+| Per-house `rotationY`, `house_point`, `house_cols`, door self-check | exists | T1 (π); π/2 is its first use: new test (below) |
+| Gable dormers (`dormers`) | exists for `hip` | **extended** to `gable_x`, with a real window opening (`real`): N1 |
+| Loft level inside the roof (`loft`): ceiling, end walls, niches, stair arriving in a strip | **new** | N6 |
+| Front roof slab cut over each dormer (`dormers.hole`) | **new** | N7 |
+| Wing on a single-storey house (`wing` with `floors == 1`) | **new** | N2 |
+| Optional palette keys `box`, `flower` | **new** | N3, zero cost |
+| Nantucket interior plan (`interior.plan="nantucket"`), style kit | **new** | N4, geometry in 7.2d.5 |
+| Site: blue hydrangeas along the z axis (`hydrangeas(..., along_z=True)`) | **new** | N5, B-03 dressing |
+
+**New generator and site options**
+
+*N1: dormers on a `gable_x` roof, with a real opening* (decided for reuse in 7.2c.9 F6; additive). `dormer_row` already derives everything from
+the roof slope; only two numbers depend on the roof kind. The assert becomes `h["roof"] in ("hip", "gable_x")` and
+`y_drip = y_eave + DRIP[h["roof"]] − e·t` with `DRIP = {"hip": 0.18, "gable_x": 0.197}` (0.197 = the front slab's 0.1 lift plus
+0.08 / cos(angle) for its half thickness; the hip value 0.18 stays). `t = rise / (min(W, DEPTH) / 2)` is already
+`rise / (DEPTH / 2)` here (DEPTH 10.61 < W 12). The hip houses call it with the same numbers as today (equivalence dump).
+B-03 values (z 3.4, w 1.4, sill 0.3, win_h 1.0, rise 0.55, e 0.6):
+```
+roof under the dormer face   y(z) = y_drip + (4.6 − z)·t = 3.140 + 1.2 × 0.6786 = 3.954
+front wall   EX_Dormer<k>_Front   w 1.4, z 3.26 → 3.40, y 3.894 → 5.474 (6 cm under the slope), E["siding"]
+window       `real=True`: the front wall is four pieces (`_FrontSill`, `_FrontHead`, two `_FrontJamb`) around a 0.9 × 1.0 opening
+             y 4.254 → 5.254 with an `E["glass"]` pane (`_Glass`) inside the wall thickness, casings, head, sill, mullion and
+             transom; `E["frame"]` falls back to the white trim, so the glazing bars are white. Without `real` the old solid
+             front wall and the dark `_Lite` stay (B-02)
+gable        L.gable_roof on y_top 5.474, rise 0.55 (38.2°, ridge 6.024), roof slabs and ridge cap top ≈ 6.19
+length       ln = (y_top + rise + 0.25 − y(z)) / t = 2.320 / 0.6786 = 3.419: the back end (z −0.019) dies 0.25 m under the slope
+x            ±4.6, spans 3.9 → 5.3 (over the outer window of each pair; the roof ends at ±6.35)
+```
+The dormer ridge (6.19) stays 0.96 m under the main ridge cap (7.15). Each dormer is the window of a loft niche (N6) and the
+opening shows the niche from outside. Allow-list prefix `EX_Dormer` exists. About 0.4 k triangles for two.
+
+*N7: roof cut* (`gable_roof_x(..., holes)`, `front_slabs_cut`). With `dormers.hole = (z0, z1)` (exterior frame, 0.95 → 3.3) the front
+slab is built in pieces with the same tilt and thickness: `EX_RoofFront` below the hole (z 3.3 → the eave), `EX_RoofFrontUp`
+above it (to the ridge), and between them `EX_RoofFrontMid<k>` in the x spans left between the holes; each hole is the inner
+width of the dormer (w − 0.24 = 1.16, x ± 0.58 about each dormer). The dormer cheeks, gable and roof (which run back to z −0.02)
+close the hole from outside, the niche from inside. Without `hole` the slab is one piece as before (B-02, A-02, B-01
+unchanged).
+
+*N6: loft* (`loft=dict(height, back, front, hole)`; the plan code is 7.2d.5). `Plan.__init__` adds the level `L1` (y 3.0, height 2.2)
+when `floors == 1` and `loft` is set; the exterior still uses `two = len(P.levels) == 2 and not loft` so its shell stays one
+storey (H_SHELL 3.30). The interior builder: the L1 perimeter walls cover only the strip (z back − 0.12 → front + 0.12), the generic
+full-footprint top ceiling is replaced by `loft_ceilings` (strip ceiling, L0 ceiling pieces behind and in front of the strip with a hole
+over the stair, a ceiling over each niche), `build_stair` takes `upper_z` (guard only where the loft floor is) and `Stair_Side` takes its
+height from the top level. `layout()` takes the L1 height from the level. All of it is guarded by `loft` / `P.loft`; the other 16
+houses rebuild identically (equivalence dump: triangle counts, node names, materials, bounding boxes, layout files).
+
+*N2: wing on a house with a single-storey eave line.* `Plan.__init__` asserts `h["floors"] == 2` for a wing; nothing in the wing code uses the
+storey count (the wing shell is 3.30 high, the garage is one storey, `zf`, `zb` come from `zi_f` and `Z_FRONT_OUT`). The assert
+becomes `h["floors"] == 2 or h["interior"]["plan"] == "nantucket"` (so the old cottage plan still cannot take a wing) with the
+message kept. The doorway lives in the plan: the kitchen's east wall (7.2d.5), already checked inside the wing by the
+existing assert `zb + 0.15 <= a, b <= zf − 0.15` (−1.04 ≤ −0.85 and 0.15 ≤ 4.85). Risk to look at in the first render: the wing
+shell top 3.30 and its west eave line stand at the main eave height (3.35), where the main roof slab overhangs the east gable
+wall by 0.35 m; the wing's west slope stops at the main wall (A-02 and B-01 are the same junction, one storey taller). If the
+slabs touch, lower the wing `rise` to 1.4; no other change. Cost: 0 triangles; A-01 to A-04, B-01, B-02 and the town houses
+rebuild unchanged.
+
+*N3: flower box colours* (`box`, `flower` optional palette keys). `E["box"]` and `E["flower"]` read `C.get("box", "#7a5638")` and
+`C.get("flower", "#f07fa8")` (the accents stay). Every other palette is unchanged. Cost: 0.
+
+*N4: Nantucket plan.* `Plan.nantucket()`, `build_nantucket()` and the `nantucket` style kit, 7.2d.5.
+
+*N5: hydrangeas on a z-axis bed* (`lib_site.hydrangeas(s, name, x0, x1, z, M, n, along_z=False)`: with `along_z` the pair
+`(x0, x1)` is the z range and `z` the fixed x). Default unchanged; B-01 and the villas call it as before.
+
+Exterior triangles (built): 3 384 (B-01: 5.2 k; B-02: 6.1 k). Interior (built): 7 156, 1.8 k under the 9 k executive ceiling, loft included
+(7.2d.5).
+
+**Lot dressing** (`build_cove_heights_site.py`, plan coordinates, same helpers as B-01; house points through T1):
+
+```python
+HOME_B03 = {"key": "cove_home_b03", "name": "Nantucket Cape", "lot": "B-03", "origin": (114.0, -221.0), "zf": 4.0,
+            "rotationY": math.pi / 2, "interiorOffset": [0.0, 0.2, -1.405], "price": 11500}
+facade_x = house_point(HOME_B03, 0.0, HOME_B03["zf"])[0]                                   # 118.0
+S.rect(est, "CH_LotB03_GarageApron", 118.0, -227.7, 120.0, -228.3, Y["lot"], Y["drive"], M["drive"])   # door's north flare
+S.rect(est, "CH_LotB03_FrontPath", 119.425, -221.8, 123.0, -220.2, Y["lot"], Y["drive"], M["drive"])   # step to the front line
+S.street_lamp(est, "CH_LotB03_PostLamp", 121.8, -219.2, M, h=2.6)
+S.hydrangeas(est, "CH_LotB03_HydrangeaN", -219.0, -215.6, 118.8, HM_BLUE, n=3, along_z=True)           # north of the canopy
+S.hydrangeas(est, "CH_LotB03_HydrangeaS", -226.4, -223.0, 118.8, HM_BLUE, n=3, along_z=True)           # south of the canopy
+est.col("HousePlaceholderB03", *house_point(HOME_B03, 2.0, -1.305), 16.0, 10.61, 6.0, yaw=HOME_B03["rotationY"])
+est.cols[-1]["name"] = f"COL_House_{HOME_B03['key']}"
+HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03, VILLA_A04, HOME_B01, HOME_B02, HOME_B03]
+```
+The hydrangea calls run on a private random generator (`est.rnd` swapped for the bed and restored), so the trees and shrubs
+drawn after them stay where they were.
+The placeholder centre is plan (112.695, −223.0), 16.0 along the lot's z axis (the swap of sx and sz under yaw π/2 is handled by
+`est.col`, as for B-01 at π). The v1 driveway slab (x 118 → 123, z −228.3 → −230.7) stays the driveway; the flare apron touches
+its edge without overlapping and ends 2.6 m short of the postbox (122.6, −227.7). The path starts on the lower canopy step's
+edge (plan x 119.425). The lamp stands 1.0 m clear of the path; the hydrangeas (blue: `HM_BLUE` of A-03, no new material) sit
+0.8 m off the facade under the flower boxes, 1.0 m clear of the canopy and 1.1 m clear of the apron. The beds are soft,
+walk-through decor. `house_cols` is not called (the canopy is walk-over, no porch or back-door box), as for B-02. Self-check
+(T1): door (118.8, −221.0) in the lot and `dot(door − origin, entry − centre) = 48 > 0`.
+
+**Wiring and rebuild.** Files that change:
+- `map-src/CampusCove/build_house_v2.py`: `PALETTES["cape"]`, `STYLES["nantucket"]`, the `cove_home_b03` entry and its window
+  list; `dormer_row` on `gable_x` (N1); the wing assert (N2); `box` / `flower` palette keys (N3); `Plan.nantucket`,
+  `build_nantucket` and the `fit` dispatch entry (N4).
+- `map-src/CampusCove/lib_site.py`: `hydrangeas(..., along_z)` (N5).
+- `map-src/CampusCove/build_cove_heights_site.py`: `HOME_B03`, its dressing, the `HOUSES` list.
+- `front/src/game/assets/catalog.ts`: `'cove_home_b03'` in the key union and `house('cove_home_b03', 'Nantucket Cape')`.
+- `backend/database/seeders/HousingUnitSeeder.php`: `['cove_home_b03', 'buy', 11500, -312.2, 1.25, -203.0, '#9FB3C2']` and
+  `'cove_home_b03' => ['minX' => -5.795, 'maxX' => 9.795, 'minZ' => -5.0, 'maxZ' => 5.2, 'maxY' => 5.4]` (two storeys for the furniture limit).
+- The housing test counts (backend) go from 16 to 17 units.
+- `socket/src/movement.test.ts`: `unitAt` finds B-03 for the world point (−314.405, −203.0), interior (0, 4.0), and not for the door
+  point itself (pins the π/2 case; only π was tested).
+- No change to `apply-cove-heights.mjs`, the socket or the front door code (rotation, door point, lock and open state are
+  generic since T1); no back door, no walkable gallery.
+- Generated: `front/public/assets/houses/cove_home_b03/*`, `front/public/assets/park/cove_heights/*`, `town.collision.json`,
+  `world.manifest.json`.
+
+Then the § 7.2b sequence with `HOUSE_KEYS = ["cove_home_b03"]`, the site build, `apply-cove-heights.mjs`, `make seed`. The house
+build prints the seeder bounds and `interiorOffset`, the site build the door points; check them against the values above.
+Equivalence check: dump every HOUSES scene before and after N1 to N4; the six Cove Heights houses and `house_01` … `house_10`
+must come out identical (the dormers of B-02 especially, with their `DRIP` constant), and `cove_heights.layout.json` must only
+gain the B-03 entries. Playtest (`playtest-game`): walk the driveway apron and the path, open the door, walk the hall, both front
+rooms and the kitchen, pass the garage doorway into the wing, check the twin dormers, the flower boxes and the chimney from
+the street, lock from inside and check that a second player without a key is refused.
+
+**Decisions** (product owner, 2026-11-18; recommendations in brackets)
+1. **Loft: yes** (reverses the recommendation, which was a one-storey house with visual dormers). Built as two rooms in the roof
+   (7.2d.5) reached by a stair and lit by the two real dormers. Cost: the loft machinery (N6, N7), 2 k interior triangles, a stair that
+   takes the hall's width. R5 is resolved by the eave line (rule check).
+2. **Width** W 12.0 × −5.0; B-07 changes its width when designed. 3. **Pitch** rise 3.6. 4. **Chimney** off-centre brick stack at x −2.5; it
+   rises through the loft in a brick breast. 5. **Entry** the existing bracketed canopy. 6. **Ground floor** two bedrooms, one bath, eat-in
+   kitchen, garage door off the kitchen. 7. **Flower boxes** white with red geraniums (N3). 8. **Blue hydrangeas** (N5).
+9. **Price: 11 500** (daily tax 575). The loft adds two rooms (GFA 197 m² against 155 m²), so the one-storey 10 000 no longer fits; the
+   single-storey band of 7.2c.2 tops out at 11 500, which is 58 coins a m² against B-01's 51 and B-02's 48: the house sits at the top of
+   the band, and an owner who thinks it dear is the reason to move it to 11 000 later. Flagged for the product owner.
+10. **maxY 5.4** in the seeder (two storeys for the furniture limit: 63 objects, about 1 per 5 m² of the 159 m² footprint and the
+   loft). Flagged: the loft is only 46 m², so the limit is generous.
+
+**Pieces and where they come from** (every piece is a building part or a simple shape, so none is a `make model` job):
+
+| Piece | Source | Why |
+|---|---|---|
+| Shell walls, window cuts, plinth, corner boards | existing `L.wall`, `L.perimeter`, `dress()` | same builders as every house |
+| Grey-blue shingles | existing `shakes` pattern from the palette | a wall material (A-03) |
+| Steep side gable, ridge cap, gable vents | existing `gable_roof_x` | standard part, a larger rise |
+| Twin gable dormers with real windows | existing `dormer_row`, extended to `gable_x` and a window opening (N1) | the hip dormers' builder |
+| Roof slab cut over the dormers | new `front_slabs_cut` (N7) | the same slab in pieces |
+| Loft: ceiling, end walls, niches, stair arrival | new `loft_ceilings`, `build_nantucket`, `Plan.nantucket` (N6) | boxes and walls from the existing builders |
+| Brick chimney over the ridge line | existing chimney box and `chimney_top` | one number |
+| Shuttered five-bay facade, flower boxes | existing `dress()` with `flowers=True` | A-03 and the town houses |
+| Bracketed canopy with steps | existing `canopy()` | the town houses' entry |
+| Garage wing, carriage door | existing `wing_exterior`, `door_style="carriage"` | one wing builder for every lot |
+| Plan, rooms, walls | new `Plan.nantucket` from `interior["lines"]` | a one-storey plan with its own circulation |
+| Fireplace, kitchen, bath fittings, wardrobes | existing `lib_interior.py` builders and `build_kitchen` | reused as they are |
+| Lot dressing: apron, path, lamp, blue hydrangeas | existing `lib_site.py` builders, `HM_BLUE`, `along_z` | same estate furniture as the villas |
+
 #### 7.2c.5 Generator extension wishlist (impact on uniqueness ÷ effort)
 
 | # | Extension | Lots it unlocks | Impact | Effort |
@@ -2125,7 +2374,7 @@ is 0.08 (the newel size), not 0.12.
 Recommended order: 1 → 3 → 2 (mirror + setback first) → 4 → 6 (loggia) → 7, which is exactly what Villa Serena needs, then 5
 and 8, which give the executive homes most of their character.
 
-### 7.2d Villa interiors: the estate, harbor and skyline plans and style kits [estate built for A-01 and A-02, harbor built for A-03, skyline built for A-04, tidewater built for B-01, lavande designed for B-02]
+### 7.2d Villa interiors: the estate, harbor and skyline plans and style kits [estate built for A-01 and A-02, harbor built for A-03, skyline built for A-04, tidewater built for B-01, lavande built for B-02, nantucket built for B-03]
 
 Item 15 of the wishlist, first variant. The town houses keep their duplex; a villa entry with
 `interior=dict(plan="estate", style=..., stair="west"|"east", ...)` in `build_house_v2.py` gets a luxury plan instead
@@ -3059,6 +3308,157 @@ cut list applied (beams, three wardrobes, powder wainscot) 10.65 k; with `flat_e
 partitions 1.5 k, paint skins and wainscot 1.7 k, door and window casings and baseboards 2.2 k, fittings 1.3 k, lights 0.9 k,
 kitchen 0.4 k, stair 0.6 k. The build prints `interior tris`. If a later change needs room, cut in this order: the Bed3
 wardrobe, the powder wainscot, the Bed2 wardrobe, the family-room beams, the dressing wardrobe B (0.06 k each).
+
+#### 7.2d.5 The nantucket plan for B-03 [built]
+
+Sixth variant of wishlist item 15, and the first plan with a **loft**. A Cape is lived around its hearth and a central hall: the front
+door opens on a 2.4 m hall that runs the full depth of the house with the stair along its east wall, the living room (with the
+hearth) and the second bedroom flank the entry, and the rear holds the primary bedroom, the eat-in kitchen and a bath at the end of
+the hall. The stair climbs away from the door into the loft, two rooms and two dormer niches in the roof. The kitchen's east wall
+carries the garage doorway into the +x wing. Sources: the compact Cape plan (centre door, hearth room, bedrooms behind, rooms in the
+roof) from [`notes/floor_plans.md`](research/luxury-suburban-houses/notes/floor_plans.md); the room sizes are design derivations.
+
+| | Estate (A-01, A-02) | Harbor (A-03) | Skyline (A-04) | Tidewater (B-01) | Lavande (B-02) | Nantucket (B-03) |
+|---|---|---|---|---|---|---|
+| Storeys | 2 | 2 | 2 | 2 | 2 | **1 + loft in the roof** |
+| Entry | double-height hall | living hall with inglenook | open entry | through hall to a back door | centre hall to a powder room | 2.4 m hall the full depth, bath at its end |
+| Stair | straight, on the hall axis | dog-leg | floating | along the hall wall toward the street | along the hall's east wall away from the door | along the hall's east wall away from the door, into the loft |
+| Front rooms | side room + open room | parlour | study, living | dining, living | dining, salon | living (hearth), bedroom 2 |
+| Back | great room | kitchen + sunroom | great room | great room | kitchen, family room, powder | primary bedroom, eat-in kitchen, bath |
+| Upper | suite, 2 bedrooms, bath 2 | suite, 3 bedrooms, bath 2 | suite, 3 bedrooms, bath 2 | suite, 2 bedrooms, bath 2 | suite, 2 bedrooms, bath 2 | two loft rooms and two dormer niches, no bath |
+| Garage doorway | kitchen side | west wall | west wall | mudroom | none | kitchen, east wall |
+
+Written for the one-storey-plus-loft, +x-wing, non-mirrored case (`Plan.nantucket()` asserts `floors == 1`, `wing["s"] == 1`,
+`not mirror` and a `loft`). The plan code has no house literal: it reads the lines below from `interior["lines"]` and `loft`, derives
+every room, partition, door, the stair and the lights from them and from xi, zf, zb, and takes its windows from `interior["windows"]`.
+B-03 values: xi 5.595, zf 5.0, zb −4.8, PT 0.12, e = PT/2 = 0.06; a partition "at x" is its centre line.
+
+```
+lines (B-03)   hall_x HX 1.25 · front_z FZ 0.4 · bath_z BZ −2.6 · kitchen_x KX 1.31 (= HX + e, the hall wall face) · stair_top ST −0.84
+               fireplace_x −2.5 · hood_x 1.9      loft: height 2.2, back LB −2.1, front LF 2.3, hole 3.0
+derived        hall clear width 2(HX − e) = 2.38, hall rect z BZ + e → zf = −2.54 → 5.0
+               stair x SX0 = HX − e − STAIR_W = −0.01 → SX1 = 1.19, run 0.2875, rise 3.0 / 16, top ST −0.84, foot SF = ST + 16 run = 3.76
+               loft niches x ± 4.6 ± 0.55 (the dormers' inner width 1.1), z LF → zn = dormer z − 0.14 − OZ = 4.665
+asserts        SF ≤ zf − 1.2 (the door leaf clears the stair foot) · SX0 − 0.08 − (−HX + e) ≥ 0.9 (the passage beside the stair: 1.06)
+               zb + 3.0 ≤ FZ ≤ zf − 3.0 · zb + 1.8 ≤ BZ ≤ FZ − 2.0 · LB + 1.0 ≤ ST ≤ LF − 1.0
+               the loft ceiling (FY + 3.0 + 2.2) is under the roof underside at LB and LF (5.46)
+               every doorway ≥ MIN_DOOR 1.0 · the garage doorway lies inside the wing · every room rect has a positive size
+```
+
+```
+L0   x: −5.595               −1.25     −0.01 1.19 1.25                    5.595        (east wall → wing x 5.795 … 9.595)
+z 5.0  ┌──────────────────────┬──── door ────┬───────────────────────┐
+       │ Living      windows  c  vestibule c  Bed 2     windows      │ ╲ wing:
+       │ hearth ▣ (back wall) │   ▲ stair foot (3.76)   │            │  garage
+z 0.46 │                      │ passage┃stair           │            │ (z −1.19 → 5.0)
+z 0.4  ├────────── walls ─────┤        ┃ top (−0.84)    ├──── walls ─┤
+       │ Bed 1         d ─────┤  hall                   ├── d  Kitchen ═ door ═ (garage, z −0.85 → 0.15)
+       │ wardrobe · window    │                         │      run · sink · window
+z −2.6 │                      ├────────── d ────────────┤            │
+       │                      │ Bath                    │            │
+z −4.8 └──────────────────────┴─────────────────────────┴────────────┘
+       c = cased opening 1.08 m · d = door 1.0 m
+```
+
+**L0 rooms** (rect x0, x1, z0, z1)
+
+| Room | Rect (formula → B-03) | Floor | Paint / finish | Light |
+|------|-----------------------|-------|----------------|-------|
+| Hall | −HX + e, HX − e, BZ + e, zf → −1.19, 1.19, −2.54, 5.0 | wood | `hall` | manual |
+| Living | −xi, −HX − e, FZ + e, zf → −5.595, −1.31, 0.46, 5.0 | wood | `living` | centre |
+| Bed2 | HX + e, xi, FZ + e, zf → 1.31, 5.595, 0.46, 5.0 | wood | `bed` | centre |
+| Bed1 | −xi, −HX − e, zb, FZ − e → −5.595, −1.31, −4.8, 0.34 | wood | `bed` | centre |
+| Kitchen | KX, xi, zb, FZ − e → 1.31, 5.595, −4.8, 0.34 | tile | none | manual |
+| Bath | −HX + e, HX − e, zb, BZ − e → −1.19, 1.19, −4.8, −2.66 | bath | `wainscot=True`, `baseboard=False` | centre |
+
+**L0 partitions**: `Walls_HallW` (z-axis at x −HX): hall → living (3.82, 4.9, 2.4, cased), hall → bed 1 (−2.4, −1.4); `Walls_HallE`
+(at x HX, **h = L1_Y** along the stair): hall → bed 2 (3.82, 4.9, 2.4, cased), hall → kitchen (−2.4, −1.4); `Walls_Front` and
+`Walls_FrontE` (x-axis at z FZ, x −xi → −HX and HX → xi): none (the hearth stands on the living side); `Walls_BathN` (at z BZ,
+x −HX → HX): hall → bath (−0.5, 0.5). Paths: front door → hall → living and bed 2 through the cased 1.08 m openings, hall rear →
+bed 1, kitchen and bath, stair along the east wall; kitchen → garage by the east doorway.
+
+**Loft** (level L1, y 3.0, height 2.2; strip z −2.1 → 2.3 about the ridge, which is at interior z 0.1)
+
+| Room | Rect (formula → B-03) | Floor | Notes |
+|------|-----------------------|-------|-------|
+| LoftLanding | −HX + e, HX − e, LB, ST → −1.19, 1.19, −2.1, −0.84 | wood | `hall`, `open=("N",)`; the stair arrives on it |
+| LoftWalk | −HX + e, SX0, ST, LF → −1.19, −0.01, −0.84, 2.3 | wood | `hall`; beside the well |
+| LoftWell | SX0, SX1, ST, LF → −0.01, 1.19, −0.84, 2.3 | **None** (void over the flight) | `light=False` |
+| LoftBed3 | −xi, −HX − e, LB, LF → −5.595, −1.31, −2.1, 2.3 | wood | `bed`, 18.9 m², door from the landing |
+| LoftSitting | HX + e, xi, LB, LF → 1.31, 5.595, −2.1, 2.3 | wood | `bed`, 18.9 m², door from the landing |
+| Niche0 / Niche1 | x ± 4.6 ± 0.55, LF + e, 4.665 | wood | 1.1 × 2.3 alcoves, one per dormer, open to the room through the front wall |
+
+Loft partitions: `Walls_LoftBack` (x-axis at LB − e), `Walls_LoftFront` (at LF + e; two niche openings 1.1 wide, 2.0 high, cased),
+`Walls_LoftW` and `Walls_LoftE` (z-axis at ∓HX, z −2.22 → 2.42; door (−1.95, −0.95) each). The end walls (x ± xi) cover only the strip.
+Every loft box lies inside the roof: the ceiling underside 5.2 is under the roof's underside 5.26 (interior frame) at the strip's edges.
+Everything beyond the strip (the eaves, the roof void) is unbuilt, unreachable and invisible. The niche side walls are 0.04 m skins
+at x ± 0.56 (inside the dormer cheeks, 0.58), a 2.2 m high box blocks each niche's window end (`Window_Niche<i>_Block`), and the
+dormer window opening (7.2c.10 N1) is trimmed on the niche side (`Window_Niche<i>_Cas*`, `_Sill`).
+
+**Windows** (`interior["windows"]`; y = WIN (0.9, 2.2) unless given; five bays at x −4.6, −2.2, 0 (the door), 2.2, 4.6; windows 1.1 m wide)
+
+| Side | Windows |
+|------|---------|
+| front | living (−5.15, −4.05) and (−2.75, −1.65); bed 2 (1.65, 2.75) and (4.05, 5.15) |
+| back | bed 1 (−4.1, −2.5); bath (−0.4, 0.4) y (1.5, 2.1); kitchen sink (2.6525, 4.2525) y (1.05, 2.15) |
+| west | living (1.4, 3.0); bed 1 (−3.4, −1.8) |
+| east | kitchen (−3.0, −1.9) y (1.05, 2.15); the garage doorway (−0.85, 0.15) y (0, DOOR_H), `kind="door"` |
+
+The loft has no window in the shell: its light is the two dormers. The east wall has no other ground-floor window: from z −1.595 forward it
+is the wing's wall.
+
+**Stair** (`build_stair` with `P.stair = dict(x0=SX0, x1=SX1, z0=ST, z1=SF, rise="-z", open=-1, rail="rail", baluster=S["baluster"],
+newel=True, foot_rail=False, upper_edge=False, upper_z=(ST, LF))`): the lavande flight, on the hall's east wall, rising away from the
+door. The upper guard stands only where the loft floor is (`upper_z`); `Stair_Side` (x −0.05, 0.08 wide, z −0.84 → 3.76) keeps players
+off the flight from the hall and guards the well. The L0 ceiling has a hole over the flight (`Ceiling_FrontMid` starts at z 3.0, the
+loft floor ends at 2.3), so the flight climbs under open roof void with at least 2 m of head room.
+
+**layout.json**
+
+```
+L0 rects   (−5.595, 5.595, −4.8, 5.2) and the wing (5.595 → 9.595, −1.19 → 5.0)
+L1 rects   (−5.595, 5.595, −2.1, −0.84)   back band: landing, both loft rooms
+           (−5.595, −0.01, −0.84, 2.3)    west front: loft room 3 and the walk beside the well
+           (1.19, 5.595, −0.84, 2.3)      east front: sitting room
+           (−5.15, −4.05, 2.3, 4.665) and (4.05, 5.15, 2.3, 4.665)   the niches
+stairs     Stair_Main x −0.01 → 1.19, z −0.84 → 3.76, y0 0, y1 3.0, rise "-z"
+```
+No gallery, no terrace, no back door.
+
+**Fittings** (`build_nantucket(B, M, P)`; positions from room rects): `LI.fireplace(… ((−2.5, living.z0), "+z") …, "stone")` on the living room's
+back wall, under the brick stack; `Fit_ChimneyBreast` 0.9 × 0.9 × 2.2 (collision) in the loft room above it, where the stack passes
+through; kitchen through `build_kitchen` unchanged (run x 1.31 → 5.595 on the back wall, return z −4.18 → −3.2 on the east wall, sink at x
+3.4525 under the back window) with `Fit_Cooktop` (1.9, zb + 0.33) and `LI.range_hood` at x 1.9; bath: shower in the west back corner, WC
+and a 0.6 vanity on the east wall; a 2.0 m wardrobe in each ground-floor bedroom against the partition under and over the hearth.
+Living, bedrooms, loft rooms and the kitchen floor stay empty for Cove Home furniture.
+
+**Lights**: hall front and rear, beside the stair, kitchen, loft hall and loft walk, room centres for the rest.
+
+**Code hooks.** `Plan.__init__` adds the L1 level for a `loft`, dispatches `interior.plan == "nantucket"` to `self.nantucket()` and
+`build_interior` calls `loft_ceilings` and the fittings dispatch gets `"nantucket": build_nantucket` (7.2c.10 N4, N6). No new allow-list
+prefix (`Ceiling`, `Window_`, `Walls_`, `Fit_`, `Stair_` exist).
+
+**Style kit** (`STYLES["nantucket"]`, the keys of the lavande kit):
+
+```python
+"nantucket": dict(foyer=("planks", "#b8895a", "#9a6f45", 1.0), stone="#b0644f", rail="#3a342e", baluster="trim",
+                  metal="#2b2d33", fire="stone", island="#7f93a0", hood="plaster", uppers="cabinet", beam="#6b4a2e",
+                  shelf="#f3f1ea", closet="#f3f1ea", art="#5f7f94", art2="#e8d9b0", plaster="#f6f2e6",
+                  vanity_top="#ecebe7", stair_pat="planks", panel_pat="stripes", panel_acc="#e6e4dc",
+                  paints=dict(hall="#f1ece0", living="#dfe7ec")),
+```
+
+| Style kit | Nantucket Cape (B-03) |
+|---|---|
+| Plan | 2.4 m hall the full depth with a straight stair to the loft; living with the hearth and bedroom 2 at the front, bedroom 1, eat-in kitchen and bath at the back; two loft rooms with dormer niches |
+| Floors | wide painted-pine planks, tile in the kitchen and bath |
+| Walls / ceilings | warm white hall, pale blue-grey living room, flat white ceilings |
+| Fireplace | red-brick chimneypiece, dark timber mantel, a brick breast through the loft |
+| Kitchen | white-grey shaker cabinets and wall units, plaster hood |
+| Bath | one shower, a WC, a vanity; no tub |
+
+Triangles (built): **7 156** interior (ground floor, stair, loft, garage room included), 1.8 k under the 9 k executive ceiling; **3 384** exterior.
+The build prints `interior tris`; no `flat_edges` and no cut list were needed.
 
 ### 7.3 Non-lot land around the bands
 

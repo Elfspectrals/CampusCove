@@ -653,6 +653,30 @@
         0.2,
         -1.405
       ]
+    },
+    {
+      "kind": "house",
+      "key": "cove_home_b03",
+      "name": "Nantucket Cape",
+      "lot": "B-03",
+      "position": [
+        -317.0,
+        0.0,
+        -203.0
+      ],
+      "rotationY": 1.570796,
+      "door": [
+        -312.2,
+        1.25,
+        -203.0
+      ],
+      "offer": "buy",
+      "price": 11500,
+      "interiorOffset": [
+        0.0,
+        0.2,
+        -1.405
+      ]
     }
   ],
   "collision": [
@@ -1565,6 +1589,26 @@
       "hy": 3.0,
       "cy": 3.0,
       "yaw": 3.1416
+    },
+    {
+      "name": "COL_Cove_CH_LotB03_PostLamp",
+      "cx": -309.2,
+      "cz": -201.2,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_House_cove_home_b03",
+      "cx": -318.305,
+      "cz": -205.0,
+      "hx": 8.0,
+      "hz": 5.305,
+      "hy": 3.0,
+      "cy": 3.0,
+      "yaw": 1.5708
     },
     {
       "name": "COL_Cove_CH_Clubhouse",

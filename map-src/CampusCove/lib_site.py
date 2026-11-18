@@ -387,11 +387,14 @@ def hedge_run(s, name, a, b, M, w=0.5, h=0.40, y0=0.02, mat="hedge_low"):
         s.col(name, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, ln, w, h + y0, seg_yaw(*a, *b))
 
 
-def hydrangeas(s, name, x0, x1, z, M, n=6):
-    """Hydrangea shrubs along a bed: a green leafy mound crowned with white flower heads (soft decor, walk-through)."""
+def hydrangeas(s, name, x0, x1, z, M, n=6, along_z=False):
+    """Hydrangea shrubs along a bed: a green leafy mound crowned with white flower heads (soft decor, walk-through).
+    along_z: the bed runs along z, (x0, x1) is its z range and z the fixed x."""
     for k in range(n):
         x = x0 + (x1 - x0) * (k + 0.5) / n + s.rnd.uniform(-0.15, 0.15)
         zz = z + s.rnd.uniform(-0.15, 0.15)
+        if along_z:
+            x, zz = zz, x
         _blob(s, f"{name}_{k}_Leaf", x, zz, 0.02, 0.5, M["boxwood"], sy=0.7, jitter=0.1)
         for j in range(4):
             a = TWO_PI * j / 4 + s.rnd.uniform(-0.4, 0.4)

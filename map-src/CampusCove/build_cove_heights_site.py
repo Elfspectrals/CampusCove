@@ -12,6 +12,7 @@ import importlib
 import json
 import math
 import os
+import random
 import sys
 
 if "__file__" not in globals():
@@ -450,7 +451,18 @@ S.street_lamp(est, "CH_LotB02_LampW", 137.7, -210.5, M, h=2.6)
 S.street_lamp(est, "CH_LotB02_LampE", 142.3, -210.5, M, h=2.6)
 est.col("HousePlaceholderB02", *house_point(HOME_B02, 0.0, -1.605), 14.4, 11.21, 6.0, yaw=HOME_B02["rotationY"])
 est.cols[-1]["name"] = f"COL_House_{HOME_B02['key']}"
-HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03, VILLA_A04, HOME_B01, HOME_B02]
+HOME_B03 = {"key": "cove_home_b03", "name": "Nantucket Cape", "lot": "B-03", "origin": (114.0, -221.0), "zf": 4.0,
+            "rotationY": math.pi / 2, "interiorOffset": [0.0, 0.2, -1.405], "price": 11500}
+S.rect(est, "CH_LotB03_GarageApron", 118.0, -227.7, 120.0, -228.3, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotB03_FrontPath", 119.425, -221.8, 123.0, -220.2, Y["lot"], Y["drive"], M["drive"])
+S.street_lamp(est, "CH_LotB03_PostLamp", 121.8, -219.2, M, h=2.6)
+_shared_rnd, est.rnd = est.rnd, random.Random("CH_LotB03")
+S.hydrangeas(est, "CH_LotB03_HydrangeaN", -219.0, -215.6, 118.8, HM_BLUE, n=3, along_z=True)
+S.hydrangeas(est, "CH_LotB03_HydrangeaS", -226.4, -223.0, 118.8, HM_BLUE, n=3, along_z=True)
+est.rnd = _shared_rnd
+est.col("HousePlaceholderB03", *house_point(HOME_B03, 2.0, -1.305), 16.0, 10.61, 6.0, yaw=HOME_B03["rotationY"])
+est.cols[-1]["name"] = f"COL_House_{HOME_B03['key']}"
+HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03, VILLA_A04, HOME_B01, HOME_B02, HOME_B03]
 for h in HOUSES:
     _, _, x0, x1, z0, z1, _, _, entry, *_ = next(lot for lot in LOTS if lot[0] == h["lot"])
     door = house_point(h, 0.0, h["zf"] + 0.8)

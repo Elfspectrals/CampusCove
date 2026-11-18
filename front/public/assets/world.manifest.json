@@ -1169,6 +1169,29 @@
             0.2,
             -1.405
           ]
+        },
+        {
+          "kind": "house",
+          "key": "cove_home_b03",
+          "name": "Nantucket Cape",
+          "position": [
+            -317,
+            0,
+            -203
+          ],
+          "rotationY": 1.570796,
+          "door": [
+            -312.2,
+            1.25,
+            -203
+          ],
+          "offer": "buy",
+          "price": 11500,
+          "interiorOffset": [
+            0,
+            0.2,
+            -1.405
+          ]
         }
       ]
     },
