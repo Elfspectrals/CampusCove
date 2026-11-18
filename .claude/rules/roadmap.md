@@ -344,6 +344,13 @@ Decision (2026-11-17): the Escape menu becomes a full-screen pause menu like the
 - [done] Help lines removed from the sport HUDs (football, basketball, tennis, boxing, punch bag, skating, running, climbing, free pétanque).
 - Left out because nothing exists behind them: a frame-rate limit and counter, HUD size, colour-blind team colours, muting when the window is in the background.
 
+## Cove Parkview Mall exteriors (done, branch fix/mall-exteriors)
+
+Decision (2026-11-18): the mall's roof voids that held only steel trusses are glazed, and the four blank outer walls get a plinth, band, cornice and pilasters. The park and Al Fresca stay open to the sky. Shops and their contents are not touched.
+
+- [done] Five roof voids glazed (`Roof_Sky_*`) and four facades dressed (`map-src/CampusCove/mall_facade.py`, `docs/MALL.md` V1.4). Rebuilt and checked on the height map from above and in renders; not walked in game.
+- [todo] Walk the outside of the mall in game; `npm run topo:check -- mall` already failed before this change (112 bad points, now 103, all on interior decor).
+
 ## Later
 
 - Fishing as the second job (reuse the darts power meter or the Drink Fast balance bar; rod and fish models exist).

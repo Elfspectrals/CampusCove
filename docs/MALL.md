@@ -37,6 +37,7 @@ Décisions produit (validées le 30/10/2026) :
   (`FoodCatalog` groupe `grocery`, codes `grocery_*`, dossiers `items/grocery/<clé>`, `build_grocery_items.py`), rayons
   pleins de faux produits, frigos vitrés creux ; règle d'asset des consommables : **dossier = code sans préfixe**
   (`candy_cotton` → `items/sweets/cotton`), ce qui a renommé quatre dossiers de bonbons.
+- **V1.4 (18/11/2026)** : extérieurs finis (`mall_facade.py`). Les cinq vides du toit qui ne portaient que des fermes (cours nord-est et sud-est de 20 × 14 m, vides de Paradise, de l'aile est et de l'aile ouest) sont fermés par un vitrage `Roof_Sky_*` posé sur les fermes, sans collision. Les quatre façades de 11,6 m (nord, sud, ouest, est) reçoivent un socle en pierre de 0,9 m, un bandeau vert à 9,4 m, une corniche et un pilastre tous les 12 m environ (`Outer_Plinth_*`, `Outer_Band_*`, `Outer_Cornice_*`, `Outer_Pilaster_*`), arrêtés aux ancres, au quai de livraison (x ∈ [-302, -280]) et à l'entrée (z ∈ [-9, 9]). Le parc (z ∈ [-50, 50]) et Al Fresca restent à ciel ouvert : c'est voulu.
 - Aucune vente côté serveur n'est spécifique au centre : le catalogue `/shop/items` est global, chaque boutique n'est
   qu'une vue filtrée (vêtements par URL de modèle, meubles et nourriture par code). Pas d'alcool ni de médicaments au
   supermarché (le pub et la clinique restent les seuls points de vente).
@@ -45,7 +46,7 @@ Décisions produit (validées le 30/10/2026) :
 
 | Couche | Fichiers |
 |---|---|
-| Blender | `map-src/CampusCove/build_mall.py` (structure, coulisses, parvis, avenue, `mall.layout.json`) + `mall_lib.py` (contexte `Ctx`, helpers, registre `lib_kit`, exclusions) + `mall_decor.py` (allées, plazas, parc) + `mall_dressing.py` (vitrines `planned`, chantiers), `build_northline.py`, `build_hearth.py`, `build_greencart.py` (intérieur + coque chacun), `build_grocery_items.py` (12 produits d'épicerie), `build_house_lightmaps.py -- store northline hearth_hollow greencart` |
+| Blender | `map-src/CampusCove/build_mall.py` (structure, coulisses, parvis, avenue, `mall.layout.json`) + `mall_lib.py` (contexte `Ctx`, helpers, registre `lib_kit`, exclusions) + `mall_decor.py` (allées, plazas, parc) + `mall_dressing.py` (vitrines `planned`, chantiers) + `mall_facade.py` (puits de lumière vitrés, socle, bandeau, corniche et pilastres des façades), `build_northline.py`, `build_hearth.py`, `build_greencart.py` (intérieur + coque chacun), `build_grocery_items.py` (12 produits d'épicerie), `build_house_lightmaps.py -- store northline hearth_hollow greencart` |
 | Outillage | `front/scripts/apply-mall.mjs` (zone `mall` du manifeste), `front/scripts/optimize-assets.mjs` (catégorie `store`) |
 | Front | `game/assets/catalog.ts` (`NORTHLINE`, `HEARTH_HOLLOW`, `GREENCART`, `MALL`), `game/world/worldManifest.ts` (`layoutUrl` de zone), `game/town/openHouses.ts` (niveaux d'une zone), `composables/game/useFurnitureStore.ts` et `useClothingStore.ts` (paramètre `store`), `components/game/GameStoreItemCard.vue` (`brand`), câblage `GameView.vue` |
 | Socket | rien de nouveau : les trois boutiques sont des bâtiments `kind: 'store'` lus par `socket/src/world.ts` (portes publiques) ; redémarrer le conteneur après `apply-mall.mjs` |

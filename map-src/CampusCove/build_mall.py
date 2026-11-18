@@ -34,7 +34,8 @@ import lib_kit as K
 import mall_lib as ML
 import mall_decor
 import mall_dressing
-for module in (L, K, ML, mall_decor, mall_dressing):
+import mall_facade
+for module in (L, K, ML, mall_decor, mall_dressing, mall_facade):
     importlib.reload(module)
 import bpy
 
@@ -946,6 +947,7 @@ M = types.SimpleNamespace(X0=X0, X1=X1, Z0=Z0, Z1=Z1, SVC=SVC, OUTER=OUTER, WALK
                           ENTRANCE_HW=ENTRANCE_HW, EXIT_W=EXIT_W, NOTCH=NOTCH, WARE=WARE, DOCK_X=DOCK_X, P_UP=P_UP, CATS=CATS, CAT_MATS=CAT_MATS, ANCHORS=ANCHORS,
                           cells=cells, cell_stores=cell_stores, stairs=stairs, l1_rects=l1_rects, rnd=rnd)
 mall_decor.build(ctx, M)
+mall_facade.build(ctx, M)
 
 # ---------------------------------------------------------------- checks, merge, export
 bad = L.check_grounded(objs, allow=("Floor", "Roof", "Slab", "Svc", "Outer_", "Return_", "Lintel_", "Spandrel_", "Cell_", "Partition_", "Pilaster_", "Back_", "Bulkhead_", "Corner_",
