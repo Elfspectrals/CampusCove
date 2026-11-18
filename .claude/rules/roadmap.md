@@ -348,8 +348,9 @@ Decision (2026-11-17): the Escape menu becomes a full-screen pause menu like the
 
 Decision (2026-11-18): the mall's roof voids that held only steel trusses are glazed, and the four blank outer walls get a plinth, band, cornice and pilasters. The park and Al Fresca stay open to the sky. Shops and their contents are not touched.
 
+- [done] Dock, service yards, service corridors, facade lamps, roof plant and corner roof caps added (2026-11-18, after the user asked for every bare zone outside the shops).
 - [done] Five roof voids glazed (`Roof_Sky_*`) and four facades dressed (`map-src/CampusCove/mall_facade.py`, `docs/MALL.md` V1.4). Rebuilt and checked on the height map from above and in renders; not walked in game.
-- [todo] Walk the outside of the mall in game; `npm run topo:check -- mall` already failed before this change (112 bad points, now 103, all on interior decor).
+- [todo] Walk the outside of the mall in game; `npm run topo:check -- mall` already failed before this change (112 bad points, now 106, none on the new pieces in the 13 spots listed).
 
 ## Later
 
