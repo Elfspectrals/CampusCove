@@ -123,8 +123,30 @@ now; robots still run on their own (`tennisRobot.ts`). Nothing else moves them b
   player's movement until the ball passes (`committedSwingAt`, `swinging()` in `useTennis`), as the serve already
   does. The socket strikes a committed swing only if the player is still within 1.8 m + 0.5 m (`SWING_DRIFT_M`, for
   the network) of the contact point when the ball gets there; otherwise the swing is dropped and the ball flies on.
-  The 0.5 m covers the position updates still in flight at the click. A click the server refuses for its 400 ms
-  cooldown still roots the front for at most 350 ms.
+  The 0.5 m covers the position updates still in flight at the click. The front keeps the socket's click cooldown
+  (400 ms, 700 ms after a swing at nothing in a match, `swingClick`), so a click the socket would refuse never roots
+  the player. In doubles a click while the partner's swing is already committed still roots the player until the
+  ball passes (the front does not know about the partner's swing); the socket refuses that click without the 700 ms.
+
+Played on 2026-11-18 on a stack of this branch, in the browser, against the normal robot, with the movement keys
+only (a script holding W, A, S, D toward the mark and clicking about 100 ms before the ball): the player did not move
+on their own through a whole point; D moved them 5.2 m/s to the screen's right and S backwards; the mark, the
+swing ring closing on it (orange, then green) and the landing ring were drawn as before; with D held through 35
+swings the player stayed rooted every time (0 m). A tie-break stood at 5-5 after a rally of 23 returns.
+
+Also measured headless through the socket's match code (`runTennis`, `onTennisHit`, the robot brains), with a
+player moved only at walking speed (5 m/s, sprint 8.5 m/s) from a 250 ms reaction, clicking 100 ms before the ball
+with ±60 ms of error; 6 tie-breaks each, points won-lost:
+
+| Player | Easy | Normal | Hard |
+|---|---|---|---|
+| Walks to the mark | 42-0 | 42-0 | 43-16 |
+| Slow (450 ms reaction, ±120 ms) | 42-3 | 42-11 | 24-42 |
+| Never moves | 42-3 | 6-42 | 1-42 |
+| Walks to the mark, doubles (robot partner at the same level) | 42-1 | 42-7 | 9-42 |
+
+Smashes made with the 0.6 s charge: 63 of 87 returns against easy, 148 of 255 against normal, 151 of 747 against
+hard. A player who stands still wins against easy, which plays to the middle.
 
 What a player can now do, and what happens:
 
@@ -132,7 +154,7 @@ What a player can now do, and what happens:
 |---|---|---|
 | Stands still while the ball comes | Allowed: the socket judges reach from where they stand; out of reach the click is a miss (700 ms in a match) and the ball wins the point if it bounces twice | `tennisRally.test.ts` (out of reach), `tennis.test.ts` (swing at nothing) |
 | Runs away from the ball | Allowed: nothing pulls them back, the mark stays where the ball comes | `tennisManualMovement.test.ts` (no auto-run in the front, fails on the old code) |
-| Clicks, then runs off before the contact | Blocked on the front (rooted until the ball passes); a modified client that runs anyway misses | `tennis.test.ts` (front, `committedSwingAt`), `tennisRally.test.ts` (socket drops the swing) |
+| Clicks, then runs off before the contact | Blocked on the front (rooted until the ball passes); a modified client that runs anyway misses | `tennis.test.ts` (front, `committedSwingAt`, `swingClick`), `tennisRally.test.ts` (socket drops the swing); played in the browser |
 | Leaves the court during a match | Allowed: it is the same as standing far from the ball; no hit is accepted from out of reach. Leaving `sports_tennis` follows the 10 s grace of every sport | `tennisRally.test.ts`, sports rejoin tests |
 | Runs through the net line to the other half | Allowed to walk there (no wall), but no hit counts from more than 0.5 m past the net on their side, and the ball is only struck on their own half | `tennisRally.test.ts` (hitter on the wrong half) |
 | Moves while serving | Blocked: the socket puts the server 1 m behind the baseline, the front locks them from the serve wait to the hit, and the toss is only hit within 1.0 m of it | `tennisRally.test.ts`, `tennis.test.ts` (socket) |

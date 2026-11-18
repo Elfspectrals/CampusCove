@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import type { TennisStatePayload } from '../../types/gameRealtime'
-import { BALL_BASKETS, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, TENNIS_MARK_MS, TENNIS_LATE_ALLOWANCE_MS, TENNIS_PERFECT_TIMING_MS, TENNIS_CHARGE_MS, TENNIS_HIT_MAX_HEIGHT, TENNIS_SERVE_FLOOR, TENNIS_SERVE_WINDOW_MS, serveRing, committedSwingAt, TENNIS_SWEET_M, TENNIS_SWING_AHEAD_MS, aimMoved, ballComing, ballPosition, chargeFill, defaultAim, freeCourtAt, highBall, inPlace, interceptSpot, iServe, markOpacity, markYaw, myTeam, sideAt, swingFor, swingRing, swingTone } from './tennis.ts'
+import { BALL_BASKETS, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, TENNIS_MARK_MS, TENNIS_LATE_ALLOWANCE_MS, TENNIS_PERFECT_TIMING_MS, TENNIS_CHARGE_MS, TENNIS_HIT_MAX_HEIGHT, TENNIS_SERVE_FLOOR, TENNIS_SERVE_WINDOW_MS, serveRing, committedSwingAt, swingClick, TENNIS_HIT_COOLDOWN_MS, TENNIS_WHIFF_RECOVERY_MS, TENNIS_SWEET_M, TENNIS_SWING_AHEAD_MS, aimMoved, ballComing, ballPosition, chargeFill, defaultAim, freeCourtAt, highBall, inPlace, interceptSpot, iServe, markOpacity, markYaw, myTeam, sideAt, swingFor, swingRing, swingTone } from './tennis.ts'
 
 const ZONE = JSON.parse(readFileSync(new URL('../../../public/assets/zones/sports_tennis.json', import.meta.url), 'utf8'))
 const RULES = JSON.parse(readFileSync(new URL('../../../public/assets/sports/rules/tennis.json', import.meta.url), 'utf8'))
@@ -86,6 +86,18 @@ test('a click that commits a swing roots the player until the ball passes; a cli
   assert.equal(committedSwingAt(play, 'red', me, 1400 - TENNIS_SWING_AHEAD_MS - 20), null)
   assert.equal(committedSwingAt(play, 'red', { x: pass.x + TENNIS_REACH_M + 0.2, z: pass.z }, 1300), null)
   assert.equal(committedSwingAt(play, 'blue', me, 1300), null)
+})
+
+test('a click waits the socket cooldown like the socket: 400 ms, 700 ms after a swing at nothing in a match', () => {
+  const s = state()
+  const play = { ...s, netZ: s.court.netZ }
+  const pass = ballPosition(s.ball!, 1400)
+  const me = { x: pass.x, z: pass.z }
+  assert.deepEqual(swingClick(play, 'red', me, 1300, true), { rootUntil: 1400, recoveryMs: TENNIS_HIT_COOLDOWN_MS })
+  assert.deepEqual(swingClick(play, 'red', me, 900, true), { rootUntil: null, recoveryMs: TENNIS_WHIFF_RECOVERY_MS })
+  assert.deepEqual(swingClick(play, 'red', me, 900, false), { rootUntil: null, recoveryMs: TENNIS_HIT_COOLDOWN_MS })
+  assert.deepEqual(swingClick(null, 'red', me, 900, true), { rootUntil: null, recoveryMs: TENNIS_HIT_COOLDOWN_MS })
+  assert.deepEqual([RULES.hit.cooldownMs, RULES.hit.whiffRecoveryMs], [TENNIS_HIT_COOLDOWN_MS, TENNIS_WHIFF_RECOVERY_MS])
 })
 
 test('the swing ring shows from 900 ms before the ball passes closest and shrinks from 2.4 m to 0.6 m', () => {

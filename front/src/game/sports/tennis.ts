@@ -32,6 +32,8 @@ export const TENNIS_LATE_ALLOWANCE_MS = 150
 export const TENNIS_SWING_AHEAD_MS = 350
 export const TENNIS_PERFECT_TIMING_MS = [-60, 200] as const
 export const TENNIS_CHARGE_MS = 600
+export const TENNIS_HIT_COOLDOWN_MS = 400
+export const TENNIS_WHIFF_RECOVERY_MS = 700
 export const TENNIS_SERVE_WINDOW_MS = 400
 export const TENNIS_SERVE_FLOOR = 0.3
 export const TENNIS_HIT_MAX_HEIGHT = 2.8
@@ -117,6 +119,12 @@ export function swingTone(offsetMs: number, distanceM: number, charged = false):
   const quality = Math.min(1, 1 - (distanceM - TENNIS_SWEET_M) / (TENNIS_REACH_M - TENNIS_SWEET_M))
   if (quality < PERFECT_QUALITY) return quality < 0.5 ? 'weak' : 'good'
   return charged ? 'smash' : 'good'
+}
+
+export function swingClick(play: BallPlay | null, team: TennisTeam, me: { x: number; z: number }, serverMs: number, match: boolean): { rootUntil: number | null; recoveryMs: number } {
+  const rootUntil = play ? committedSwingAt(play, team, me, serverMs) : null
+  const whiff = match && rootUntil === null && play !== null && play.phase === 'flight' && play.hitter !== team
+  return { rootUntil, recoveryMs: whiff ? TENNIS_WHIFF_RECOVERY_MS : TENNIS_HIT_COOLDOWN_MS }
 }
 
 export function committedSwingAt(play: BallPlay, team: TennisTeam, me: { x: number; z: number }, serverMs: number): number | null {

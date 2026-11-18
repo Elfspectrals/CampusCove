@@ -19,7 +19,7 @@ import {
   defaultAim,
   freeCourtAt,
   chargeFill,
-  committedSwingAt,
+  swingClick,
   highBall,
   inPlace,
   interceptSpot,
@@ -205,6 +205,7 @@ export function useTennis(deps: TennisDeps) {
   let freeSide: { court: string; team: TennisTeam } | null = null
   let ownRacket = false
   let swingUntil = 0
+  let nextClickAt = 0
 
   function mySessionId(): string | null {
     return deps.gameRoomRef.value?.sessionId ?? null
@@ -314,9 +315,12 @@ export function useTennis(deps: TennisDeps) {
     if (!shot || !here) return false
     const target = aimFor(here)
     const lob = e.button === RIGHT_BUTTON
-    const play = shot.serving ? null : incoming(here)
     const serverMs = Date.now() + clockOffset.value
-    swingUntil = (play && committedSwingAt(play, here.team, deps.myPosition, serverMs)) ?? swingUntil
+    if (serverMs >= nextClickAt) {
+      const click = swingClick(shot.serving ? null : incoming(here), here.team, deps.myPosition, serverMs, here.match !== null)
+      nextClickAt = serverMs + click.recoveryMs
+      swingUntil = click.rootUntil ?? swingUntil
+    }
     room.send('tennis_hit', { aimX: target.x, aimZ: target.z, lob })
     deps.onSwing(swingFor(shot.serving, lob, shot.team, deps.myPosition, shot.ball.visible ? shot.ball.position.x : null))
     return true
