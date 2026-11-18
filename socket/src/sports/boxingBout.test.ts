@@ -8,7 +8,9 @@ import {
   dodge,
   forfeitBout,
   getUpPress,
-  matchCombo,
+  comboOf,
+  continuesString,
+  earliestThrowAt,
   newCharges,
   parseBoxingRules,
   pressHand,
@@ -77,7 +79,7 @@ test('a jab in reach lands, scores 1 and waits its cooldown; out of reach it mis
   const [red, blue] = bout.boxers
   assert.equal(punch(bout, red, 'jab', CLOSE, ROUND_START), 'landed')
   assert.deepEqual([blue.health, red.points, red.endurance], [RULES.health - 5, 1, RULES.endurance - 6])
-  assert.equal(punch(bout, red, 'jab', CLOSE, ROUND_START + 449), 'cooldown')
+  assert.equal(punch(bout, red, 'hook', CLOSE, ROUND_START + 449), 'cooldown')
   assert.equal(punch(bout, red, 'jab', { ...CLOSE, distM: 1.71 }, ROUND_START + 450), 'missed')
   assert.equal(red.endurance, RULES.endurance - 12)
   assert.equal(punch(bout, red, 'cross', { ...CLOSE, facingCos: 0.29 }, ROUND_START + 900), 'missed')
@@ -182,11 +184,11 @@ test('a forfeit hands the bout to the other boxer and does not overwrite a resul
   assert.deepEqual(bout.result, { winner: 1, method: 'forfeit' })
 })
 
-function chainOf(bout: Bout, kinds: PunchKind[], from: number): number {
+function chainOf(bout: Bout, kinds: PunchKind[], from: number, when: 'cancel' | 'cooldown' = 'cancel'): number {
   const red = bout.boxers[0]
   let at = from
   for (const kind of kinds) {
-    at = Math.max(at, red.nextPunchAt)
+    at = Math.max(at, when === 'cancel' && red.chain.length > 0 ? red.cancelAt : red.nextPunchAt)
     punch(bout, red, kind, CLOSE, at)
   }
   return at
@@ -197,10 +199,10 @@ test('a tap is a jab or a cross, a hold from 250 ms a hook or an uppercut, a new
   const red = bout.boxers[0]
   assert.equal(pressHand(bout, red, 'left', ROUND_START - 500), true)
   assert.equal(pressHand(bout, red, 'left', ROUND_START), true)
-  assert.deepEqual(releaseHand(bout, red, 'left', ROUND_START + RULES.holdMs - 1), { kind: 'jab', queued: false })
+  assert.deepEqual(releaseHand(bout, red, 'left', ROUND_START + RULES.holdMs - 1), { kind: 'jab', heldMs: RULES.holdMs - 1, timing: 'now' })
   assert.equal(releaseHand(bout, red, 'left', ROUND_START + 400), null)
   pressHand(bout, red, 'right', ROUND_START)
-  assert.deepEqual(releaseHand(bout, red, 'right', ROUND_START + RULES.holdMs), { kind: 'uppercut', queued: false })
+  assert.deepEqual(releaseHand(bout, red, 'right', ROUND_START + RULES.holdMs), { kind: 'uppercut', heldMs: RULES.holdMs, timing: 'now' })
   pressHand(bout, red, 'left', ROUND_START)
   assert.equal(releaseHand(bout, red, 'left', ROUND_START + 5000)?.kind, 'hook')
   pressHand(bout, red, 'right', ROUND_START)
@@ -218,47 +220,142 @@ test('the wind-up is announced once per press, when it passes the hold time', ()
   assert.deepEqual(newCharges(bout, ROUND_START + RULES.holdMs + 100), [])
 })
 
-test('a release in the last 200 ms of the cooldown is kept and thrown when the cooldown ends', () => {
+test('a punch that continues no string is buffered in the last 120 ms of its cooldown; earlier it is too early, refused and drops the chain', () => {
   const bout = fighting()
   const red = bout.boxers[0]
   punch(bout, red, 'jab', CLOSE, ROUND_START)
   const end = red.nextPunchAt
-  pressHand(bout, red, 'right', end - RULES.bufferMs - 1)
-  assert.deepEqual(releaseHand(bout, red, 'right', end - RULES.bufferMs - 1), { kind: 'cross', queued: false })
-  pressHand(bout, red, 'right', end - RULES.bufferMs)
-  assert.deepEqual(releaseHand(bout, red, 'right', end - RULES.bufferMs), { kind: 'cross', queued: true })
+  pressHand(bout, red, 'left', end - RULES.bufferMs - RULES.holdMs - 1)
+  assert.equal(releaseHand(bout, red, 'left', end - RULES.bufferMs - 1)?.timing, 'early')
+  assert.deepEqual([red.chain, red.queued], [[], null])
+  pressHand(bout, red, 'left', end - RULES.bufferMs - RULES.holdMs)
+  assert.equal(releaseHand(bout, red, 'left', end - RULES.bufferMs)?.timing, 'queued')
   assert.equal(takeQueued(red, end - 1), null)
-  assert.equal(takeQueued(red, end), 'cross')
+  assert.deepEqual(takeQueued(red, end), { kind: 'hook', at: end, heldMs: RULES.holdMs })
   assert.equal(takeQueued(red, end + 100), null)
 })
 
-test('the longest combo at the end of the chain wins', () => {
-  const list = RULES.combo.list
-  assert.equal(matchCombo(list, ['jab', 'cross'])?.id, 'one_two')
-  assert.equal(matchCombo(list, ['jab', 'jab', 'cross'])?.id, 'double_jab')
-  assert.equal(matchCombo(list, ['cross', 'jab', 'cross', 'hook'])?.id, 'one_two_hook')
-  assert.equal(matchCombo(list, ['jab', 'cross', 'hook', 'uppercut'])?.id, 'full_combo')
-  assert.equal(matchCombo(list, ['hook', 'jab']), null)
-})
-
-test('a full combo thrown in time adds each combo bonus to its last punch', () => {
-  const bout = fighting(5)
-  const [red, blue] = bout.boxers
-  chainOf(bout, ['jab', 'cross', 'hook', 'uppercut'], ROUND_START)
-  assert.equal(red.combo, 'full_combo')
-  assert.equal(RULES.health - blue.health, 5 + (9 + 3) + (17 + 6) + (21 + 10))
-  assert.equal(red.points, 1 + (2 + 1) + (3 + 2) + (3 + 4))
-})
-
-test('a punch thrown more than 500 ms after the cooldown starts a new chain', () => {
+test('the next punch of a string can cancel the current one from its cancel time, and is buffered 120 ms before it', () => {
   const bout = fighting()
   const red = bout.boxers[0]
   punch(bout, red, 'jab', CLOSE, ROUND_START)
-  punch(bout, red, 'cross', CLOSE, red.nextPunchAt + RULES.combo.windowMs + 1)
-  assert.deepEqual([red.chain, red.combo], [['cross'], null])
-  punch(bout, red, 'jab', CLOSE, red.nextPunchAt + 600)
-  punch(bout, red, 'cross', CLOSE, red.nextPunchAt + RULES.combo.windowMs)
-  assert.equal(red.combo, 'one_two')
+  const cancelAt = ROUND_START + RULES.punches.jab.cancelMs
+  assert.equal(red.cancelAt, cancelAt)
+  assert.equal(earliestThrowAt(RULES, red, 'cross', cancelAt, 0), cancelAt)
+  assert.equal(earliestThrowAt(RULES, red, 'hook', cancelAt, Infinity), red.nextPunchAt)
+  pressHand(bout, red, 'right', cancelAt - RULES.bufferMs - 1 - 50)
+  assert.equal(releaseHand(bout, red, 'right', cancelAt - RULES.bufferMs - 1)?.timing, 'early')
+  assert.deepEqual(red.chain, [])
+  punch(bout, red, 'jab', CLOSE, red.nextPunchAt + RULES.flurry.restMs + 1)
+  const again = red.cancelAt
+  pressHand(bout, red, 'right', again - RULES.bufferMs - 50)
+  assert.equal(releaseHand(bout, red, 'right', again - RULES.bufferMs)?.timing, 'queued')
+  const queued = takeQueued(red, again)
+  assert.deepEqual(queued, { kind: 'cross', at: again, heldMs: 50 })
+  assert.equal(punch(bout, red, 'cross', CLOSE, again + 90, { at: again, heldMs: 50 }), 'landed')
+  assert.deepEqual([red.cancelled, red.combo, red.nextPunchAt], [true, 'one_two', again + RULES.punches.cross.cooldownMs])
+})
+
+test('a string is read from its start: jab, jab cancels but a third jab waits its cooldown, so mashing one button gains nothing', () => {
+  assert.equal(continuesString(RULES.combo.list, ['jab'], 'jab'), true)
+  assert.equal(continuesString(RULES.combo.list, ['jab', 'jab'], 'jab'), false)
+  assert.equal(continuesString(RULES.combo.list, ['jab', 'cross', 'hook'], 'uppercut'), true)
+  assert.equal(continuesString(RULES.combo.list, [], 'jab'), false)
+  const bout = fighting()
+  const red = bout.boxers[0]
+  punch(bout, red, 'jab', CLOSE, ROUND_START)
+  assert.equal(punch(bout, red, 'jab', CLOSE, red.cancelAt), 'landed')
+  assert.equal(red.cancelled, true)
+  assert.equal(punch(bout, red, 'jab', CLOSE, red.cancelAt), 'cooldown')
+  assert.equal(punch(bout, red, 'jab', CLOSE, red.nextPunchAt), 'landed')
+  assert.deepEqual([red.chain, red.cancelled], [['jab'], false])
+})
+
+test('combos match the whole string from its start', () => {
+  const list = RULES.combo.list
+  assert.equal(comboOf(list, ['jab', 'cross'])?.id, 'one_two')
+  assert.equal(comboOf(list, ['jab', 'jab', 'cross'])?.id, 'double_jab')
+  assert.equal(comboOf(list, ['jab', 'cross', 'hook'])?.id, 'one_two_hook')
+  assert.equal(comboOf(list, ['jab', 'cross', 'hook', 'uppercut'])?.id, 'full_combo')
+  assert.equal(comboOf(list, ['cross', 'jab', 'cross']), null)
+  assert.equal(comboOf(list, ['jab']), null)
+})
+
+test('a full combo cancelled on time adds each bonus to its last punch, every cancelled hit at 0.8', () => {
+  const bout = fighting(5)
+  const [red, blue] = bout.boxers
+  const end = chainOf(bout, ['jab', 'cross', 'hook', 'uppercut'], ROUND_START)
+  assert.equal(red.combo, 'full_combo')
+  assert.equal(end, ROUND_START + 250 + 450 + 600)
+  assert.equal(RULES.health - blue.health, 5 + Math.round((9 + 3) * 0.8) + Math.round((17 + 6) * 0.8) + Math.round((21 + 10) * 0.8))
+  assert.equal(red.points, 1 + (2 + 1) + (3 + 2) + (3 + 4))
+})
+
+test('a string punch thrown after the link window (cancel time + 250 ms) starts a new chain with no bonus', () => {
+  const bout = fighting(5)
+  const red = bout.boxers[0]
+  chainOf(bout, ['jab', 'cross', 'hook', 'uppercut'], ROUND_START, 'cooldown')
+  assert.deepEqual([red.chain, red.combo], [['uppercut'], null])
+  const fresh = fighting()
+  const r = fresh.boxers[0]
+  punch(fresh, r, 'jab', CLOSE, ROUND_START)
+  punch(fresh, r, 'cross', CLOSE, r.cancelAt + RULES.combo.windowMs + 1)
+  assert.deepEqual([r.chain, r.combo], [['cross'], null])
+  punch(fresh, r, 'jab', CLOSE, r.nextPunchAt + 600)
+  punch(fresh, r, 'cross', CLOSE, r.cancelAt + RULES.combo.windowMs)
+  assert.equal(r.combo, 'one_two')
+})
+
+test('a hook or an uppercut thrown as a cancel needs its wind-up shown 100 ms; a quicker one waits its cooldown', () => {
+  const bout = fighting()
+  const red = bout.boxers[0]
+  chainOf(bout, ['jab', 'cross'], ROUND_START)
+  const cancelAt = red.cancelAt
+  assert.equal(punch(bout, red, 'hook', CLOSE, cancelAt, { heldMs: RULES.holdMs }), 'cooldown')
+  assert.equal(earliestThrowAt(RULES, red, 'hook', cancelAt, RULES.holdMs), red.nextPunchAt)
+  assert.equal(punch(bout, red, 'hook', CLOSE, cancelAt, { heldMs: RULES.holdMs + RULES.cancel.heavyChargeMs }), 'landed')
+  assert.equal(red.combo, 'one_two_hook')
+})
+
+test('a guard broken by a combo ends the string, so no punch is free on the staggered boxer', () => {
+  const bout = fighting()
+  const [red, blue] = bout.boxers
+  chainOf(bout, ['jab', 'cross'], ROUND_START)
+  setGuard(bout, blue, true, red.cancelAt - 1000)
+  assert.equal(punch(bout, red, 'hook', CLOSE, red.cancelAt), 'guard_broken')
+  assert.deepEqual(red.chain, [])
+  assert.equal(earliestThrowAt(RULES, red, 'uppercut', red.cancelAt, Infinity), red.nextPunchAt)
+})
+
+test('mid-combo, raising the guard, dodging or taking a landed punch drops the string and the buffered punch', () => {
+  for (const interrupt of ['guard', 'dodge', 'hit'] as const) {
+    const bout = fighting()
+    const [red, blue] = bout.boxers
+    punch(bout, red, 'jab', CLOSE, ROUND_START)
+    pressHand(bout, red, 'right', red.cancelAt - 60)
+    assert.equal(releaseHand(bout, red, 'right', red.cancelAt - 50)?.timing, 'queued')
+    if (interrupt === 'guard') setGuard(bout, red, true, red.cancelAt - 40)
+    if (interrupt === 'dodge') assert.equal(dodge(bout, red, red.cancelAt - 40), true)
+    if (interrupt === 'hit') assert.equal(punch(bout, blue, 'jab', CLOSE, red.cancelAt - 40), 'landed')
+    assert.deepEqual([interrupt, red.chain, red.queued], [interrupt, [], null])
+  }
+})
+
+test('moving or turning mid-combo is allowed: the cancelled punch is judged on where the boxers are when it is thrown', () => {
+  const bout = fighting()
+  const red = bout.boxers[0]
+  punch(bout, red, 'jab', CLOSE, ROUND_START)
+  assert.equal(punch(bout, red, 'cross', { ...CLOSE, facingCos: 0.1 }, red.cancelAt), 'missed')
+  assert.deepEqual(red.chain, [])
+})
+
+test('a punch released too early counts in the flurry row', () => {
+  const bout = fighting()
+  const red = bout.boxers[0]
+  punch(bout, red, 'jab', CLOSE, ROUND_START)
+  pressHand(bout, red, 'right', ROUND_START + 10)
+  assert.equal(releaseHand(bout, red, 'right', ROUND_START + 20)?.timing, 'early')
+  assert.equal(red.row, 2)
 })
 
 test('a miss or a landed punch taken clears the chain; a blocked combo adds its bonus through the guard', () => {
@@ -366,7 +463,7 @@ test('a parry empties what the stunned boxer had ready: chain, queued punch and 
   const [red, blue] = bout.boxers
   punch(bout, red, 'jab', CLOSE, ROUND_START)
   pressHand(bout, red, 'right', ROUND_START + 100)
-  red.queued = 'cross'
+  red.queued = { kind: 'cross', at: red.nextPunchAt, heldMs: 10 }
   setGuard(bout, blue, true, red.nextPunchAt - 10)
   assert.equal(punch(bout, red, 'cross', CLOSE, red.nextPunchAt), 'parried')
   assert.deepEqual([red.chain, red.queued, red.pressedAt, red.combo], [[], null, { left: null, right: null }, null])
@@ -377,4 +474,7 @@ test('the rules refuse a combo of an unknown punch or a hold time of 0', () => {
   const combo = raw.combo as { windowMs: number, list: unknown[] }
   assert.throws(() => parseBoxingRules({ ...raw, combo: { ...combo, list: [{ id: 'x', sequence: ['jab', 'kick'], bonusDamage: 1, bonusPoints: 1 }] } }), /sequence/)
   assert.throws(() => parseBoxingRules({ ...raw, hold: { ms: 0 } }), /hold/)
+  const punches = raw.punches as Record<string, Record<string, number>>
+  assert.throws(() => parseBoxingRules({ ...raw, punches: { ...punches, jab: { ...punches.jab, cancelMs: 451 } } }), /cancelMs/)
+  assert.throws(() => parseBoxingRules({ ...raw, cancel: null }), /cancel/)
 })

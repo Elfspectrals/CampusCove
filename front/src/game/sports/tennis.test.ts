@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import type { TennisStatePayload } from '../../types/gameRealtime'
-import { BALL_BASKETS, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, TENNIS_MARK_MS, TENNIS_LATE_ALLOWANCE_MS, TENNIS_PERFECT_TIMING_MS, TENNIS_CHARGE_MS, TENNIS_HIT_MAX_HEIGHT, TENNIS_SERVE_FLOOR, TENNIS_SERVE_WINDOW_MS, serveRing, TENNIS_SWEET_M, TENNIS_SWING_AHEAD_MS, aimMoved, ballComing, ballPosition, chargeFill, defaultAim, freeCourtAt, highBall, inPlace, interceptSpot, iServe, markOpacity, markYaw, myTeam, recoverySpot, runStep, sideAt, swingFor, swingRing, swingTone } from './tennis.ts'
+import { BALL_BASKETS, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, TENNIS_MARK_MS, TENNIS_LATE_ALLOWANCE_MS, TENNIS_PERFECT_TIMING_MS, TENNIS_CHARGE_MS, TENNIS_HIT_MAX_HEIGHT, TENNIS_SERVE_FLOOR, TENNIS_SERVE_WINDOW_MS, serveRing, committedSwingAt, swingClick, TENNIS_HIT_COOLDOWN_MS, TENNIS_WHIFF_RECOVERY_MS, TENNIS_SWEET_M, TENNIS_SWING_AHEAD_MS, aimMoved, ballComing, ballPosition, chargeFill, defaultAim, freeCourtAt, highBall, inPlace, interceptSpot, iServe, markOpacity, markYaw, myTeam, sideAt, swingFor, swingRing, swingTone } from './tennis.ts'
 
 const ZONE = JSON.parse(readFileSync(new URL('../../../public/assets/zones/sports_tennis.json', import.meta.url), 'utf8'))
 const RULES = JSON.parse(readFileSync(new URL('../../../public/assets/sports/rules/tennis.json', import.meta.url), 'utf8'))
@@ -61,7 +61,7 @@ test('on the serve the ring closes on the server as the toss rises and is green 
   }
 })
 
-test('the mark charges while the player stands within 0.8 m of where the ball passes at a height they can hit, in 0.6 s', () => {
+test('the mark charges while the player stands within 0.8 m of where the ball passes at a height they can hit, in 1 s', () => {
   const s = state()
   const play = { ...s, netZ: s.court.netZ }
   const pass = ballPosition(s.ball!, 1400)
@@ -69,12 +69,35 @@ test('the mark charges while the player stands within 0.8 m of where the ball pa
   assert.equal(inPlace(play, 'red', { x: pass.x + 2.5, z: pass.z }, 500), false)
   assert.equal(inPlace(play, 'blue', { x: pass.x, z: pass.z }, 500), false)
   assert.equal(chargeFill(null, 5000), 0)
-  assert.equal(chargeFill(4700, 5000), 0.5)
-  assert.equal(chargeFill(4400, 5000), 1)
+  assert.equal(chargeFill(4500, 5000), 0.5)
+  assert.equal(chargeFill(4000, 5000), 1)
   assert.equal(chargeFill(1000, 5000), 1)
   assert.equal(highBall({ x: 0, y: 1, z: 0, vx: 0, vy: 8, vz: 5, t: 0 }), true)
   assert.equal(highBall({ x: 0, y: 1, z: 0, vx: 0, vy: 7, vz: 5, t: 0 }), false)
   assert.equal(highBall({ x: 0, y: 4.2, z: 0, vx: 0, vy: -3, vz: 5, t: 0 }), true)
+})
+
+test('a click that commits a swing roots the player until the ball passes; a click that would miss does not', () => {
+  const s = state()
+  const play = { ...s, netZ: s.court.netZ }
+  const pass = ballPosition(s.ball!, 1400)
+  const me = { x: pass.x, z: pass.z }
+  assert.equal(committedSwingAt(play, 'red', me, 1400 - TENNIS_SWING_AHEAD_MS), 1400)
+  assert.equal(committedSwingAt(play, 'red', me, 1400 - TENNIS_SWING_AHEAD_MS - 20), null)
+  assert.equal(committedSwingAt(play, 'red', { x: pass.x + TENNIS_REACH_M + 0.2, z: pass.z }, 1300), null)
+  assert.equal(committedSwingAt(play, 'blue', me, 1300), null)
+})
+
+test('a click waits the socket cooldown like the socket: 400 ms, 700 ms after a swing at nothing in a match', () => {
+  const s = state()
+  const play = { ...s, netZ: s.court.netZ }
+  const pass = ballPosition(s.ball!, 1400)
+  const me = { x: pass.x, z: pass.z }
+  assert.deepEqual(swingClick(play, 'red', me, 1300, true), { rootUntil: 1400, recoveryMs: TENNIS_HIT_COOLDOWN_MS })
+  assert.deepEqual(swingClick(play, 'red', me, 900, true), { rootUntil: null, recoveryMs: TENNIS_WHIFF_RECOVERY_MS })
+  assert.deepEqual(swingClick(play, 'red', me, 900, false), { rootUntil: null, recoveryMs: TENNIS_HIT_COOLDOWN_MS })
+  assert.deepEqual(swingClick(null, 'red', me, 900, true), { rootUntil: null, recoveryMs: TENNIS_HIT_COOLDOWN_MS })
+  assert.deepEqual([RULES.hit.cooldownMs, RULES.hit.whiffRecoveryMs], [TENNIS_HIT_COOLDOWN_MS, TENNIS_WHIFF_RECOVERY_MS])
 })
 
 test('the swing ring shows from 900 ms before the ball passes closest and shrinks from 2.4 m to 0.6 m', () => {
@@ -141,7 +164,7 @@ test('the aim mark stays inside the lines: 0.5 m from them and 1.5 m from the ne
   near(aimMoved(court, 'red', { x: 0, z: -8.5 }, 0, 1000), { x: 0, z: -1.5 }, 'net')
 })
 
-test('the player runs to where the ball will be 350 ms after its bounce, standing 0.6 m off so it comes on the racket side', () => {
+test('the mark shows where to stand: where the ball will be 350 ms after its bounce, 0.6 m off so it comes on the racket side', () => {
   const s = state()
   const play = { ...s, netZ: s.court.netZ }
   const landing = (4 + Math.sqrt(16 + 2 * TENNIS_GRAVITY)) / TENNIS_GRAVITY
@@ -154,17 +177,6 @@ test('the player runs to where the ball will be 350 ms after its bounce, standin
   near(interceptSpot(bounced, 'red', 1400), { x: 0.4, z: 10.5 }, 'chasing a ball already past')
   const long = { ...play, bounces: 1, ball: { x: 0, y: 0, z: 11, vx: 0, vy: 6, vz: 20, t: 0 } }
   near(interceptSpot(long, 'red', 0), { x: -0.6, z: TENNIS_HALF_LENGTH + 3 }, 'never more than 3 m behind the baseline')
-})
-
-test('between shots a singles player goes back to the middle of the baseline, a doubles player to their side', () => {
-  near(recoverySpot({ cx: 0, netZ: 0, halfWidth: 4.115 }, 'red', { x: 3, z: 5 }), { x: 0, z: TENNIS_HALF_LENGTH + 0.3 }, 'singles red')
-  near(recoverySpot({ cx: 0, netZ: 0, halfWidth: 5.485 }, 'blue', { x: -1, z: -5 }), { x: -2.5, z: -(TENNIS_HALF_LENGTH + 0.3) }, 'doubles blue')
-})
-
-test('a run step never overshoots the spot and stops within 5 cm of it', () => {
-  assert.deepEqual(runStep({ x: 0, z: 0 }, { x: 3, z: 4 }, 1), { dx: 0.6, dz: 0.8 })
-  assert.deepEqual(runStep({ x: 0, z: 0 }, { x: 0.3, z: 0.4 }, 1), { dx: 0.3, dz: 0.4 })
-  assert.deepEqual(runStep({ x: 0, z: 0 }, { x: 0.03, z: 0 }, 1), { dx: 0, dz: 0 })
 })
 
 test('my side and my serve come from the server state', () => {

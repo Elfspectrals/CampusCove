@@ -1015,6 +1015,7 @@ export const messages = {
         combo: { one_two: 'One-two', double_jab: 'Double jab', one_two_hook: 'One-two-hook', upper_hook: 'Uppercut-hook', full_combo: 'Full combo', slip_counter: 'Slip and counter', duck_under: 'Duck under', high_guard: 'High guard', machine_gun: 'Machine gun', body_breaker: 'Body breaker', in_and_out: 'In and out', finisher: 'The finisher' },
         comboCallout: '{name}! {damage}',
         tired: 'Out of breath: lower your guard and breathe.',
+        early: 'Too early: the combo is broken.',
         noGloves: 'You need boxing gloves: buy them at Summit Sports (mall) or borrow them from the boxing coach.',
         result: { ko: '{name} wins by KO', points: '{name} wins on points', forfeit: '{name} wins: the other boxer left', draw: 'Draw on points' },
         bag: {
@@ -2419,6 +2420,7 @@ export const messages = {
         combo: { one_two: 'Un-deux', double_jab: 'Double jab', one_two_hook: 'Un-deux-crochet', upper_hook: 'Uppercut-crochet', full_combo: 'Combo complet', slip_counter: 'Esquive et contre', duck_under: 'Passage dessous', high_guard: 'Garde haute', machine_gun: 'Mitraillette', body_breaker: 'Casse-côtes', in_and_out: 'Entrée-sortie', finisher: 'Le finisseur' },
         comboCallout: '{name} ! {damage}',
         tired: 'À bout de souffle : baisse la garde et respire.',
+        early: 'Trop tôt : le combo est cassé.',
         noGloves: 'Il te faut des gants de boxe : achète-les chez Summit Sports (centre commercial) ou emprunte-les au coach de boxe.',
         result: { ko: '{name} gagne par KO', points: '{name} gagne aux points', forfeit: '{name} gagne : l’autre boxeur est parti', draw: 'Match nul aux points' },
         bag: {

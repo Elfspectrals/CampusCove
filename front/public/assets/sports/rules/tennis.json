@@ -84,13 +84,14 @@
     "missM": 4,
     "powerByTiming": "linear",
     "swingAheadMs": 350,
+    "swingDriftM": 0.5,
     "perfectTimingMs": [
       -60,
       200
     ],
     "timingFloor": 0.5,
     "netClearM": 0.35,
-    "chargeMs": 600,
+    "chargeMs": 1000,
     "smashSpeedMs": 25,
     "cooldownMs": 400,
     "whiffRecoveryMs": 700
