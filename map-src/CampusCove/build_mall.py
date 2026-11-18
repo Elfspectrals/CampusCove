@@ -52,6 +52,7 @@ ROOF1 = 7.6
 ROOF2 = 11.6
 BAL = 5.0
 WALL_T = 0.3
+CEILING_T = 0.1
 PART_T = 0.3
 GAP = 0.02
 RAMP_RUN = 10.4
@@ -760,7 +761,8 @@ for name, a0, a1, p0, p1 in (("Gable_N", N_OUT, N_IN, P_UP[0], P_UP[0] + WALL_T)
 
 # ---------------------------------------------------------------- roofs: plates to the balcony edges, trusses only over the voids, low roofs over the one-level plazas
 def roof_plate(name, x0, z0, x1, z1, y=ROOF2):
-    rect(name, x0, z0, x1, z1, y, 0.3, P["roof"], tile=4.0)
+    rect(f"{name}_Ceiling", x0, z0, x1, z1, y, CEILING_T, P["slab"], tile=4.0)
+    rect(name, x0, z0, x1, z1, y + CEILING_T, 0.3 - CEILING_T, P["roof"], tile=4.0)
 
 
 def trusses(name, axis, a0, a1, p0, p1, y=ROOF2):
