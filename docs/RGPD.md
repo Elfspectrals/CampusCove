@@ -6,7 +6,7 @@ Documents exigés en cas de contrôle (non publiés). Les textes publics sont da
 
 Responsable : l'éditeur (voir `SITE.publisher`). Pas de DPO obligatoire (pas de traitement à grande échelle de données sensibles ni de suivi systématique, art. 37) ; contact : `SITE.publisher.privacyEmail`.
 
-Personnes concernées : joueurs inscrits (15 ans et plus) ; visiteurs du site pour les seuls journaux techniques.
+Personnes concernées : joueurs inscrits (18 ans et plus) ; visiteurs du site pour les seuls journaux techniques.
 
 | Traitement | Données | Base légale | Durée | Destinataires |
 |---|---|---|---|---|

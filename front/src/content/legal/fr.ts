@@ -115,7 +115,7 @@ export const legalFr: LegalDocs = {
       {
         heading: 'Mineurs',
         paragraphs: [
-          `${SITE.name} est réservé aux personnes de ${SITE.minimumAge} ans et plus (article 45 de la loi Informatique et Libertés). L’âge est déclaré lors de l’inscription. Si nous apprenons qu’un compte appartient à une personne plus jeune, il est supprimé.`,
+          `${SITE.name} est réservé aux personnes de ${SITE.minimumAge} ans et plus. L’âge est déclaré lors de l’inscription. Si nous apprenons qu’un compte appartient à une personne plus jeune, il est supprimé.`,
         ],
       },
       {
