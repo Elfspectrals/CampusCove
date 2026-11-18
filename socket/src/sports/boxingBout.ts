@@ -18,6 +18,7 @@ export interface PunchRules {
   damage: number
   enduranceCost: number
   cooldownMs: number
+  cancelMs: number
   reachM: number
   points: number
 }
@@ -56,6 +57,7 @@ export interface BoxingRules {
   punches: Record<PunchKind, PunchRules>
   holdMs: number
   bufferMs: number
+  cancel: { damageFactor: number, heavyChargeMs: number }
   combo: { windowMs: number, list: Combo[] }
   guard: { damageFactor: number, drainPerSec: number }
   flurry: { freePunches: number, restMs: number, costStep: number, damageStep: number, minDamage: number }
@@ -86,6 +88,7 @@ export interface Boxer {
   row: number
   rowUntil: number
   nextPunchAt: number
+  cancelAt: number
   nextDodgeAt: number
   dodgeUntil: number
   knockdowns: number
@@ -94,10 +97,23 @@ export interface Boxer {
   points: number
   pressedAt: Record<Hand, number | null>
   charged: Record<Hand, boolean>
-  queued: PunchKind | null
+  queued: QueuedPunch | null
   chain: PunchKind[]
   chainUntil: number
   combo: string | null
+  cancelled: boolean
+}
+
+export interface QueuedPunch {
+  kind: PunchKind
+  at: number
+  heldMs: number
+}
+
+export interface Released {
+  kind: PunchKind
+  heldMs: number
+  timing: 'now' | 'queued' | 'early'
 }
 
 export interface BoutResult {
@@ -119,6 +135,10 @@ export interface Bout {
 export const HEAVY_PUNCHES: readonly PunchKind[] = ['hook', 'uppercut']
 export type PunchOutcome = 'landed' | 'blocked' | 'parried' | 'guard_broken' | 'dodged' | 'missed'
 export type PunchRefusal = 'not_fighting' | 'cooldown' | 'tired' | 'guarding' | 'stunned'
+export interface PunchTiming {
+  at?: number
+  heldMs?: number
+}
 export interface PunchReach {
   distM: number
   facingCos: number
@@ -141,6 +161,7 @@ function newBoxer(accountId: number, corner: Corner, rules: BoxingRules): Boxer 
     row: 0,
     rowUntil: 0,
     nextPunchAt: 0,
+    cancelAt: 0,
     nextDodgeAt: 0,
     dodgeUntil: 0,
     knockdowns: 0,
@@ -152,7 +173,8 @@ function newBoxer(accountId: number, corner: Corner, rules: BoxingRules): Boxer 
     queued: null,
     chain: [],
     chainUntil: 0,
-    combo: null
+    combo: null,
+    cancelled: false
   }
 }
 
@@ -260,9 +282,12 @@ function fighting(bout: Bout, boxer: Boxer): boolean {
   return bout.phase === 'round' && !someoneDown(bout) && boxer.down === null
 }
 
+function slowed(rules: BoxingRules, boxer: Boxer, ms: number): number {
+  return boxer.endurance < rules.lowEndurance ? Math.round(ms * rules.lowEnduranceSlowdown) : ms
+}
+
 export function punchCooldownMs(rules: BoxingRules, boxer: Boxer, kind: PunchKind): number {
-  const base = rules.punches[kind].cooldownMs
-  return boxer.endurance < rules.lowEndurance ? Math.round(base * rules.lowEnduranceSlowdown) : base
+  return slowed(rules, boxer, rules.punches[kind].cooldownMs)
 }
 
 function inReach(rules: BoxingRules, kind: PunchKind, reach: PunchReach): boolean {
@@ -281,28 +306,45 @@ function knockDown(bout: Bout, boxer: Boxer, now: number): void {
   opponentOf(bout, boxer).guard = false
 }
 
-const CHAIN_KEEP = 4
+const MAX_COMBO_LENGTH = 4
 
-export function matchCombo(list: Combo[], chain: PunchKind[]): Combo | null {
-  let best: Combo | null = null
-  for (const combo of list) {
-    const n = combo.sequence.length
-    if (n > chain.length || (best && n <= best.sequence.length)) continue
-    if (combo.sequence.every((kind, i) => chain[chain.length - n + i] === kind)) best = combo
-  }
-  return best
+export function comboOf(list: Combo[], chain: PunchKind[]): Combo | null {
+  return list.find((combo) => combo.sequence.length === chain.length && combo.sequence.every((kind, i) => chain[i] === kind)) ?? null
 }
 
-function extendChain(rules: BoxingRules, attacker: Boxer, kind: PunchKind, now: number): Combo | null {
-  if (now > attacker.chainUntil) attacker.chain = []
-  attacker.chain = [...attacker.chain, kind].slice(-CHAIN_KEEP)
-  attacker.chainUntil = attacker.nextPunchAt + rules.combo.windowMs
-  return matchCombo(rules.combo.list, attacker.chain)
+export function continuesString(list: Combo[], chain: PunchKind[], kind: PunchKind): boolean {
+  if (chain.length === 0) return false
+  const next = [...chain, kind]
+  return list.some((combo) => combo.sequence.length >= next.length && next.every((k, i) => combo.sequence[i] === k))
+}
+
+function linkOpen(boxer: Boxer, at: number): boolean {
+  return boxer.chain.length > 0 && at <= boxer.chainUntil
+}
+
+function mayCancel(rules: BoxingRules, boxer: Boxer, kind: PunchKind, at: number, heldMs: number): boolean {
+  const charged = !HEAVY_PUNCHES.includes(kind) || heldMs >= rules.holdMs + rules.cancel.heavyChargeMs
+  return charged && linkOpen(boxer, at) && continuesString(rules.combo.list, boxer.chain, kind)
+}
+
+export function earliestThrowAt(rules: BoxingRules, boxer: Boxer, kind: PunchKind, at: number, heldMs: number): number {
+  return mayCancel(rules, boxer, kind, at, heldMs) ? Math.min(boxer.cancelAt, boxer.nextPunchAt) : boxer.nextPunchAt
+}
+
+function extendChain(rules: BoxingRules, attacker: Boxer, kind: PunchKind, at: number): Combo | null {
+  const links = linkOpen(attacker, at) && continuesString(rules.combo.list, attacker.chain, kind)
+  attacker.chain = links ? [...attacker.chain, kind] : [kind]
+  return comboOf(rules.combo.list, attacker.chain)
 }
 
 export function weariness(rules: BoxingRules, boxer: Boxer, now: number): number {
   const row = now > boxer.rowUntil ? 1 : boxer.row + 1
   return Math.max(0, row - rules.flurry.freePunches)
+}
+
+function dropString(boxer: Boxer): void {
+  boxer.chain = []
+  boxer.queued = null
 }
 
 function stun(boxer: Boxer, until: number): void {
@@ -313,25 +355,31 @@ function stun(boxer: Boxer, until: number): void {
   boxer.pressedAt = { left: null, right: null }
 }
 
-export function punch(bout: Bout, attacker: Boxer, kind: PunchKind, reach: PunchReach, now: number): PunchOutcome | PunchRefusal {
+export function punch(bout: Bout, attacker: Boxer, kind: PunchKind, reach: PunchReach, now: number, timing: PunchTiming = {}): PunchOutcome | PunchRefusal {
   const { rules } = bout
+  const at = timing.at ?? now
   attacker.combo = null
   attacker.countered = false
+  attacker.cancelled = false
   if (!fighting(bout, attacker)) return 'not_fighting'
   if (now < attacker.stunnedUntil) return 'stunned'
   if (attacker.guard) return 'guarding'
-  if (now < attacker.nextPunchAt) return 'cooldown'
+  const cancelled = at < attacker.nextPunchAt && at >= attacker.cancelAt && mayCancel(rules, attacker, kind, at, timing.heldMs ?? Infinity)
+  if (at < attacker.nextPunchAt && !cancelled) return 'cooldown'
   const spec = rules.punches[kind]
-  const weary = weariness(rules, attacker, now)
+  const weary = weariness(rules, attacker, at)
   const cost = Math.round(spec.enduranceCost * (1 + rules.flurry.costStep * weary))
   if (attacker.endurance < cost) return 'tired'
   attacker.endurance -= cost
-  attacker.nextPunchAt = now + punchCooldownMs(rules, attacker, kind)
-  attacker.row = now > attacker.rowUntil ? 1 : attacker.row + 1
+  attacker.nextPunchAt = at + punchCooldownMs(rules, attacker, kind)
+  attacker.row = at > attacker.rowUntil ? 1 : attacker.row + 1
   attacker.rowUntil = attacker.nextPunchAt + rules.flurry.restMs
   const countering = now < attacker.counterUntil
   attacker.counterUntil = 0
-  const combo = extendChain(rules, attacker, kind, now)
+  const combo = extendChain(rules, attacker, kind, at)
+  attacker.cancelAt = at + slowed(rules, attacker, spec.cancelMs)
+  attacker.chainUntil = attacker.cancelAt + rules.combo.windowMs
+  attacker.cancelled = cancelled
   const target = opponentOf(bout, attacker)
   const outcome = !inReach(rules, kind, reach) ? 'missed' : now < target.dodgeUntil ? 'dodged' : null
   if (outcome) {
@@ -340,7 +388,7 @@ export function punch(bout: Bout, attacker: Boxer, kind: PunchKind, reach: Punch
     return outcome
   }
   attacker.combo = combo?.id ?? null
-  const strength = Math.max(rules.flurry.minDamage, 1 - rules.flurry.damageStep * weary) * (countering ? rules.counter.damageFactor : 1)
+  const strength = Math.max(rules.flurry.minDamage, 1 - rules.flurry.damageStep * weary) * (countering ? rules.counter.damageFactor : 1) * (cancelled ? rules.cancel.damageFactor : 1)
   const damage = Math.round((spec.damage + (combo?.bonusDamage ?? 0)) * strength)
   if (target.guard) {
     if (target.parryArmed && now - target.guardSince <= rules.parry.windowMs) {
@@ -352,6 +400,7 @@ export function punch(bout: Bout, attacker: Boxer, kind: PunchKind, reach: Punch
     if (HEAVY_PUNCHES.includes(kind)) {
       target.health = Math.max(1, target.health - Math.round(damage * rules.guardBreak.damageFactor))
       stun(target, now + rules.guardBreak.staggerMs)
+      attacker.chain = []
       return 'guard_broken'
     }
     target.health = Math.max(1, target.health - Math.round(damage * rules.guard.damageFactor))
@@ -360,7 +409,7 @@ export function punch(bout: Bout, attacker: Boxer, kind: PunchKind, reach: Punch
   attacker.countered = countering
   attacker.points += spec.points + (combo?.bonusPoints ?? 0) + (countering ? rules.counter.bonusPoints : 0)
   target.health -= damage
-  target.chain = []
+  dropString(target)
   if (target.health <= 0) knockDown(bout, target, now)
   return 'landed'
 }
@@ -372,23 +421,33 @@ export function pressHand(bout: Bout, boxer: Boxer, hand: Hand, now: number): bo
   return true
 }
 
-export function releaseHand(bout: Bout, boxer: Boxer, hand: Hand, now: number): { kind: PunchKind, queued: boolean } | null {
+export function releaseHand(bout: Bout, boxer: Boxer, hand: Hand, now: number): Released | null {
+  const { rules } = bout
   const pressedAt = boxer.pressedAt[hand]
   if (pressedAt === null) return null
   boxer.pressedAt[hand] = null
   boxer.charged[hand] = false
-  const held = now - pressedAt >= bout.rules.holdMs
+  const heldMs = now - pressedAt
+  const held = heldMs >= rules.holdMs
   const kind: PunchKind = hand === 'left' ? (held ? 'hook' : 'jab') : (held ? 'uppercut' : 'cross')
-  const queued = now < boxer.nextPunchAt && boxer.nextPunchAt - now <= bout.rules.bufferMs && fighting(bout, boxer)
-  if (queued) boxer.queued = kind
-  return { kind, queued }
+  const earliest = earliestThrowAt(rules, boxer, kind, now, heldMs)
+  if (now >= earliest || !fighting(bout, boxer) || now < boxer.stunnedUntil || boxer.guard) return { kind, heldMs, timing: 'now' }
+  if (earliest - now <= rules.bufferMs) {
+    boxer.queued = { kind, at: earliest, heldMs }
+    return { kind, heldMs, timing: 'queued' }
+  }
+  boxer.chain = []
+  boxer.queued = null
+  boxer.row = now > boxer.rowUntil ? 1 : boxer.row + 1
+  boxer.rowUntil = Math.max(boxer.rowUntil, now + rules.flurry.restMs)
+  return { kind, heldMs, timing: 'early' }
 }
 
-export function takeQueued(boxer: Boxer, now: number): PunchKind | null {
-  const kind = boxer.queued
-  if (kind === null || now < boxer.nextPunchAt) return null
+export function takeQueued(boxer: Boxer, now: number): QueuedPunch | null {
+  const queued = boxer.queued
+  if (queued === null || now < queued.at) return null
   boxer.queued = null
-  return kind
+  return queued
 }
 
 export function newCharges(bout: Bout, now: number): { boxer: Boxer, hand: Hand }[] {
@@ -409,6 +468,7 @@ export function setGuard(bout: Bout, boxer: Boxer, up: boolean, now: number): bo
   if (boxer.guard === next) return false
   boxer.guard = next
   if (next) {
+    dropString(boxer)
     boxer.guardSince = now
     boxer.parryArmed = now >= boxer.parryReadyAt
   } else {
@@ -421,6 +481,7 @@ export function dodge(bout: Bout, boxer: Boxer, now: number): boolean {
   const spec = bout.rules.dodge
   if (!fighting(bout, boxer) || boxer.guard || now < boxer.stunnedUntil || now < boxer.nextDodgeAt || boxer.endurance < spec.enduranceCost) return false
   boxer.endurance -= spec.enduranceCost
+  dropString(boxer)
   boxer.nextDodgeAt = now + spec.cooldownMs
   boxer.dodgeUntil = now + spec.windowMs
   return true
@@ -485,6 +546,12 @@ function str(raw: Json, key: string, path: string): string {
   return value
 }
 
+function cancelMsOf(p: Json, path: string): number {
+  const cancelMs = num(p, 'cancelMs', path, 1)
+  if (cancelMs > num(p, 'cooldownMs', path, 1)) throw new Error(`boxing rules: ${path}.cancelMs must not exceed cooldownMs`)
+  return cancelMs
+}
+
 function punchRules(raw: unknown, kind: PunchKind): PunchRules {
   const p = obj(raw, `punches.${kind}`)
   const path = `punches.${kind}`
@@ -492,6 +559,7 @@ function punchRules(raw: unknown, kind: PunchKind): PunchRules {
     damage: num(p, 'damage', path, 1),
     enduranceCost: num(p, 'enduranceCost', path),
     cooldownMs: num(p, 'cooldownMs', path, 1),
+    cancelMs: cancelMsOf(p, path),
     reachM: num(p, 'reachM', path, 0.1),
     points: num(p, 'points', path)
   }
@@ -506,7 +574,7 @@ function combosOf(raw: unknown): Combo[] {
     if (!Array.isArray(sequence) || sequence.length < 2 || !sequence.every((k) => PUNCH_KINDS.includes(k as PunchKind))) {
       throw new Error(`boxing rules: ${path}.sequence must list at least two punch kinds`)
     }
-    if (sequence.length > CHAIN_KEEP) throw new Error(`boxing rules: ${path}.sequence is longer than ${CHAIN_KEEP}`)
+    if (sequence.length > MAX_COMBO_LENGTH) throw new Error(`boxing rules: ${path}.sequence is longer than ${MAX_COMBO_LENGTH}`)
     return { id: str(c, 'id', path), sequence: sequence as PunchKind[], bonusDamage: num(c, 'bonusDamage', path), bonusPoints: num(c, 'bonusPoints', path) }
   })
 }
@@ -555,6 +623,7 @@ export function parseBoxingRules(raw: unknown): BoxingRules {
   const hit = obj(r.hit, 'hit')
   const hold = obj(r.hold, 'hold')
   const combo = obj(r.combo, 'combo')
+  const cancel = obj(r.cancel, 'cancel')
   const boutCombos = combosOf(combo.list)
   const roundsChoices = r.roundsChoices
   if (!Array.isArray(roundsChoices) || roundsChoices.length === 0 || !roundsChoices.every((n) => Number.isInteger(n) && n > 0)) {
@@ -593,6 +662,7 @@ export function parseBoxingRules(raw: unknown): BoxingRules {
     punches: { jab: punchRules(punches.jab, 'jab'), cross: punchRules(punches.cross, 'cross'), hook: punchRules(punches.hook, 'hook'), uppercut: punchRules(punches.uppercut, 'uppercut') },
     holdMs: num(hold, 'ms', 'hold', 1),
     bufferMs: num(r, 'bufferMs', 'root'),
+    cancel: { damageFactor: num(cancel, 'damageFactor', 'cancel'), heavyChargeMs: num(cancel, 'heavyChargeMs', 'cancel') },
     combo: { windowMs: num(combo, 'windowMs', 'combo'), list: boutCombos },
     bagCombos: bagCombosOf(bag.extra, boutCombos),
     guard: { damageFactor: num(guard, 'damageFactor', 'guard'), drainPerSec: num(guard, 'drainPerSec', 'guard') },

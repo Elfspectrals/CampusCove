@@ -75,6 +75,7 @@
       "damage": 5,
       "enduranceCost": 6,
       "cooldownMs": 450,
+      "cancelMs": 250,
       "reachM": 1.7,
       "points": 1
     },
@@ -82,6 +83,7 @@
       "damage": 9,
       "enduranceCost": 11,
       "cooldownMs": 800,
+      "cancelMs": 450,
       "reachM": 1.9,
       "points": 2
     },
@@ -89,6 +91,7 @@
       "damage": 17,
       "enduranceCost": 18,
       "cooldownMs": 1150,
+      "cancelMs": 600,
       "reachM": 1.5,
       "points": 3
     },
@@ -96,6 +99,7 @@
       "damage": 21,
       "enduranceCost": 20,
       "cooldownMs": 1250,
+      "cancelMs": 550,
       "reachM": 1.3,
       "points": 3
     }
@@ -103,9 +107,13 @@
   "hold": {
     "ms": 250
   },
-  "bufferMs": 200,
+  "bufferMs": 120,
+  "cancel": {
+    "damageFactor": 0.8,
+    "heavyChargeMs": 100
+  },
   "combo": {
-    "windowMs": 500,
+    "windowMs": 250,
     "list": [
       {
         "id": "one_two",

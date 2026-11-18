@@ -261,7 +261,7 @@ fc = cb.fcurves.new('pose.bones["Hips"].rotation_quaternion', index=0)
   - Call `setLoop(LoopOnce,1); clampWhenFinished=true; reset().play()`.
   - Listen with `mixer.addEventListener('finished', e => e.action===a && …)`.
   - Without clamp, the action disables itself and its weight falls back to the binding's original state (usually the rest pose) until another action takes the weight. With clamp it holds the last frame. Either way, `reset()` is needed before it plays again (`AnimationAction.js`, `PropertyMixer.js` apply).
-- **Crossfade:** the project uses `crossFadeTo(next, 0.22, false)` (`glbCharacter.ts:121-157`). Use `warp=true` or `syncWith` between cycles whose foot phases match.
+- **Crossfade:** the game no longer calls `crossFadeTo`, `fadeIn` or `fadeOut`; every character goes through the shared blend layer (section 3.4). Those three.js calls restart a fade from weight 1 or 0, so interrupting a fade pops.
 - **No snap back to the rest pose between clips** (found 2026-11-15 on the dance moves). For every clip:
   - A one-shot starts and ends exactly on the pose of the clip it returns to (the `DanceMove*` clips on the `Dance`
     frame-0 pose). A looped clip starts and ends on a pose that blends with
@@ -269,9 +269,9 @@ fc = cb.fcurves.new('pose.bones["Hips"].rotation_quaternion', index=0)
   - A looped clip's last frame equals its first frame on every channel.
   - Every clip keys the same set of bones (all bones, translation, rotation and scale, as `sample_actions` does). A
     bone without a track in one of two blended clips falls back to its rest pose during the blend.
-  - The player crossfades from the running action to the next one (`crossFadeTo`, or `fadeOut` + `reset().fadeIn().play()`
-    on the next). Never `stop()` an action and then start another, and never let a `LoopOnce` action end without
-    `clampWhenFinished`: both hand the bones back to the rest pose for at least one frame.
+  - The player blends from the running action to the next one through the blend layer (section 3.4), which keeps the
+    weights of every layer summing to 1. Never `stop()` an action and then start another, and never let a `LoopOnce`
+    action end without `clampWhenFinished`: both hand the bones back to the rest pose for at least one frame.
 - **Additive:** `AnimationUtils.makeClipAdditive(clip.clone(), 0, ref, 30)`. Always clone, because it mutates the clip in place.
 - **Retargeting** with `SkeletonUtils.retargetClip`:
   - `names` maps target to source in sanitized form.
@@ -286,6 +286,19 @@ fc = cb.fcurves.new('pose.bones["Hips"].rotation_quaternion', index=0)
   - Draco does not compress animation. Resample removes every key that linear or slerp interpolation reproduces within 1e-4, keeping the first and last keys (the loop seam is safe).
   - `join` skips skinned meshes, so merge rigid pieces that share a material in Blender before export.
   - `optimize` runs `--palette` by default and merges untextured materials; pass `--palette false` for assets the runtime tints by material name. Textured materials (ours) are kept.
+
+### 3.4 Blending in game (2026-11-18)
+
+Every character, own and remote, third person and first-person arms, plays its clips through one blend layer: `front/src/avatar/animBlend.ts` (pure, tested in `animBlend.test.ts`) and `front/src/avatar/animBlender.ts` (three.js actions).
+
+- **Weights move from where they are.** Each layer holds a weight per clip and a target. A clip that rises moves at exactly 1 / fade per second, the falling ones share what is left, so the layer always sums to 1 and no bone leaks to the rest pose. A new target in the middle of a fade carries on from the current weights instead of restarting from 1 (`stepWeights`).
+- **Twins.** A one-shot played again while it still shows starts a second copy (`Jab#twin`) at its start frame, and the first copy fades out where it is, so the time never snaps to 0 (`freshInstance`).
+- **Layers.** The human rig has a `lower` layer (Hips, legs, feet, and any other bone) and an `upper` layer (Spine, Chest, Neck, Head, shoulders, arms, hands: `UPPER_BODY_BONES`). Each clip is split into one masked copy per layer, cached per source clip. A full-body clip plays on both layers. Eat, Drink and Pick play on the upper layer over the walk or run, and on both layers when the player stands still at the start (Pick crouches; it keeps its legs only while the player does not move). Boxing keeps its footwork mix (`BoxIdle`, `BoxStep`) under the punches, and the uppercut drives the legs too. The first-person arms use one `arms` layer over the whole rig.
+- **Fade per transition** (`fadeSeconds`, from the `animator` review): punch to punch 0.08 s (first person 0.05), guard or locomotion to punch 0.05, punch back to anything 0.15, into a hit react 0.05 and out 0.15, Idle and Walk 0.25, Walk and Run 0.20, Run to Idle 0.30, into Sit 0.35 and out 0.30, into Eat, Drink or Pick 0.20 and out 0.25, into a knockdown 0.08, out of Knockdown, Down or KO 0.30, into a dodge 0.06 and out 0.12, any other full-body one-shot 0.10 in and 0.20 out, anything else 0.22.
+- **Smooth return.** A one-shot calls back `fadeS` before its last frame, so the return blend overlaps the end of the clip instead of holding the clamped pose and then popping.
+- **Cancel frames** (boxing combos, `docs/sports/boxing.md` "Cancels"): a cancelled punch starts after part of its wind-up but never past its load key (jab frame 1, cross 2, hook 5, uppercut 4) and blends in from the current pose. The socket's cancel times sit after the impact frames: jab 250 ms (frame 7.5, impact 5), cross 450 ms (13.5, impact 8), hook 600 ms after release (clip frame 23, impact 11), uppercut 550 ms after release (clip frame 20.5, impact 9).
+- **Masking trap.** Spine and Chest are children of Hips: an upper-body clip authored on one hip pose takes the hips of the clip under it. Over Walk and Run the torso inherits the walk's hip yaw and loses the run's forward lean held in Spine. Keep aimed upper-body actions (punches) over their own footwork, and keep clips that crouch or lift a heel full body.
+- Not done: `warp` / `syncWith` between Walk and Run, so the feet can slide out of phase during the 0.20 s blend.
 
 ---
 

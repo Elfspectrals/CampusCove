@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { BOX_STEP_DESIGN_SPEED, BoxingAnimState, LOWER_BODY_BONES, chargeClip, footwork, keepsTrack, punchClip } from './boxingAnimLogic.ts'
+import { BOX_STEP_DESIGN_SPEED, BoxingAnimState, chargeClip, footwork, punchClip } from './boxingAnimLogic.ts'
 
 test('footwork blends from the bouncing guard into the step as the boxer speeds up, no jump at either end', () => {
   assert.deepEqual(footwork(0), { idle: 1, step: 0, stepTimeScale: 0.7 })
@@ -12,12 +12,6 @@ test('footwork blends from the bouncing guard into the step as the boxer speeds 
   assert.ok(footwork(0.31).step < 0.01 && footwork(1.59).step > 0.99)
   assert.equal(footwork(BOX_STEP_DESIGN_SPEED).stepTimeScale, 1)
   assert.equal(footwork(9).stepTimeScale, 1.4)
-})
-
-test('a layer keeps only the tracks of its own bones', () => {
-  assert.equal(keepsTrack('UpperLegL.quaternion', LOWER_BODY_BONES), true)
-  assert.equal(keepsTrack('HandR.quaternion', LOWER_BODY_BONES), false)
-  assert.equal(keepsTrack('Hips.position', LOWER_BODY_BONES), true)
 })
 
 test('a punch flows out of the guard and back into the guard, or into the block when the guard is held', () => {

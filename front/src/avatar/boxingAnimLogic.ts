@@ -4,8 +4,6 @@ const STEP_BLEND_TO = 1.6
 const STEP_TIMESCALE_MIN = 0.7
 const STEP_TIMESCALE_MAX = 1.4
 
-export const LOWER_BODY_BONES = ['Hips', 'UpperLegL', 'UpperLegR', 'LowerLegL', 'LowerLegR', 'FootL', 'FootR', 'ToeL', 'ToeR'] as const
-export const UPPER_BODY_BONES = ['Spine', 'Chest', 'Neck', 'Head', 'ShoulderL', 'ShoulderR', 'UpperArmL', 'UpperArmR', 'LowerArmL', 'LowerArmR', 'HandL', 'HandR'] as const
 
 export type UpperLoop = 'Guard' | 'Block'
 export type UpperShot = 'Jab' | 'Cross' | 'Hook' | 'Uppercut' | 'DodgeL' | 'DodgeR' | 'HitReact'
@@ -27,11 +25,6 @@ export function footwork(speed: number): { idle: number; step: number; stepTimeS
   const step = smoothstep(STEP_BLEND_FROM, STEP_BLEND_TO, Math.max(0, speed))
   const stepTimeScale = Math.min(STEP_TIMESCALE_MAX, Math.max(STEP_TIMESCALE_MIN, speed / BOX_STEP_DESIGN_SPEED))
   return { idle: 1 - step, step, stepTimeScale }
-}
-
-export function keepsTrack(trackName: string, bones: readonly string[]): boolean {
-  const bone = trackName.split('.')[0]!
-  return bones.includes(bone)
 }
 
 export interface BoxerPose {

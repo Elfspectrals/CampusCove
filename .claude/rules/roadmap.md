@@ -99,6 +99,11 @@ Decision (2026-11-10): new clips for the human rig and the animals are written a
 - [done] Rework of every human clip: Walk and Run designed for the real speeds (5 and 8.5 m/s) with IK-planted feet, Idle and Sit alive, skin secondary motion locked to the steps, first-person arms reworked plus a first-person Pick, run thresholds 6.7 / 5.8 m/s and speed-matched timeScale.
 - [done] Eat and Drink clips (1.0 s) in first person and third person, base body and premium skins, seen by other players through `user_action`.
 
+Decision (2026-11-18): clips blend into each other instead of playing one after the other, for every character (own, remote, first-person arms), and boxing combos chain like Mortal Kombat strings: a well-timed next punch cancels the current one and blends in from its pose. Branch `feat/animation-blend-combos`, on top of `feat/sports-review`.
+
+- [doing] Shared blend layer (`animBlend.ts`, `animBlender.ts`, playbook 3.4): weights move from where they are, twins for replayed one-shots, lower and upper body layers so Eat, Drink and Pick play over the walk, a fade per transition, one-shots that return before their last frame. Third-person avatar, boxing animator and first-person arms moved onto it. Covered by unit tests, not seen in game yet.
+- [doing] Boxing cancels judged by the socket (`docs/sports/boxing.md` "Cancels"): cancel time per punch, 250 ms link window, 120 ms buffer stamped at its due time, too early refused and breaking the string, strings read from their start, cancelled hits at 0.8, a heavy cancel needs 100 ms of shown wind-up, a guard break ends the string, guard, dodge or a landed punch drop it, the robot cancels late by its level. Socket tests only, not played.
+
 ## First-person hands, punch and watch (done)
 
 Decision (2026-11-11): the first-person hands get finger bones so they can relax, make a fist and grip; the punch becomes a left jab then a right cross (back to the jab after a pause), same impact frame and cooldown; the survival watch is an AI model from `make model` at real size, strapped to the forearm, with a square smartwatch face that keeps hunger and thirst. Shipped in three steps, each checked in game.

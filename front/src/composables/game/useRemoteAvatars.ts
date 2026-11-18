@@ -500,8 +500,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     entry.boxer = on ? dressBoxer(entry.group) : null
   }
 
-  function boxerShot(sessionId: string, clip: UpperShot) {
-    avatars.get(sessionId)?.boxer?.shot(clip)
+  function boxerShot(sessionId: string, clip: UpperShot, cancel = false) {
+    avatars.get(sessionId)?.boxer?.shot(clip, cancel)
   }
 
   function boxerCharge(sessionId: string, clip: UpperCharge, on: boolean) {
