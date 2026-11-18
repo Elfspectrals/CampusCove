@@ -61,7 +61,7 @@ test('on the serve the ring closes on the server as the toss rises and is green 
   }
 })
 
-test('the mark charges while the player stands within 0.8 m of where the ball passes at a height they can hit, in 0.6 s', () => {
+test('the mark charges while the player stands within 0.8 m of where the ball passes at a height they can hit, in 1 s', () => {
   const s = state()
   const play = { ...s, netZ: s.court.netZ }
   const pass = ballPosition(s.ball!, 1400)
@@ -69,8 +69,8 @@ test('the mark charges while the player stands within 0.8 m of where the ball pa
   assert.equal(inPlace(play, 'red', { x: pass.x + 2.5, z: pass.z }, 500), false)
   assert.equal(inPlace(play, 'blue', { x: pass.x, z: pass.z }, 500), false)
   assert.equal(chargeFill(null, 5000), 0)
-  assert.equal(chargeFill(4700, 5000), 0.5)
-  assert.equal(chargeFill(4400, 5000), 1)
+  assert.equal(chargeFill(4500, 5000), 0.5)
+  assert.equal(chargeFill(4000, 5000), 1)
   assert.equal(chargeFill(1000, 5000), 1)
   assert.equal(highBall({ x: 0, y: 1, z: 0, vx: 0, vy: 8, vz: 5, t: 0 }), true)
   assert.equal(highBall({ x: 0, y: 1, z: 0, vx: 0, vy: 7, vz: 5, t: 0 }), false)

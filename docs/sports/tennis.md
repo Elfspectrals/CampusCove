@@ -101,7 +101,7 @@ impossible. Reworked on the model of Wii Sports Tennis (automatic positioning, t
   the court lines (`position_correction`, reason `tennis_serve`). The front locks their movement while they serve (match:
   from the serve wait to the hit; free play: during their own toss, `tennis_free.server`). The socket only accepts the
   serve hit from a server within 1.0 m of the tossed ball: a server who walked away from the toss could still hit it.
-- **Smash**: a fifth timing, earned by being early (second review, 2026-11-15, on the model of the star of Mario Tennis; it was a click in a 100 ms window before). A player is *in position* when the incoming ball will pass within 0.8 m of them at a height they can hit (2.8 m at most), on their half. Standing in position for 0.6 s without a break charges the shot (`chargeMs`, `trackReady` in `tennisRally.ts`, followed on each sports tick and at the click); stepping out, a new ball or their own shot starts the charge again. A charged drive struck in the perfect window (60 ms late to 200 ms early) with a quality of 0.85 or more leaves at 25 m/s. Examples: in position for 600 ms, click 50 ms before the ball: smash; in position for 599 ms: perfect; charged but 201 ms early: early; out and back 300 ms before the click: perfect; a lob is never a smash.
+- **Smash**: a fifth timing, earned by being early (second review, 2026-11-15, on the model of the star of Mario Tennis; it was a click in a 100 ms window before). A player is *in position* when the incoming ball will pass within 0.8 m of them at a height they can hit (2.8 m at most), on their half. Standing in position for 1 s without a break (0.6 s until 2026-11-18) charges the shot (`chargeMs`, `trackReady` in `tennisRally.ts`, followed on each sports tick and at the click); stepping out, a new ball or their own shot starts the charge again. A charged drive struck in the perfect window (60 ms late to 200 ms early) with a quality of 0.85 or more leaves at 25 m/s. Examples: in position for 1,000 ms, click 50 ms before the ball: smash; in position for 999 ms: perfect; charged but 201 ms early: early; out and back 300 ms before the click: perfect; a lob is never a smash.
 - **A swing at nothing** (decided 2026-11-15, under the "Emergent gameplay" rule): clicking in bursts returned the ball about 6 times in 10 without reading the ring. A click that finds no ball to strike while the ball is coming now costs 700 ms before the next click instead of 400 ms, in a match. Free play keeps 400 ms.
 - **Serve ring** (2026-11-15, after the user tested alone and saw no circle: alone only the serve can be played): during the server's own toss the ring is drawn around them, closing as the ball rises; green within 60 ms of the top of the toss (the socket's Perfect), orange within 280 ms, red outside (`serveRing`).
 - **Mark on the court**: as soon as the other side hits, a disc of 0.8 m is drawn where the player should stand for that ball (`interceptSpot`: where the ball will be 350 ms after its bounce, 0.6 m to the side so it comes on the racket side); a star 1.5 times wider for a high ball (apex of 4 m or more). It is pale yellow, turquoise once the player is in position, and a white disc grows inside it while the charge builds, purple when it is full. The front shows its own estimate (`inPlace`, `chargeFill`, the same numbers as the socket); the socket decides.
@@ -116,9 +116,14 @@ now; robots still run on their own (`tennisRobot.ts`). Nothing else moves them b
   about 1.5 s from its hit to 350 ms after its bounce, and the run needed to come within reach is about 2.1 m, so
   walking reaches it with time to spare; the sprint is the dash for a ball read late. A faster walk would leave no
   reason to sprint.
-- **Mark, ring and smash** are unchanged: the mark is still where full quality comes (0.6 m from the ball, inside the
-  0.8 m sweet spot), the ring is drawn around it, and the 0.6 s charge starts as soon as the player is within 0.8 m of
-  the ball's path, before reaching the mark. To check in play: how often a smash comes against the hard robot.
+- **Mark and ring** are unchanged: the mark is still where full quality comes (0.6 m from the ball, inside the 0.8 m
+  sweet spot) and the ring is drawn around it. The charge starts as soon as the player is within 0.8 m of the ball's
+  path, before reaching the mark.
+- **Smash charge 1 s** (was 0.6 s, chosen 2026-11-18 from the measures below): walking at 5 m/s gets a player to the
+  mark early, so with 0.6 s most returns became smashes and the smash was no longer a reward. At 1 s a player who walks
+  to the mark smashes about 3 returns in 10 against normal (6 in 10 before) and 1 in 7 against hard; a slower player
+  about 1 in 6 and 1 in 11. Against easy the balls are slow, so a smash stays common (6 in 10). At 1.2 s a slower
+  player almost never smashes against hard (1 in 16), so 1 s is kept. The hard robot smashes about 3 shots in 10.
 - **Rooted while swinging**: a click that commits a swing (the ball within reach, 350 ms ahead at most) locks the
   player's movement until the ball passes (`committedSwingAt`, `swinging()` in `useTennis`), as the serve already
   does. The socket strikes a committed swing only if the player is still within 1.8 m + 0.5 m (`SWING_DRIFT_M`, for
@@ -145,8 +150,17 @@ with ±60 ms of error; 6 tie-breaks each, points won-lost:
 | Never moves | 42-3 | 6-42 | 1-42 |
 | Walks to the mark, doubles (robot partner at the same level) | 42-1 | 42-7 | 9-42 |
 
-Smashes made with the 0.6 s charge: 63 of 87 returns against easy, 148 of 255 against normal, 151 of 747 against
-hard. A player who stands still wins against easy, which plays to the middle.
+The table was measured with the 0.6 s charge; at 1 s the scores stay within a few points (walker against hard 43-11,
+slow against hard 26-38). Smashes per returns, by charge, for the player who walks to the mark:
+
+| Charge | Easy | Normal | Hard |
+|---|---|---|---|
+| 0.6 s | 63 / 87 | 148 / 255 | 151 / 747 |
+| 0.9 s | 58 / 87 | 101 / 308 | 125 / 845 |
+| 1.0 s (kept) | 52 / 87 | 86 / 308 | 115 / 852 |
+| 1.2 s | 40 / 75 | 66 / 334 | 101 / 768 |
+
+A player who stands still wins against easy, which plays to the middle.
 
 What a player can now do, and what happens:
 
@@ -192,8 +206,8 @@ every opponent. For reference a player walks at 5 m/s and sprints at 8.5 m/s. Th
 are in one table, `TENNIS_ROBOT`.
 
 Measured with a scripted feeder that never misses (not a playtest): easy sends back about 7 balls in 10 played within
-2 m of the middle and 5 in 10 played to the lines; normal about 9 in 10; hard more than 9 in 10, and it smashes most
-balls it waits for, so a player who only stood on the mark (as the former auto-run did) lost about 3 points in 4 against it.
+2 m of the middle and 5 in 10 played to the lines; normal about 9 in 10; hard more than 9 in 10, and with the 0.6 s charge of then it smashed most
+balls it waited for, so a player who only stood on the mark (as the former auto-run did) lost about 3 points in 4 against it.
 
 Not covered: the robot never comes to the net or volleys on purpose, plays no drop shot, does not change its play
 with the score, and a robot partner does not cover for the player. A robot's missed swing shows no stroke (as for a

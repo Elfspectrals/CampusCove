@@ -187,7 +187,7 @@ test('the timing keeps the full quality from 60 ms late to 200 ms early and halv
   assert.equal(timingOf(50, 0.84, true), 'good')
 })
 
-test('a receiver is charged after standing 0.6 s where the ball comes; stepping out, a new ball or their own shot starts again', () => {
+test('a receiver is charged after standing 1 s where the ball comes; stepping out, a new ball or their own shot starts again', () => {
   const ball = served({ x: 0, z: 8 })
   const bounced = flight(step(ball, groundTime(ball.ball) + 1, COURT, nowhere))
   const contactAt = bounced.ball.t + 300
@@ -201,8 +201,8 @@ test('a receiver is charged after standing 0.6 s where the ball comes; stepping 
   assert.equal(inPosition(ball, COURT, { ...inPlace, x: at.x + 0.81 }, start), false)
   assert.equal(inPosition(ball, COURT, { ...inPlace, team: 'blue' }, start), false)
   assert.equal(trackReady(who, ball, COURT, inPlace, start), false)
-  assert.equal(trackReady(who, ball, COURT, inPlace, start + 599), false)
-  assert.equal(trackReady(who, ball, COURT, inPlace, start + 600), true)
+  assert.equal(trackReady(who, ball, COURT, inPlace, start + 999), false)
+  assert.equal(trackReady(who, ball, COURT, inPlace, start + 1000), true)
   assert.equal(trackReady(who, bounced, COURT, inPlace, start + 1050), true)
   assert.equal(trackReady(who, bounced, COURT, away, start + 1060), false)
   assert.equal(trackReady(who, bounced, COURT, inPlace, start + 1070), false)

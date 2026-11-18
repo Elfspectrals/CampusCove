@@ -338,7 +338,7 @@ Decision (2026-11-17, third review of the sports): boxing must reward technique,
 
 Decision (2026-11-18): in tennis only the movement keys move a human player; the auto-run toward the ball is gone (robots keep running on their own). Walk and sprint speeds are unchanged.
 
-- [done] Tennis manual movement: no auto-run, the mark, ring and smash charge kept as they were, the player rooted from a committed swing until the ball passes, and the socket drops a committed swing whose player is more than 2.3 m from the contact point (`docs/sports/tennis.md`, 2026-11-18). Played in the browser against the normal robot on 2026-11-18 by a script holding only the movement keys: no move on its own, the mark and ring reached by hand, rooted through 35 swings. The three levels and doubles were measured headless through the socket's match code, not by hand.
+- [done] Tennis manual movement: no auto-run, the mark, ring and smash charge kept as they were, the player rooted from a committed swing until the ball passes, and the socket drops a committed swing whose player is more than 2.3 m from the contact point (`docs/sports/tennis.md`, 2026-11-18). Played in the browser against the normal robot on 2026-11-18 by a script holding only the movement keys: no move on its own, the mark and ring reached by hand, rooted through 35 swings. The three levels and doubles were measured headless through the socket's match code, not by hand. The smash charge goes from 0.6 s to 1 s (decided 2026-11-18): with manual movement most returns had become smashes.
 
 ## Pause menu and options (done)
 
