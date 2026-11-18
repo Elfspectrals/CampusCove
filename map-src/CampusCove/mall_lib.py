@@ -15,6 +15,7 @@ import lib_common as L
 import lib_kit as K
 
 TWO_PI = 2 * math.pi
+TEXT_RESOLUTION = 2
 
 
 class Ctx:
@@ -79,7 +80,7 @@ class Ctx:
         cu.body = body
         cu.size = size
         cu.extrude = 0.0
-        cu.resolution_u = 1
+        cu.resolution_u = TEXT_RESOLUTION
         cu.align_x = "CENTER"
         cu.align_y = "BOTTOM"
         tmp = bpy.data.objects.new(name + "_tmp", cu)

@@ -15,6 +15,7 @@ TWO_PI = 2 * math.pi
 SKIPPED = []
 PLACED = []
 ATM_Z, ATM_OUT = 11.5, 0.62
+VENDING_Z = 38.5
 NUDGE_STEP, NUDGE_STEPS = 0.5, 16
 NUDGE_DIRS = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1))
 TRIS = {}
@@ -55,7 +56,7 @@ def _nudged(ctx, x, z, hx, hz):
 
 
 def _place(ctx, name, spots, hx, hz, reserve=False):
-    found = next(((x, z) for x, z in spots if ctx.clear(x, z, hx, hz)), None)
+    found = next(((x, z) for x, z in spots if _free(ctx, x, z, hx, hz)), None)
     if found is None:
         found = _nudged(ctx, *spots[0], hx, hz)
         if found is None:
@@ -401,7 +402,7 @@ def _entrance(ctx, C, M):
     for k, (gx, gz, yaw) in enumerate(((-183.6, 10.5, -math.pi / 2), (-176.4, -16.5, math.pi / 2))):
         if _place(ctx, f"Deco_Terminal_E{k}", [(gx, gz)], 0.3, 0.3):
             _terminal(ctx, C, f"Deco_Terminal_E{k}", gx, gz, yaw)
-    for k, (gx, gz) in enumerate(((-172.7, -43.0), (-172.7, 43.0), (-187.3, -27.5), (-187.3, 27.5))):
+    for k, (gx, gz) in enumerate(((-172.7, -VENDING_Z), (-172.7, VENDING_Z), (-187.3, -27.5), (-187.3, 27.5))):
         yaw = math.pi / 2 if gx > -180 else -math.pi / 2
         if _place(ctx, f"Deco_Vending_E{k}", [(gx, gz)], 0.45, 1.0):
             _vending_pair(ctx, C, f"Deco_Vending_E{k}", gx, gz, yaw)
