@@ -1146,6 +1146,29 @@
             0.2,
             -1.405
           ]
+        },
+        {
+          "kind": "house",
+          "key": "cove_home_b02",
+          "name": "Maison Lavande",
+          "position": [
+            -291,
+            0,
+            -186
+          ],
+          "rotationY": 3.141593,
+          "door": [
+            -291,
+            1.25,
+            -190.8
+          ],
+          "offer": "buy",
+          "price": 15500,
+          "interiorOffset": [
+            0,
+            0.2,
+            -1.405
+          ]
         }
       ]
     },
@@ -12352,16 +12375,6 @@
   },
   "adminDestinations": [
     {
-      "key": "cove_heights_gate",
-      "name": "Cove Heights gate",
-      "position": [
-        -247.25,
-        0,
-        -158
-      ],
-      "yaw": 0
-    },
-    {
       "key": "sports_gate",
       "name": "Cove Sports Park gate",
       "position": [
@@ -12400,6 +12413,16 @@
         -275.5
       ],
       "yaw": 1.5708
+    },
+    {
+      "key": "cove_heights_gate",
+      "name": "Cove Heights gate",
+      "position": [
+        -247.25,
+        0,
+        -158
+      ],
+      "yaw": 0
     }
   ],
   "sportsComplex": {

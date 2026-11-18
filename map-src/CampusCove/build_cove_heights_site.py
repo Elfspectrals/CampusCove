@@ -116,6 +116,9 @@ HM = {  # lot landscaping around the houses (the houses themselves come from bui
     "boxwood": L.make_mat("TW_CoveBoxwoodLeaf", "#3f6f37", 0.9, "noise", 0.07),
     "hydrangea": L.make_mat("TW_CoveHydrangeaFlower", "#f3f1e4", 0.9, "noise", 0.08, accent="#dfe6c8"),
     "hedge_low": M["hedge_low"],
+    "gravel": L.make_mat("TW_CoveGravel", "#cfc6b2", 0.95, "noise", 0.10, accent="#b8ae98"),
+    "hornbeam": L.make_mat("TW_CoveHornbeam", "#547f3a", 0.9, "noise", 0.07),
+    "lavender": L.make_mat("TW_CoveHedgeLavender", "#9a86c4", 0.9, "noise", 0.08, accent="#7d6aa6"),
 }
 
 LOOP_SEC = S.road_section(6.0, 0.15, 0.0, 1.5, Y)
@@ -435,7 +438,19 @@ S.hydrangeas(est, "CH_LotB01_Hydrangea", 160.2, 162.9, -211.75, HM, n=3)
 house_cols(HOME_B01, "LotB01")
 est.col("HousePlaceholderB01", *house_point(HOME_B01, -2.0, -1.605), 15.0, 11.21, 6.0, yaw=HOME_B01["rotationY"])
 est.cols[-1]["name"] = f"COL_House_{HOME_B01['key']}"
-HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03, VILLA_A04, HOME_B01]
+HOME_B02 = {"key": "cove_home_b02", "name": "Maison Lavande", "lot": "B-02", "origin": (140.0, -204.0), "zf": 4.0,
+            "rotationY": PI, "interiorOffset": [0.0, 0.2, -1.405], "price": 15500}
+S.rect(est, "CH_LotB02_CourW", 134.5, -212.0, 138.8, -209.4, Y["lot"], Y["drive"], HM["gravel"])
+S.rect(est, "CH_LotB02_CourE", 141.2, -212.0, 145.5, -209.4, Y["lot"], Y["drive"], HM["gravel"])
+S.hedge_run(est, "CH_LotB02_HornbeamW", (134.1, -209.5), (134.1, -212.1), HM, w=0.6, h=1.6, mat="hornbeam")
+S.hedge_run(est, "CH_LotB02_HornbeamE", (145.9, -209.5), (145.9, -212.1), HM, w=0.6, h=1.6, mat="hornbeam")
+S.hedge_run(est, "CH_LotB02_LavenderW", (133.6, -208.7), (138.3, -208.7), HM, w=0.6, mat="lavender")
+S.hedge_run(est, "CH_LotB02_LavenderE", (141.7, -208.7), (146.4, -208.7), HM, w=0.6, mat="lavender")
+S.street_lamp(est, "CH_LotB02_LampW", 137.7, -210.5, M, h=2.6)
+S.street_lamp(est, "CH_LotB02_LampE", 142.3, -210.5, M, h=2.6)
+est.col("HousePlaceholderB02", *house_point(HOME_B02, 0.0, -1.605), 14.4, 11.21, 6.0, yaw=HOME_B02["rotationY"])
+est.cols[-1]["name"] = f"COL_House_{HOME_B02['key']}"
+HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03, VILLA_A04, HOME_B01, HOME_B02]
 for h in HOUSES:
     _, _, x0, x1, z0, z1, _, _, entry, *_ = next(lot for lot in LOTS if lot[0] == h["lot"])
     door = house_point(h, 0.0, h["zf"] + 0.8)
