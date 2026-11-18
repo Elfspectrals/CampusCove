@@ -45,6 +45,7 @@ export interface BoxingHitPayload {
   damage: number
   combo: BoxingCombo | null
   counter: boolean
+  cancel: boolean
   chain: number
 }
 

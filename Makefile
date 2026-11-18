@@ -141,6 +141,9 @@ model-checked: ## * make model with CHECK=quadruped|biped, retried on the next s
 model-test: ## * Tests of the make model Blender cleanup (headless Blender)
 	$(BLENDER) -b --factory-startup --python-exit-code 1 -P map-src/CampusCove/test_clean_ai_mesh.py
 
+animal-skin-test: ## * Tests of the animal auto-skinning on a worm, fish, bird, tiger, octopus and every shipped animal (headless Blender)
+	$(BLENDER) -b --factory-startup --python-exit-code 1 -P map-src/CampusCove/test_animal_skin.py
+
 TILE ?= 2.0
 SIZE ?= 1024
 CATEGORY ?= other

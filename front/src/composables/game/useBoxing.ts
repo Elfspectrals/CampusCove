@@ -57,6 +57,7 @@ export interface BoxingDeps {
   playOn: (sound: 'bag_hit', object: THREE.Object3D) => void
   say: (text: string) => void
   tiredText: () => string
+  earlyText: () => string
   noGlovesText: () => string
   comboName: (id: string) => string
   myPosition: { x: number; z: number }
@@ -413,6 +414,10 @@ export function useBoxing(deps: BoxingDeps) {
     },
     onTired() {
       deps.say(deps.tiredText())
+    },
+    onEarly() {
+      deps.play('glove_block')
+      deps.say(deps.earlyText())
     },
     onBagHit(data: BoxingBagHitPayload) {
       const bag = bags[data.bag]
