@@ -9,7 +9,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 import lib_common as L
+import lib_skin as LS
 importlib.reload(L)
+importlib.reload(LS)
 import bpy
 import numpy as np
 from mathutils import Matrix, Vector
@@ -41,11 +43,6 @@ sc = L.new_build_scene("ANIMALS")
 sc.render.fps = FPS
 coll = bpy.data.collections.new("Animals")
 sc.collection.children.link(coll)
-
-
-def smoothstep(edge0, edge1, x):
-    t = np.clip((x - edge0) / (edge1 - edge0), 0.0, 1.0)
-    return t * t * (3 - 2 * t)
 
 
 def body_mesh(key, cfg):
@@ -132,41 +129,7 @@ def build_rig(key, obj, cfg):
         bone(f"shin_{name}", Vector((x, y, knee)), Vector((x, y, 0.0)), f"leg_{name}")
     bpy.ops.object.mode_set(mode="OBJECT")
 
-    z = verts[:, 2]
-    centres = [("hips", 0.3), ("chest", (0.45 + cfg["neck"]) / 2), ("neck", (cfg["neck"] + cfg["skull"]) / 2), ("head", min(1.0, cfg["skull"] + 0.08))]
-    weights = {name: np.zeros(len(verts)) for name, _ in centres}
-    for (a, sa), (b, sb) in zip(centres, centres[1:]):
-        f = np.clip((s - sa) / (sb - sa), 0.0, 1.0)
-        span = (s >= sa) & (s < sb)
-        weights[a][span] += 1 - f[span]
-        weights[b][span] += f[span]
-    weights["hips"][s < centres[0][1]] = 1.0
-    weights["head"][s >= centres[-1][1]] = 1.0
-    lifted = np.where(s < cfg["skull"], smoothstep(spine_z - 0.2 * height, spine_z, z), 1.0)
-    for name in ("neck", "head"):
-        dropped = weights[name] * (1 - lifted)
-        weights[name] -= dropped
-        weights["chest"] += dropped
-
-    centres_xy = np.array([c for c, _ in legs.values()])
-    nearest = np.argmin(np.linalg.norm(verts[:, None, :2] - centres_xy[None], axis=2), axis=1)
-    blend = 0.3 * leg_top
-    for i, (name, (centre, radius)) in enumerate(legs.items()):
-        mine = (nearest == i) & (np.linalg.norm(verts[:, :2] - centre, axis=1) < radius) & (z < leg_top)
-        on_leg = np.where(mine, smoothstep(leg_top, leg_top - 0.2 * leg_top, z), 0.0)
-        upper = smoothstep(knee - blend, knee + blend, z)
-        for body in weights:
-            if not body.startswith(("leg_", "shin_")):
-                weights[body] *= 1 - on_leg
-        weights[f"leg_{name}"] = on_leg * upper
-        weights[f"shin_{name}"] = on_leg * (1 - upper)
-
-    for name, w in weights.items():
-        group = obj.vertex_groups.new(name=name)
-        for i in np.nonzero(w > 1e-4)[0]:
-            group.add([int(i)], float(w[i]), "REPLACE")
-    obj.parent = arm
-    obj.modifiers.new("Armature", "ARMATURE").object = arm
+    LS.skin_mesh(obj, arm)
     return arm, legs, height, leg_top
 
 

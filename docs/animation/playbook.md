@@ -72,6 +72,17 @@ Scope: design rigs and generate clips with code only, using Blender 5.2 Python, 
 - Place bone heads at the piece pivots.
 - Bending past about 45-60° opens gaps between pieces. Cap the joints with overlap or limit the amplitude, and check visually (https://cseweb.ucsd.edu/classes/wi19/cse169-a/readings/3-Skin.html).
 
+**Our `make model` animals are one smooth mesh** (`build_barnyard.py`), skinned by `map-src/CampusCove/lib_skin.py` (`skin_mesh`) for any body plan, whatever the number of legs, arms or spine bones.
+
+- Why the first version tore (found 2026-11-17 on the dog, cow, pig and sheep): weights were one-hot per region, and each leg took the vertices nearest its foot inside a fixed radius. The cut sat at the top of the leg, between the hips or chest and the leg bone (101 edges on the cow, 73 on the dog), and on the birds between chest and head, so the thigh folded into flat shards when the leg swung.
+- Split edges longer than 1.5x the 95th-percentile edge length first: a decimated AI mesh keeps a few 15-20 cm triangles across the knees, and a joint spanned by one triangle cannot bend smoothly.
+- Weld vertices at the same position, so the two copies of a UV seam always get the same weights.
+- Give each bone the vertices nearest to its axis. Where two bones of different branches touch (left and right legs under the belly, the pig's jaw on its front leg), the vertices within one blend of the contact go to their common ancestor (hips, chest), so the two limbs are separated by body skin.
+- Spread each bone's weight along the mesh surface with a gaussian, `exp(-(d / blend)^2)`, `d` measured along the edges, and only into the regions of its parent, its children, or a touching bone of the same branch (a tentacle lying on the mantle). Without that limit the weight crossed the belly: 25 to 63 % of each thigh followed the opposite leg.
+- `blend` is twice the 95th-percentile edge length. Keep the 4 strongest bones per vertex, drop weights under 0.02, normalise.
+- Gates, in `skin_mesh` and in `make animal-skin-test`: at most 3 edges per joint may join vertices that follow different bones (a whole knee ring is 12 to 20 edges, so a global ratio hides it), and at most 10 % of a limb may take more than 0.1 weight from a sibling limb. The test skins a worm, a fish, a bird, a tiger and an octopus (legs out of phase), and checks every shipped `front/public/assets/animals/*/model.glb`; the files shipped before this fix fail it.
+- A new anatomy only needs its bones (head, tail and parent of each, in rest pose). Look at the extreme pose of every clip in a render before shipping: the gates do not see a fold that keeps its weights smooth.
+
 ---
 
 ## 2. Authoring clips in code
