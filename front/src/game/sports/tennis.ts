@@ -39,15 +39,10 @@ const HIGH_BALL_M = 4
 const PERFECT_QUALITY = 0.85
 const RING_LEAD_MS = 900
 const RING_RADIUS_M = [0.6, 2.4] as const
-export const TENNIS_AUTO_RUN_SHARE = 0.6
 const CONTACT_AFTER_BOUNCE_MS = 350
 const CHASE_AHEAD_MS = 150
 const STAND_ASIDE_M = 0.6
 const MAX_BEHIND_BASELINE_M = 3
-const RECOVERY_BEHIND_BASELINE_M = 0.3
-const DOUBLES_FROM_HALF_WIDTH_M = 5
-const DOUBLES_SPREAD_M = 2.5
-const ARRIVED_M = 0.05
 const AIM_M_PER_PIXEL = 0.02
 const AIM_NET_GAP_M = 1.5
 const AIM_LINE_MARGIN_M = 0.5
@@ -124,6 +119,11 @@ export function swingTone(offsetMs: number, distanceM: number, charged = false):
   return charged ? 'smash' : 'good'
 }
 
+export function committedSwingAt(play: BallPlay, team: TennisTeam, me: { x: number; z: number }, serverMs: number): number | null {
+  const pass = closestPass(play, team, me, serverMs)
+  return pass !== null && swingTone(pass.t - serverMs, pass.d) !== 'miss' ? pass.t : null
+}
+
 export function inPlace(play: BallPlay, team: TennisTeam, me: { x: number; z: number }, serverMs: number): boolean {
   const pass = closestPass(play, team, me, serverMs)
   return pass !== null && pass.d <= TENNIS_SWEET_M
@@ -189,21 +189,6 @@ export function interceptSpot(play: BallPlay & { bounces: number }, team: Tennis
   const side = sideSign(team)
   const depth = clamp((at.z - play.netZ) * side, 0, TENNIS_HALF_LENGTH + MAX_BEHIND_BASELINE_M)
   return { x: at.x - side * STAND_ASIDE_M, z: play.netZ + depth * side }
-}
-
-export function recoverySpot(court: CourtView, team: TennisTeam, me: Spot): Spot {
-  const doubles = court.halfWidth > DOUBLES_FROM_HALF_WIDTH_M
-  const x = doubles ? court.cx + (me.x >= court.cx ? DOUBLES_SPREAD_M : -DOUBLES_SPREAD_M) : court.cx
-  return { x, z: court.netZ + sideSign(team) * (TENNIS_HALF_LENGTH + RECOVERY_BEHIND_BASELINE_M) }
-}
-
-export function runStep(me: Spot, spot: Spot, maxStep: number): { dx: number; dz: number } {
-  const dx = spot.x - me.x
-  const dz = spot.z - me.z
-  const distance = Math.hypot(dx, dz)
-  if (distance < ARRIVED_M) return { dx: 0, dz: 0 }
-  const step = Math.min(distance, maxStep)
-  return { dx: (dx / distance) * step, dz: (dz / distance) * step }
 }
 
 export function iServe(state: TennisStatePayload, sessionId: string | null): boolean {

@@ -71,7 +71,6 @@ export interface UseGameMovementDeps {
   skate?: (dt: number, yaw: number, keys: { forward: boolean; brake: boolean }) => { dx: number; dz: number } | null
   afterSkate?: (wanted: number, moved: number) => void
   lockedLook?: () => { yaw: number; pitch: number } | null
-  autoRun?: (dt: number) => { dx: number; dz: number } | null
   moveFrameYaw?: () => number | null
   faceSpot?: () => { x: number; z: number } | null
   swim?: {
@@ -189,14 +188,13 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       const skating = deps.skate?.(dt, yaw, { forward: keys.forward, brake: keys.brake }) ?? null
       const speedFactor = deps.speedFactor()
       const moving = !skating && (forward !== 0 || right !== 0) && speedFactor > 0
-      const auto = !skating && forward === 0 && right === 0 ? (deps.autoRun?.(dt) ?? null) : null
       sprinting = keys.sprint && moving && deps.trySpendSprint(dt, sprinting)
       if (skating) yaw -= right * SKATE_KEY_TURN * dt
       else if (jumpRequested && airY === 0 && speedFactor > 0 && deps.trySpendJump()) airVelocity = JUMP_VELOCITY
       const step = (sprinting ? SPRINT_SPEED : WALK_SPEED) * speedFactor * dt
       const pushFactor = speedFactor > 0 ? 1 : 0
-      const walkX = auto ? auto.dx * speedFactor : direction.x * forward * step + rightVec.x * right * step
-      const walkZ = auto ? auto.dz * speedFactor : direction.z * forward * step + rightVec.z * right * step
+      const walkX = direction.x * forward * step + rightVec.x * right * step
+      const walkZ = direction.z * forward * step + rightVec.z * right * step
       const dx = skating ? (skating.dx + push.dx) * pushFactor : walkX + push.dx * pushFactor
       const dz = skating ? (skating.dz + push.dz) * pushFactor : walkZ + push.dz * pushFactor
       const liftY = capsuleLiftInBuilding(myPosition.x, myPosition.z, feetY)

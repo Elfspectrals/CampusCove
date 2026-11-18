@@ -29,6 +29,7 @@ export const PERFECT_QUALITY = 0.85
 export const HIT_SAMPLE_MS = 10
 export const REACH_M = 1.8
 export const SWEET_M = 0.8
+export const SWING_DRIFT_M = 0.5
 export const HIT_MAX_HEIGHT = 2.8
 export const DRIVE_SPEED = [11, 19] as const
 export const LOB_SPEED = [6.5, 8.5] as const

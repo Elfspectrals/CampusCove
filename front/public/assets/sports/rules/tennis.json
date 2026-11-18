@@ -84,6 +84,7 @@
     "missM": 4,
     "powerByTiming": "linear",
     "swingAheadMs": 350,
+    "swingDriftM": 0.5,
     "perfectTimingMs": [
       -60,
       200

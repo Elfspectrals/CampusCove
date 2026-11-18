@@ -13,7 +13,7 @@ Two outdoor courts, with a tennis coach between them. Shared rules in [README.md
 ## Controls
 
 - The view is third person from behind the player's baseline (see "Camera" in [README.md](README.md)); the body always faces the net.
-- The player **runs to the ball on their own** (60 % of the walking speed) and comes back to the baseline between shots. Any movement key takes over, at full speed.
+- **Only the movement keys move the player** (walk 5 m/s, sprint 8.5 m/s): the camera faces the net, so forward goes to the net and the side keys run along the baseline. A mark on the court shows where to stand for the incoming ball.
 - **Left click to swing**. The swing can be started up to 350 ms before the ball passes; the timing and how close the ball passes give power and accuracy.
 - **The mouse moves a yellow target** on the opponent's half: the ball is sent there.
 - **Right click**: lob.
@@ -90,10 +90,8 @@ impossible. Reworked on the model of Wii Sports Tennis (automatic positioning, t
 - **Net**: a shot of quality 0.5 or more is given the flight time it needs to cross the net 0.35 m above the tape, and
   still lands where it was aimed. A weaker shot keeps its flat flight and can catch the net.
 - **Serve**: any click during the toss serves. Quality = 1 - (time from the top of the toss) / 400 ms, never under 0.3.
-- **Auto-run** (front only, the socket only checks the move speed as for any move): towards where the ball will be
-  350 ms after its bounce, 0.6 m to the side so it comes on the racket side, at 60 % of the walking speed; in doubles
-  only the partner nearest to that spot runs. After the player's side has hit, back to the middle of the baseline
-  (singles) or to their side of it (doubles). At 70 % every ball was reachable and no point ended.
+- **Auto-run**: removed on 2026-11-18 (see below). It ran the player at 60 % of the walking speed towards where the ball
+  would be 350 ms after its bounce, 0.6 m to the side.
 - **Free play**: the side (camera, target) is the half the player stands on when they step on the court with a ball, and
   stays until they leave the court.
 
@@ -106,8 +104,38 @@ impossible. Reworked on the model of Wii Sports Tennis (automatic positioning, t
 - **Smash**: a fifth timing, earned by being early (second review, 2026-11-15, on the model of the star of Mario Tennis; it was a click in a 100 ms window before). A player is *in position* when the incoming ball will pass within 0.8 m of them at a height they can hit (2.8 m at most), on their half. Standing in position for 0.6 s without a break charges the shot (`chargeMs`, `trackReady` in `tennisRally.ts`, followed on each sports tick and at the click); stepping out, a new ball or their own shot starts the charge again. A charged drive struck in the perfect window (60 ms late to 200 ms early) with a quality of 0.85 or more leaves at 25 m/s. Examples: in position for 600 ms, click 50 ms before the ball: smash; in position for 599 ms: perfect; charged but 201 ms early: early; out and back 300 ms before the click: perfect; a lob is never a smash.
 - **A swing at nothing** (decided 2026-11-15, under the "Emergent gameplay" rule): clicking in bursts returned the ball about 6 times in 10 without reading the ring. A click that finds no ball to strike while the ball is coming now costs 700 ms before the next click instead of 400 ms, in a match. Free play keeps 400 ms.
 - **Serve ring** (2026-11-15, after the user tested alone and saw no circle: alone only the serve can be played): during the server's own toss the ring is drawn around them, closing as the ball rises; green within 60 ms of the top of the toss (the socket's Perfect), orange within 280 ms, red outside (`serveRing`).
-- **Mark on the court**: as soon as the other side hits, a disc of 0.8 m is drawn where the player should stand for that ball (`interceptSpot`, the spot the auto-run goes to); a star 1.5 times wider for a high ball (apex of 4 m or more). It is pale yellow, turquoise once the player is in position, and a white disc grows inside it while the charge builds, purple when it is full. The front shows its own estimate (`inPlace`, `chargeFill`, the same numbers as the socket); the socket decides.
+- **Mark on the court**: as soon as the other side hits, a disc of 0.8 m is drawn where the player should stand for that ball (`interceptSpot`: where the ball will be 350 ms after its bounce, 0.6 m to the side so it comes on the racket side); a star 1.5 times wider for a high ball (apex of 4 m or more). It is pale yellow, turquoise once the player is in position, and a white disc grows inside it while the charge builds, purple when it is full. The front shows its own estimate (`inPlace`, `chargeFill`, the same numbers as the socket); the socket decides.
 - **Swing ring**: a ring on the ground around that mark (around the player when there is no mark), from 900 ms before the ball passes closest, shrinking from 2.4 m to 0.6 m as it comes. Its colour is what a click now would give: red a miss (more than 350 ms early, more than 150 ms late, or out of reach), orange a weak shot, green a good one, purple a smash (charged). Purple rather than yellow: yellow is the aim target. Front only (`swingRing`, `swingTone`), from the same constants as the socket; a ball passing higher than 2.8 m over the player no longer counts as a pass.
+
+## Decisions (2026-11-18, manual movement)
+
+The user found the auto-run took the player where they had not asked to go. Only the movement keys move a human player
+now; robots still run on their own (`tennisRobot.ts`). Nothing else moves them but the socket's serve placement.
+
+- **Run speed** stays at 5 m/s walking, 8.5 m/s sprinting (game-designer review): the widest hard-robot drive leaves
+  about 1.5 s from its hit to 350 ms after its bounce, and the run needed to come within reach is about 2.1 m, so
+  walking reaches it with time to spare; the sprint is the dash for a ball read late. A faster walk would leave no
+  reason to sprint.
+- **Mark, ring and smash** are unchanged: the mark is still where full quality comes (0.6 m from the ball, inside the
+  0.8 m sweet spot), the ring is drawn around it, and the 0.6 s charge starts as soon as the player is within 0.8 m of
+  the ball's path, before reaching the mark. To check in play: how often a smash comes against the hard robot.
+- **Rooted while swinging**: a click that commits a swing (the ball within reach, 350 ms ahead at most) locks the
+  player's movement until the ball passes (`committedSwingAt`, `swinging()` in `useTennis`), as the serve already
+  does. The socket strikes a committed swing only if the player is still within 1.8 m + 0.5 m (`SWING_DRIFT_M`, for
+  the network) of the contact point when the ball gets there; otherwise the swing is dropped and the ball flies on.
+  The 0.5 m covers the position updates still in flight at the click. A click the server refuses for its 400 ms
+  cooldown still roots the front for at most 350 ms.
+
+What a player can now do, and what happens:
+
+| Case | Decision | Covered by |
+|---|---|---|
+| Stands still while the ball comes | Allowed: the socket judges reach from where they stand; out of reach the click is a miss (700 ms in a match) and the ball wins the point if it bounces twice | `tennisRally.test.ts` (out of reach), `tennis.test.ts` (swing at nothing) |
+| Runs away from the ball | Allowed: nothing pulls them back, the mark stays where the ball comes | `tennisManualMovement.test.ts` (no auto-run in the front, fails on the old code) |
+| Clicks, then runs off before the contact | Blocked on the front (rooted until the ball passes); a modified client that runs anyway misses | `tennis.test.ts` (front, `committedSwingAt`), `tennisRally.test.ts` (socket drops the swing) |
+| Leaves the court during a match | Allowed: it is the same as standing far from the ball; no hit is accepted from out of reach. Leaving `sports_tennis` follows the 10 s grace of every sport | `tennisRally.test.ts`, sports rejoin tests |
+| Runs through the net line to the other half | Allowed to walk there (no wall), but no hit counts from more than 0.5 m past the net on their side, and the ball is only struck on their own half | `tennisRally.test.ts` (hitter on the wrong half) |
+| Moves while serving | Blocked: the socket puts the server 1 m behind the baseline, the front locks them from the serve wait to the hit, and the toss is only hit within 1.0 m of it | `tennisRally.test.ts`, `tennis.test.ts` (socket) |
 
 ## Robot opponent (2026-11-17)
 
@@ -138,12 +166,12 @@ It has no rule of its own.
 
 The timing error is the sum of two draws, so small errors are the most common: easy is often early or late (weaker,
 longer shots), hard is on time almost every ball. The open side is the aim spot (left, right or middle) furthest from
-every opponent. For reference a player runs at 3 m/s on the auto-run and 5 m/s with the movement keys. The numbers
+every opponent. For reference a player walks at 5 m/s and sprints at 8.5 m/s. The numbers
 are in one table, `TENNIS_ROBOT`.
 
 Measured with a scripted feeder that never misses (not a playtest): easy sends back about 7 balls in 10 played within
 2 m of the middle and 5 in 10 played to the lines; normal about 9 in 10; hard more than 9 in 10, and it smashes most
-balls it waits for, so a player on the auto-run alone loses about 3 points in 4 against it.
+balls it waits for, so a player who only stood on the mark (as the former auto-run did) lost about 3 points in 4 against it.
 
 Not covered: the robot never comes to the net or volleys on purpose, plays no drop shot, does not change its play
 with the score, and a robot partner does not cover for the player. A robot's missed swing shows no stroke (as for a
