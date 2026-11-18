@@ -33,7 +33,7 @@ def _palette(ctx):
         "teal": mk("Teal", "#2fa17a"), "cactus": mk("Cactus", "#4f9d54", 0.9), "gazebo": mk("GazeboRoof", "#8f4f3a", 0.9),
         "bronze": mk("Bronze", "#6b5a3a", 0.45), "sky": mk("SkyBlue", "#5ac8e8"), "paper": mk("Paper", "#f4efe6", 0.85),
         "slate": mk("Slate", "#2a2e35", 0.8), "navy": mk("Navy", "#1f3f8f"),
-        "screen": mk("AtmScreen", "#2f7fe0", 0.15, "noise", 0.0, emit="#4a95ff", emit_strength=1.6),
+        "screen": mk("AtmScreen", "#1c56b8", 0.15, "noise", 0.0, emit="#2f78e6", emit_strength=0.6),
     }
 
 
@@ -198,11 +198,11 @@ def _atm(ctx, C, name, gx, gz, yaw):
         ctx.box(f"{name}_{tag}", gx + fx * f + rx * r, gz + fz * f + rz * r, y0, w, d, h, mat, rot=yaw, bevel=bevel)
 
     part("Base", 0.0, 0.0, 0.0, 0.78, 0.66, 0.12, P["dark"], 0.02)
-    part("Body", -0.04, 0.0, 0.12, 0.66, 0.52, 1.58, P["metal"], 0.03)
+    part("Body", -0.04, 0.0, 0.12, 0.66, 0.52, 1.58, C["silver"], 0.03)
     for side in (-1, 1):
         part(f"Trim{side}", 0.225, side * 0.29, 0.14, 0.04, 0.04, 1.54, C["silver"])
-    part("Fascia", 0.235, 0.0, 0.34, 0.52, 0.03, 1.2, P["dark"])
-    part("Bezel", 0.2675, 0.0, 1.04, 0.44, 0.035, 0.38, P["steel"], 0.01)
+    part("Fascia", 0.235, 0.0, 0.34, 0.52, 0.03, 1.2, P["steel"])
+    part("Bezel", 0.2675, 0.0, 1.04, 0.44, 0.035, 0.38, P["dark"], 0.01)
     part("Screen", 0.3, 0.0, 1.09, 0.36, 0.01, 0.28, C["screen"])
     for side in (-1, 1):
         for k in range(2):
@@ -222,7 +222,7 @@ def _atm(ctx, C, name, gx, gz, yaw):
     part("Hood", 0.02, 0.0, 1.7, 0.74, 0.72, 0.12, P["band"], 0.03)
     part("HoodSign", 0.395, 0.0, 1.72, 0.62, 0.02, 0.08, P["sign"])
     part("HoodLight", 0.3, 0.0, 1.68, 0.5, 0.12, 0.02, P["lamp"])
-    ctx.text(f"{name}_Text", "ATM", gx + fx * 0.41, gz + fz * 0.41, 1.73, 0.06, P["dark"], yaw + math.pi)
+    ctx.text(f"{name}_Text", "ATM", gx + fx * 0.42, gz + fz * 0.42, 1.735, 0.07, P["dark"], yaw + math.pi)
     ctx.cols.add(name, gx, gz, 0.0, 0.8, 0.7, 1.9, rot=yaw)
 
 

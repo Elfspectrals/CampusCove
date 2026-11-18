@@ -53,6 +53,7 @@ ROOF2 = 11.6
 BAL = 5.0
 WALL_T = 0.3
 CEILING_T = 0.1
+SELF_LIT_INTERIOR, SELF_LIT_EXTERIOR = 0.5, 0.25
 PART_T = 0.3
 GAP = 0.02
 RAMP_RUN = 10.4
@@ -160,10 +161,10 @@ P = {
     "paving": L.make_mat("TW_MallPaving", "#c9c2b4", 0.9, "tiles", 0.03, accent="#b0a99b"),
     "street": L.make_mat("TW_MallStreet", "#d8c7a8", 0.85, "tiles", 0.04, accent="#c2ad8a"),
     "service": L.make_mat("TW_MallService", "#9a9a98", 0.95, "noise", 0.03),
-    "wall": L.make_mat("TW_MallWall", "#f4f2ee", 0.9, "noise", 0.02),
-    "wall_out": L.make_mat("TW_MallOuter", "#cfc6b6", 0.95, "noise", 0.03),
+    "wall": L.make_mat("TW_MallWall", "#f4f2ee", 0.9, "noise", 0.02, emit="#f4f2ee", emit_strength=SELF_LIT_INTERIOR),
+    "wall_out": L.make_mat("TW_MallOuter", "#cfc6b6", 0.95, "noise", 0.03, emit="#cfc6b6", emit_strength=SELF_LIT_EXTERIOR),
     "band": L.make_mat("TW_MallBand", "#2f6f63", 0.7, "noise", 0.02),
-    "slab": L.make_mat("TW_MallSlab", "#e6e3dc", 0.9, "noise", 0.02),
+    "slab": L.make_mat("TW_MallSlab", "#e6e3dc", 0.9, "noise", 0.02, emit="#e6e3dc", emit_strength=SELF_LIT_INTERIOR),
     "steel": L.make_mat("TW_MallSteel", "#5d6670", 0.55, "noise", 0.03),
     "dark": L.make_mat("TW_MallDark", "#2a2e35", 0.5, "noise", 0.02),
     "glass": L.make_mat("TW_MallGlass", "#9fd6ea", 0.1, "noise", 0.02, alpha=0.4),
