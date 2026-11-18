@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { COURT_HALF_LENGTH, POINT_PAUSE_MS, REACH_M, SERVE_WAIT_MS, SERVE_WINDOW_MS, SINGLES_HALF_WIDTH, SMASH_SPEED, TOSS_FALL_MS } from './tennisConstants.ts'
+import { COURT_HALF_LENGTH, POINT_PAUSE_MS, REACH_M, SWING_DRIFT_M, SERVE_WAIT_MS, SERVE_WINDOW_MS, SINGLES_HALF_WIDTH, SMASH_SPEED, TOSS_FALL_MS } from './tennisConstants.ts'
 import { type Court, type Rally, ballAt, strokeOf, contactQuality, groundTime, hit, inPosition, landsIn, serveWait, shoot, step, timingFactor, timingOf, tossBall, tossPeak, trackReady } from './tennisRally.ts'
 
 const COURT: Court = { cx: 0, netZ: 0, halfWidth: SINGLES_HALF_WIDTH }
@@ -109,7 +109,7 @@ test('the receiver returns the ball when it is within reach on their half, the t
   const charged = flight(hit(bounced, receiver, { x: 0, z: -9 }, false, t, COURT, true))
   assert.equal(charged.shot?.timing, 'smash')
   assert.ok(Math.abs(Math.hypot(charged.ball.vx, charged.ball.vz) - SMASH_SPEED) < 1e-6)
-  const ahead = flight(step(flight(hit(bounced, receiver, { x: 0, z: -9 }, false, t - 150, COURT)), t + 20, COURT, nowhere))
+  const ahead = flight(step(flight(hit(bounced, receiver, { x: 0, z: -9 }, false, t - 150, COURT)), t + 20, COURT, () => receiver))
   assert.equal(ahead.shot?.timing, 'perfect')
   assert.ok(Math.hypot(ahead.ball.vx, ahead.ball.vz) < 19 + 1e-6)
   assert.equal(hit(bounced, { ...receiver, x: at.x + 2.0 }, { x: 0, z: -9 }, false, t, COURT), null)
@@ -140,7 +140,7 @@ test('a click up to 350 ms before the ball passes closest commits the swing, whi
   assert.equal(committed.swing?.at, contactAt)
   assert.equal(hit(committed, receiver, { x: 0, z: -9 }, false, clickAt + 50, COURT), null)
   assert.equal(step(committed, contactAt - 1, COURT, nowhere), committed)
-  const struck = flight(step(committed, contactAt + 20, COURT, nowhere))
+  const struck = flight(step(committed, contactAt + 20, COURT, () => receiver))
   assert.equal(struck.hitter, 'red')
   assert.equal(struck.ball.t, contactAt)
   assert.equal(struck.shot?.timing, 'early')
@@ -150,6 +150,23 @@ test('a click up to 350 ms before the ball passes closest commits the swing, whi
   const within = ballAt(bounced.ball, contactAt - 360 + 350)
   assert.ok(Math.hypot(within.x - receiver.x, within.z - receiver.z) < REACH_M)
   assert.equal(hit(bounced, receiver, { x: 0, z: -9 }, false, contactAt - 360, COURT), null)
+})
+
+test('a player who runs off after committing a swing misses: the socket strikes only from where they are at contact', () => {
+  const ball = served({ x: 0, z: 8 })
+  const bounced = flight(step(ball, groundTime(ball.ball) + 1, COURT, nowhere))
+  const contactAt = bounced.ball.t + 400
+  const at = ballAt(bounced.ball, contactAt)
+  const receiver = { ...RED_RECEIVER, x: at.x + 0.5, z: at.z }
+  const committed = flight(hit(bounced, receiver, { x: 0, z: -9 }, false, contactAt - 300, COURT))
+  const ranOff = { ...receiver, x: at.x + REACH_M + SWING_DRIFT_M + 0.1 }
+  const missed = flight(step(committed, contactAt + 20, COURT, () => ranOff))
+  assert.equal(missed.hitter, 'blue')
+  assert.equal(missed.swing, null)
+  assert.equal(step(missed, groundTime(missed.ball) + 1, COURT, nowhere).phase, 'point')
+  const drifted = { ...receiver, x: at.x + REACH_M + SWING_DRIFT_M - 0.1 }
+  assert.equal(flight(step(committed, contactAt + 20, COURT, () => drifted)).hitter, 'red')
+  assert.equal(flight(step(committed, contactAt + 20, COURT, nowhere)).swing, null)
 })
 
 test('the timing keeps the full quality from 60 ms late to 200 ms early and halves it at the edges; a clean hit in that window is a smash only when charged', () => {
@@ -170,7 +187,7 @@ test('the timing keeps the full quality from 60 ms late to 200 ms early and halv
   assert.equal(timingOf(50, 0.84, true), 'good')
 })
 
-test('a receiver is charged after standing 0.6 s where the ball comes; stepping out, a new ball or their own shot starts again', () => {
+test('a receiver is charged after standing 1 s where the ball comes; stepping out, a new ball or their own shot starts again', () => {
   const ball = served({ x: 0, z: 8 })
   const bounced = flight(step(ball, groundTime(ball.ball) + 1, COURT, nowhere))
   const contactAt = bounced.ball.t + 300
@@ -184,8 +201,8 @@ test('a receiver is charged after standing 0.6 s where the ball comes; stepping 
   assert.equal(inPosition(ball, COURT, { ...inPlace, x: at.x + 0.81 }, start), false)
   assert.equal(inPosition(ball, COURT, { ...inPlace, team: 'blue' }, start), false)
   assert.equal(trackReady(who, ball, COURT, inPlace, start), false)
-  assert.equal(trackReady(who, ball, COURT, inPlace, start + 599), false)
-  assert.equal(trackReady(who, ball, COURT, inPlace, start + 600), true)
+  assert.equal(trackReady(who, ball, COURT, inPlace, start + 999), false)
+  assert.equal(trackReady(who, ball, COURT, inPlace, start + 1000), true)
   assert.equal(trackReady(who, bounced, COURT, inPlace, start + 1050), true)
   assert.equal(trackReady(who, bounced, COURT, away, start + 1060), false)
   assert.equal(trackReady(who, bounced, COURT, inPlace, start + 1070), false)

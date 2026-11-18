@@ -977,7 +977,6 @@ const tennis = useTennis({
     realtime.ownAvatar.setTennis(me, holding)
   },
   remoteSessions: () => realtime.remotePlayers().map((p) => p.sessionId),
-  remotePosition: (sessionId) => realtime.remotePosition(sessionId),
 })
 const { hud: tennisHud, cue: tennisCue, call: tennisCall, timing: tennisTiming, freePlay: tennisFreePlay } = tennis
 const poolRace = usePoolRace({
@@ -1881,7 +1880,7 @@ const movement = useGameMovement({
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * gymMatch.speedFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
-  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || gymMatch.down() || boxing.stunned() || runningRace.racing.value || dancing.value || figureActive.value || climbingNow.value || poolRace.locked.value || tennis.serving(),
+  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || gymMatch.down() || boxing.stunned() || runningRace.racing.value || dancing.value || figureActive.value || climbingNow.value || poolRace.locked.value || tennis.serving() || tennis.swinging(),
   flying: () => adminWatch.hasMyPower('fly'),
   afterCameraPlaced: (camera, dt) => {
     intoxication.applyToCamera(camera, dt)
@@ -1890,7 +1889,6 @@ const movement = useGameMovement({
   lockedLook: sportsCamera.lockedLook,
   moveFrameYaw: sportsCamera.moveFrameYaw,
   faceSpot: gymMatch.faceSpot,
-  autoRun: tennis.autoRun,
   skate: skating.step,
   cameraRoll: skating.cameraRoll,
   afterSkate: skating.afterMove,
