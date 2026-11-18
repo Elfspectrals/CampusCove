@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
-import { AvatarClipSelector, clampDt, startsDanceOneShot } from './avatarAnimationLogic'
-import { type AnimBlender, HUMAN_TORSO, createAnimBlender, humanBodyLayers } from './animBlender'
+import { AvatarClipSelector, clampDt, startsDanceOneShot } from './avatarAnimationLogic.ts'
+import { type AnimBlender, HUMAN_TORSO, createAnimBlender, humanBodyLayers } from './animBlender.ts'
 
 /** Animation clips per loaded / cloned root (kept out of userData, which three JSON-clones). */
 const clipsByRoot = new WeakMap<THREE.Object3D, THREE.AnimationClip[]>()
@@ -346,6 +346,7 @@ function playLower(state: AvatarAnimState, name: string, timeScale: number): voi
 }
 
 function playClip(state: AvatarAnimState, name: string, timeScale: number): void {
+  if (state.oneShot !== null && state.oneShot !== name) state.oneShot = null
   playLower(state, name, timeScale)
   state.blender.play('upper', name, { timeScale })
 }

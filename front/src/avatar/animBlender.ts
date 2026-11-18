@@ -73,7 +73,6 @@ export function humanBodyLayers(): BlendLayerSpec[] {
 export function createAnimBlender(mixer: THREE.AnimationMixer, root: THREE.Object3D, layers: readonly BlendLayerSpec[], torso: TorsoSpec | null = null) {
   const clips = new Map<string, THREE.AnimationClip>()
   const actions = new Map<string, THREE.AnimationAction>()
-  const looping = new Set<string>()
   const timeScales = new Map<string, number>()
   const released = new Set<string>()
   const states = new Map<string, LayerState>(layers.map((spec) => [spec.name, { spec, weights: new Map(), target: new Map(), fadeS: 0, lead: null, done: null }]))
@@ -127,8 +126,6 @@ export function createAnimBlender(mixer: THREE.AnimationMixer, root: THREE.Objec
       action.setEffectiveWeight(layer.weights.get(instance) ?? 0)
       action.play()
     }
-    if (options.once) looping.delete(instance)
-    else looping.add(instance)
     if (options.timeScale !== undefined) timeScales.set(clip, options.timeScale)
     action.timeScale = timeScales.get(clip) ?? 1
     layer.target = new Map([[instance, 1]])
@@ -149,7 +146,6 @@ export function createAnimBlender(mixer: THREE.AnimationMixer, root: THREE.Objec
         action.setEffectiveWeight(0)
         action.play()
       }
-      looping.add(clip)
       target.set(clip, w)
       if (lead === null || w > (target.get(lead) ?? 0)) lead = clip
     }
@@ -229,7 +225,7 @@ export function createAnimBlender(mixer: THREE.AnimationMixer, root: THREE.Objec
         const instance = key.slice(layer.spec.name.length + 1)
         const w = layer.weights.get(instance) ?? 0
         action.setEffectiveWeight(w)
-        if (w === 0 && !looping.has(instance) && action.isRunning()) action.stop()
+        if (w === 0 && !layer.target.has(instance) && action.isRunning()) action.stop()
       }
       checkDone(layer)
     }

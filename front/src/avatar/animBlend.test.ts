@@ -68,11 +68,11 @@ describe('freshInstance', () => {
 
 describe('fadeSeconds', () => {
   it('uses short fades between punches and a shorter one in first person', () => {
-    assert.equal(fadeSeconds('Jab', 'Cross'), 0.08)
-    assert.equal(fadeSeconds('Jab' + TWIN_SUFFIX, 'Jab'), 0.08)
+    assert.equal(fadeSeconds('boxing/Jab', 'boxing/Cross'), 0.08)
+    assert.equal(fadeSeconds('boxing/Jab' + TWIN_SUFFIX, 'boxing/Jab'), 0.08)
     assert.equal(fadeSeconds('FpJab', 'FpCross'), 0.05)
-    assert.equal(fadeSeconds('Guard', 'Hook'), 0.05)
-    assert.equal(fadeSeconds('Cross', 'Guard'), 0.15)
+    assert.equal(fadeSeconds('boxing/Guard', 'boxing/Hook'), 0.05)
+    assert.equal(fadeSeconds('boxing/Cross', 'boxing/Guard'), 0.15)
   })
 
   it('times locomotion, seats, actions and hits', () => {
@@ -83,10 +83,16 @@ describe('fadeSeconds', () => {
     assert.equal(fadeSeconds('Sit', 'Idle'), 0.3)
     assert.equal(fadeSeconds('Walk', 'Eat'), 0.2)
     assert.equal(fadeSeconds('Eat', 'Idle'), 0.25)
-    assert.equal(fadeSeconds('Guard', 'HitReact'), 0.05)
-    assert.equal(fadeSeconds('Guard', 'Knockdown'), 0.08)
-    assert.equal(fadeSeconds('Down', 'GetUp'), 0.3)
-    assert.equal(fadeSeconds('Guard', 'DodgeL'), 0.06)
+    assert.equal(fadeSeconds('boxing/Guard', 'boxing/HitReact'), 0.05)
+    assert.equal(fadeSeconds('boxing/Guard', 'boxing/Knockdown'), 0.08)
+    assert.equal(fadeSeconds('boxing/Down', 'boxing/GetUp'), 0.3)
+    assert.equal(fadeSeconds('boxing/Guard', 'boxing/DodgeL'), 0.06)
+  })
+
+  it('keeps the boxing clips apart from the avatar\'s own clips of the same name', () => {
+    assert.equal(blendGroup('boxing/Block'), 'guard')
+    assert.equal(blendGroup('Block'), 'other')
+    assert.equal(fadeSeconds('Dribble', 'Block'), 0.22)
   })
 
   it('starts the first clip with no fade and falls back on the default', () => {

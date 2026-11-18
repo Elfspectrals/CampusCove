@@ -1,4 +1,5 @@
 export const TWIN_SUFFIX = '#twin'
+export const BOXING_CLIP_PREFIX = 'boxing/'
 export const UPPER_BODY_BONES: readonly string[] = ['Spine', 'Chest', 'Neck', 'Head', 'ShoulderL', 'ShoulderR', 'UpperArmL', 'UpperArmR', 'LowerArmL', 'LowerArmR', 'HandL', 'HandR']
 const SILENT = 1e-3
 
@@ -62,13 +63,13 @@ export function clipOfInstance(instance: string): string {
 export type BlendGroup = 'locomotion' | 'seated' | 'punch' | 'guard' | 'upperAction' | 'hit' | 'fullOneShot' | 'other'
 
 const GROUPS: Record<Exclude<BlendGroup, 'other'>, readonly string[]> = {
-  locomotion: ['Idle', 'Walk', 'Run', 'Hold', 'Swim', 'Tread', 'Dribble', 'TennisReady', 'PetanqueCrouch', 'RunSet', 'Breathless', 'SkateGlide', 'SkatePush', 'BoxIdle', 'BoxStep'],
+  locomotion: ['Idle', 'Walk', 'Run', 'Hold', 'Swim', 'Tread', 'Dribble', 'TennisReady', 'PetanqueCrouch', 'RunSet', 'Breathless', 'SkateGlide', 'SkatePush', 'boxing/BoxIdle', 'boxing/BoxStep'],
   seated: ['Sit'],
-  punch: ['Jab', 'Cross', 'Hook', 'Uppercut', 'Punch', 'PunchL', 'FpJab', 'FpCross', 'FpHook', 'FpUppercut'],
-  guard: ['Guard', 'Block', 'HookCharge', 'UppercutCharge', 'FpGuard', 'FpBlock', 'FpHookCharge', 'FpUppercutCharge'],
+  punch: ['boxing/Jab', 'boxing/Cross', 'boxing/Hook', 'boxing/Uppercut', 'Punch', 'PunchL', 'FpJab', 'FpCross', 'FpHook', 'FpUppercut'],
+  guard: ['boxing/Guard', 'boxing/Block', 'boxing/HookCharge', 'boxing/UppercutCharge', 'FpGuard', 'FpBlock', 'FpHookCharge', 'FpUppercutCharge'],
   upperAction: ['Eat', 'Drink', 'Pick'],
-  hit: ['HitReact', 'FpHit'],
-  fullOneShot: ['DodgeL', 'DodgeR', 'Knockdown', 'Down', 'GetUp', 'KO', 'Win', 'Stumble'],
+  hit: ['boxing/HitReact', 'FpHit'],
+  fullOneShot: ['boxing/DodgeL', 'boxing/DodgeR', 'boxing/Knockdown', 'boxing/Down', 'boxing/GetUp', 'boxing/KO', 'boxing/Win', 'Stumble'],
 }
 
 export function blendGroup(clip: string): BlendGroup {
@@ -90,14 +91,14 @@ const FADES: readonly [FadeEnd, FadeEnd, number][] = [
   ['punch', '*', 0.15],
   ['*', 'hit', 0.05],
   ['hit', '*', 0.15],
-  ['=Knockdown', '*', 0.3],
-  ['=Down', '*', 0.3],
-  ['=KO', '*', 0.3],
-  ['*', '=Knockdown', 0.08],
-  ['*', '=DodgeL', 0.06],
-  ['*', '=DodgeR', 0.06],
-  ['=DodgeL', '*', 0.12],
-  ['=DodgeR', '*', 0.12],
+  ['=boxing/Knockdown', '*', 0.3],
+  ['=boxing/Down', '*', 0.3],
+  ['=boxing/KO', '*', 0.3],
+  ['*', '=boxing/Knockdown', 0.08],
+  ['*', '=boxing/DodgeL', 0.06],
+  ['*', '=boxing/DodgeR', 0.06],
+  ['=boxing/DodgeL', '*', 0.12],
+  ['=boxing/DodgeR', '*', 0.12],
   ['guard', 'guard', 0.12],
   ['=Run', '=Idle', 0.3],
   ['=Walk', '=Run', 0.2],

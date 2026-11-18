@@ -68,6 +68,10 @@ export class BoxingAnimState {
     this.guard = next.guard
     let upper: UpperClip | null = null
     const loop: UpperLoop = next.guard ? 'Block' : 'Guard'
+    if (full !== 'none' && full !== null) {
+      this.upper = loop
+      return { upper, full }
+    }
     const busy = UPPER_SHOT_CLIPS.includes(this.upper as UpperShot) || UPPER_CHARGE_CLIPS.includes(this.upper as UpperCharge)
     if (!busy && this.upper !== loop) upper = this.upper = loop
     return { upper, full }

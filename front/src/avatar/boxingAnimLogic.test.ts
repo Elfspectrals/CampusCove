@@ -36,6 +36,17 @@ test('a knockdown goes down, stays down, gets up, and the bout ends on KO or a w
   assert.equal(new BoxingAnimState().pose({ guard: false, down: false, result: 'won' }).full, 'Win')
 })
 
+test('a punch or a hit reaction cut by a knockdown leaves the guard to come back to after the get-up', () => {
+  const s = new BoxingAnimState()
+  assert.equal(s.shot('HitReact'), 'HitReact')
+  assert.deepEqual(s.pose({ guard: false, down: true, result: null }), { upper: null, full: 'Knockdown' })
+  assert.equal(s.upper, 'Guard')
+  s.fullFinished('Knockdown')
+  s.pose({ guard: false, down: false, result: null })
+  assert.equal(s.fullFinished('GetUp'), null)
+  assert.equal(s.upper, 'Guard')
+})
+
 test('a held button shows the wind-up until its punch or its release, and the guard state picks the loop it falls back to', () => {
   const s = new BoxingAnimState()
   s.pose({ guard: true, down: false, result: null })

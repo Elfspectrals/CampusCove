@@ -106,7 +106,7 @@ export function createFirstPersonArms(container: THREE.Group) {
     }
   }
 
-  function playOnce(name: string, fadeS: number | undefined = ONE_SHOT_FADE_S, durationS?: number, fromS?: number, backFadeS = BASE_FADE_S): void {
+  function playOnce(name: string, fadeS: number | undefined, durationS?: number, fromS?: number, backFadeS = BASE_FADE_S): void {
     if (!blender) return
     const arms = need(name)
     oneShot = name
@@ -261,9 +261,9 @@ export function createFirstPersonArms(container: THREE.Group) {
       backToBase(EAT_FADE_S)
     },
     equip: () => {
-      if (!isPlaying('Pick')) playOnce('Equip')
+      if (!isPlaying('Pick')) playOnce('Equip', ONE_SHOT_FADE_S)
     },
-    use: (kind: ArmsUse) => playOnce(kind === 'door' ? 'UseDoor' : 'UseKey'),
+    use: (kind: ArmsUse) => playOnce(kind === 'door' ? 'UseDoor' : 'UseKey', ONE_SHOT_FADE_S),
     punch: () => {
       const now = performance.now()
       lastPunch = nextPunchHand(lastPunch, now - lastPunchAt)
@@ -274,9 +274,9 @@ export function createFirstPersonArms(container: THREE.Group) {
     setClimbPose: (pose: ArmsClimbPose) => {
       climbPose = pose
     },
-    climbMove: (move: ArmsClimbMove) => playOnce(CLIMB_MOVE_CLIPS[move]),
+    climbMove: (move: ArmsClimbMove) => playOnce(CLIMB_MOVE_CLIPS[move], ONE_SHOT_FADE_S),
     pick: (durationMs?: number) => playOnce('Pick', ONE_SHOT_FADE_S, durationMs && durationMs / 1000),
-    throwBoule: (mode: 'point' | 'shoot') => playOnce(mode === 'shoot' ? 'PetanqueShoot' : 'PetanquePoint'),
+    throwBoule: (mode: 'point' | 'shoot') => playOnce(mode === 'shoot' ? 'PetanqueShoot' : 'PetanquePoint', ONE_SHOT_FADE_S),
     cancelPick,
     hitStop: (seconds: number) => {
       frozenFor = seconds
