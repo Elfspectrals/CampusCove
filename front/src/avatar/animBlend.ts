@@ -34,6 +34,20 @@ export function stepWeights(current: Weights, target: Weights, dt: number, fadeS
   return next
 }
 
+const FOOT_PHASE_GROUPS: readonly (readonly string[])[] = [['Walk', 'Run']]
+
+export function sharesFootPhase(a: string, b: string): boolean {
+  const x = clipOfInstance(a)
+  const y = clipOfInstance(b)
+  return x !== y && FOOT_PHASE_GROUPS.some((group) => group.includes(x) && group.includes(y))
+}
+
+export function phaseTime(leadTime: number, leadDuration: number, duration: number): number {
+  if (leadDuration <= 0) return 0
+  const phase = (((leadTime / leadDuration) % 1) + 1) % 1
+  return phase * duration
+}
+
 export function freshInstance(clip: string, weights: Weights): string {
   const twin = clip + TWIN_SUFFIX
   const own = weights.get(clip) ?? 0

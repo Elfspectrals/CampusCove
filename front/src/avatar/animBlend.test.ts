@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { TWIN_SUFFIX, UPPER_BODY_BONES, blendGroup, clipOfInstance, fadeSeconds, freshInstance, stepWeights } from './animBlend.ts'
+import { TWIN_SUFFIX, UPPER_BODY_BONES, blendGroup, clipOfInstance, fadeSeconds, freshInstance, phaseTime, sharesFootPhase, stepWeights } from './animBlend.ts'
 
 const close = (actual: number | undefined, expected: number) => assert.ok(actual !== undefined && Math.abs(actual - expected) < 1e-6, `${actual} is not ${expected}`)
 
@@ -102,5 +102,21 @@ describe('body layers', () => {
     assert.ok(UPPER_BODY_BONES.includes('HandR'))
     assert.ok(!UPPER_BODY_BONES.includes('Hips'))
     assert.ok(!UPPER_BODY_BONES.includes('UpperLegL'))
+  })
+})
+
+describe('foot phase', () => {
+  it('ties Walk and Run, twins included, and nothing else', () => {
+    assert.equal(sharesFootPhase('Walk', 'Run'), true)
+    assert.equal(sharesFootPhase('Run' + TWIN_SUFFIX, 'Walk'), true)
+    assert.equal(sharesFootPhase('Walk', 'Walk'), false)
+    assert.equal(sharesFootPhase('Idle', 'Walk'), false)
+  })
+
+  it('maps a time to the same point of the stride in a clip of another length', () => {
+    close(phaseTime(0.25, 1, 0.6), 0.15)
+    close(phaseTime(1.25, 1, 0.6), 0.15)
+    close(phaseTime(-0.25, 1, 0.6), 0.45)
+    assert.equal(phaseTime(0.3, 0, 0.6), 0)
   })
 })

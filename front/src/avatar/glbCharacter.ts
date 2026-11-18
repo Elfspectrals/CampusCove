@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { AvatarClipSelector, clampDt, startsDanceOneShot } from './avatarAnimationLogic'
-import { type AnimBlender, createAnimBlender, humanBodyLayers } from './animBlender'
+import { type AnimBlender, HUMAN_TORSO, createAnimBlender, humanBodyLayers } from './animBlender'
 
 /** Animation clips per loaded / cloned root (kept out of userData, which three JSON-clones). */
 const clipsByRoot = new WeakMap<THREE.Object3D, THREE.AnimationClip[]>()
@@ -174,7 +174,7 @@ export function attachAvatarAnimations(root: THREE.Object3D): void {
   const clips = clipsByRoot.get(root) ?? []
   if (clips.length === 0) return
   const mixer = new THREE.AnimationMixer(root)
-  const blender = createAnimBlender(mixer, root, humanBodyLayers())
+  const blender = createAnimBlender(mixer, root, humanBodyLayers(), HUMAN_TORSO)
   blender.add(clips)
   const state: AvatarAnimState = { mixer, blender, selector: new AvatarClipSelector(), seated: false, swimming: false, crouching: false, dribbling: false, tennis: false, dancing: null, oneShot: null, racePose: null, climbPose: null, climbMove: null, skating: false, skatePushedAt: -Infinity, skateMove: null }
   animStateByRoot.set(root, state)
@@ -385,6 +385,7 @@ export function updateAvatarAnimation(root: THREE.Object3D, dt: number, speed: n
   }
   state.blender.update(clampDt(dt))
   state.mixer.update(clampDt(dt))
+  state.blender.correctTorso()
 }
 
 export function avatarBlender(root: THREE.Object3D): AnimBlender | null {
