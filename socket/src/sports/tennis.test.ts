@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import type { Player } from '../types.ts'
+import type { ShotKind } from './tennisConstants.ts'
 import { type Match, joinLobby, markAway, markBack, openLobby, startMatch } from './signup.ts'
 import { type FakeRoom, api, clientOf, fakeRoom, installWorld, makePlayer, sentOf } from './testWorld.ts'
 
@@ -9,6 +10,7 @@ installWorld()
 const { loadWorld } = await import('../world.ts')
 await loadWorld()
 const tennis = await import('./tennis.ts')
+const { moveRejection } = await import('../movement.ts')
 const C = await import('./tennisConstants.ts')
 const { ballAt, groundTime, playAreaFor, tossPeak } = await import('./tennisRally.ts')
 
@@ -16,11 +18,11 @@ const RULES = JSON.parse(readFileSync(new URL('../../../front/public/assets/spor
 const [COURT_1] = C.TENNIS_COURTS
 const T0 = 9_000_000
 
-async function singles(format = 'short_set_4'): Promise<{ room: FakeRoom, match: Match, red: Player, blue: Player }> {
+async function singles(format = 'short_set_4', rules = 'classic'): Promise<{ room: FakeRoom, match: Match, red: Player, blue: Player }> {
   const red = await makePlayer(1, COURT_1.cx, C.TENNIS_NET_Z + 5)
   const blue = await makePlayer(2, COURT_1.cx, C.TENNIS_NET_Z - 5)
   const room = await fakeRoom([red, blue])
-  const settings = { mode: 'singles', format }
+  const settings = { mode: 'singles', format, rules }
   const lobby = openLobby(COURT_1.id, C.TENNIS_COACH.id, settings, tennis.playersFor(settings), { sessionId: red.sessionId, accountId: 1, name: 'P1', team: 'red' }, T0)
   joinLobby(lobby, { sessionId: blue.sessionId, accountId: 2, name: 'P2', team: 'blue' }, T0)
   const match = startMatch(lobby, 'match-1', 'tennis', T0)
@@ -52,6 +54,13 @@ test('the rules file says what the socket plays', () => {
   assert.deepEqual([RULES.serve.tossStartY, RULES.serve.tossSpeedMs, RULES.serve.windowMs, RULES.serve.autoTossAfterMs], [C.TOSS_START_Y, C.TOSS_SPEED, C.SERVE_WINDOW_MS, C.SERVE_WAIT_MS])
   assert.equal(RULES.rejoinGraceSec * 1000, C.REJOIN_GRACE_MS)
   assert.deepEqual(RULES.gear, [C.TENNIS_GEAR])
+  assert.deepEqual(RULES.cove.strokes, C.COVE_STROKES)
+  for (const [kind, rule] of Object.entries(RULES.cove.shots) as [ShotKind, { speedMs: number[], bounceKeep: number, restitution: number, netClearM: number, maxDepthM?: number }][]) {
+    const spec = C.SHOTS[kind]
+    assert.deepEqual([rule.speedMs, rule.bounceKeep, rule.restitution, rule.netClearM, rule.maxDepthM ?? null], [spec.speed, spec.keep, spec.restitution, spec.netClearM, spec.maxDepthM], kind)
+  }
+  assert.deepEqual(RULES.cove.gauge, { full: C.GAUGE_FULL, gain: C.GAUGE_GAIN })
+  assert.deepEqual(RULES.cove.knock, { returnQuality: C.KNOCKED_RETURN_QUALITY, backM: C.KNOCK_BACK_M, rootMs: C.KNOCK_ROOT_MS })
 })
 
 test('the two courts and the coach between them sit inside the venue footprint', () => {
@@ -200,7 +209,7 @@ test('the serve rotates between doubles partners each time their side serves aga
     servers.push((game.rally as { server: string }).server)
     const loser = game.score.serving === 'red' ? 'blue' : 'red'
     for (let p = 0; p < 4; p++) {
-      game.rally = { phase: 'flight', ball: { x: COURT_1.cx + 30, y: 0, z: C.TENNIS_NET_Z, vx: 0, vy: 0, vz: 0, t: now }, hitter: loser, bounces: 0, netAt: null, swing: null, shot: null }
+      game.rally = { phase: 'flight', ball: { x: COURT_1.cx + 30, y: 0, z: C.TENNIS_NET_Z, vx: 0, vy: 0, vz: 0, t: now, keep: C.BOUNCE_KEEP, restitution: C.RESTITUTION }, hitter: loser, bounces: 0, netAt: null, swing: null, shot: null }
       tennis.runTennis(room, match, now)
       now += C.POINT_PAUSE_MS
       tennis.runTennis(room, match, now)
@@ -208,4 +217,93 @@ test('the serve rotates between doubles partners each time their side serves aga
   }
   assert.deepEqual(game.score.games, { red: 2, blue: 2 })
   assert.deepEqual(servers, ['s1', 's3', 's2', 's4'])
+})
+
+const { bounce, shoot } = await import('./tennisRally.ts')
+
+function incoming(from: 'red' | 'blue', kind: ShotKind, sessionId: string, start: number) {
+  const sign = from === 'red' ? 1 : -1
+  const court = { cx: COURT_1.cx, netZ: C.TENNIS_NET_Z, halfWidth: C.SINGLES_HALF_WIDTH }
+  const { ball } = shoot(court, { x: COURT_1.cx, y: 1, z: C.TENNIS_NET_Z + sign * 11 }, { x: COURT_1.cx, z: C.TENNIS_NET_Z - sign * 8 }, 14, start, true)
+  const bounced = bounce(ball, groundTime(ball))
+  const contactAt = bounced.t + 300
+  const rally = { phase: 'flight' as const, ball: bounced, hitter: from, bounces: 1 as const, netAt: null, swing: null, shot: { sessionId, timing: 'perfect' as const, kind, knocked: false } }
+  return { rally, contactAt, contact: ballAt(bounced, contactAt) }
+}
+
+test('Tennis Cove: a stroke is required, a good serve fills the gauge, the classic rules have no gauge', async () => {
+  const classic = await singles()
+  const plain = tennis.startTennis(classic.room, classic.match, COURT_1.cx, 'blue', T0)
+  assert.deepEqual([lastState(classic.room, classic.red).rules, lastState(classic.room, classic.red).gauges], ['classic', null])
+  tennis.onTennisHit(classic.room, clientOf(classic.room, classic.blue), { aimX: COURT_1.cx, aimZ: C.TENNIS_NET_Z + 8, stroke: 'slice' }, T0 + 10)
+  assert.equal(phaseOf(plain), 'toss')
+
+  const { room, match, red, blue } = await singles('short_set_4', 'cove')
+  const game = tennis.startTennis(room, match, COURT_1.cx, 'blue', T0)
+  const aim = { aimX: COURT_1.cx, aimZ: C.TENNIS_NET_Z + 8 }
+  tennis.onTennisHit(room, clientOf(room, blue), aim, T0 + 10)
+  assert.equal(phaseOf(game), 'serve_wait')
+  tennis.onTennisHit(room, clientOf(room, blue), { ...aim, stroke: 'spin' }, T0 + 20)
+  tennis.onTennisHit(room, clientOf(room, blue), { ...aim, stroke: 'topspin', special: 'yes' }, T0 + 30)
+  assert.equal(phaseOf(game), 'serve_wait')
+  tennis.onTennisHit(room, clientOf(room, blue), { ...aim, stroke: 'topspin' }, T0 + 40)
+  assert.equal(phaseOf(game), 'toss')
+  const peak = tossPeak((game.rally as { ball: Parameters<typeof tossPeak>[0] }).ball)
+  tennis.onTennisHit(room, clientOf(room, blue), { ...aim, stroke: 'topspin', special: true }, peak)
+  assert.equal(phaseOf(game), 'flight')
+  assert.deepEqual(lastState(room, red).gauges, { [red.sessionId]: 0, [blue.sessionId]: C.GAUGE_GAIN.perfect })
+  assert.equal(lastState(room, red).rules, 'cove')
+})
+
+test('Tennis Cove: the special needs a full gauge, empties it and flies faster than any flat shot', async () => {
+  const { room, match, red } = await singles('short_set_4', 'cove')
+  const game = tennis.startTennis(room, match, COURT_1.cx, 'blue', T0)
+  const aim = { aimX: COURT_1.cx, aimZ: C.TENNIS_NET_Z - 8 }
+  const first = incoming('blue', 'topspin', 'blue-session', T0 + 5000)
+  game.rally = first.rally
+  Object.assign(red, { x: first.contact.x + 0.3, z: first.contact.z })
+  game.gauges?.set(1, C.GAUGE_FULL - 1)
+  tennis.onTennisHit(room, clientOf(room, red), { ...aim, stroke: 'flat', special: true }, first.contactAt - 100)
+  tennis.runTennis(room, match, first.contactAt + 10)
+  const flat = game.rally as { shot: { kind: string } }
+  assert.equal(flat.shot.kind, 'flat')
+
+  const second = incoming('blue', 'topspin', 'blue-session', T0 + 15_000)
+  game.rally = second.rally
+  game.gauges?.set(1, C.GAUGE_FULL)
+  tennis.onTennisHit(room, clientOf(room, red), { ...aim, stroke: 'flat', special: true }, second.contactAt - 100)
+  assert.equal(game.gauges?.get(1), 0)
+  tennis.runTennis(room, match, second.contactAt + 10)
+  const special = game.rally as { ball: { vx: number, vz: number }, shot: { kind: string } }
+  assert.equal(special.shot.kind, 'special')
+  assert.ok(Math.hypot(special.ball.vx, special.ball.vz) > C.SHOTS.flat.speed[1])
+})
+
+test('Tennis Cove: a special returned with less than a Perfect pops up and knocks the player 2 m back for 0.8 s; a Perfect sends it back', async () => {
+  const { room, match, red } = await singles('short_set_4', 'cove')
+  const game = tennis.startTennis(room, match, COURT_1.cx, 'blue', T0)
+  const aim = { aimX: COURT_1.cx, aimZ: C.TENNIS_NET_Z - 8 }
+  const weak = incoming('blue', 'special', 'blue-session', T0 + 5000)
+  game.rally = weak.rally
+  Object.assign(red, { x: weak.contact.x + 1.3, z: weak.contact.z })
+  tennis.onTennisHit(room, clientOf(room, red), { ...aim, stroke: 'topspin' }, weak.contactAt - 100)
+  tennis.runTennis(room, match, weak.contactAt + 10)
+  const popped = game.rally as { shot: { kind: string, knocked: boolean, timing: string } }
+  assert.deepEqual([popped.shot.kind, popped.shot.knocked, popped.shot.timing], ['lob', true, 'good'])
+  assert.ok(Math.abs(red.z - (weak.contact.z + C.KNOCK_BACK_M)) < 1e-9)
+  assert.equal((sentOf(clientOf(room, red), 'position_correction').at(-1) as { reason: string }).reason, 'tennis_knocked')
+  assert.deepEqual(sentOf(clientOf(room, red), 'tennis_knocked').at(-1), { until: weak.contactAt + 10 + C.KNOCK_ROOT_MS })
+  const knockedUntil = weak.contactAt + 10 + C.KNOCK_ROOT_MS
+  assert.equal(moveRejection(room, red, red.x, red.y, red.z - 0.5, knockedUntil - 1), 'tackled')
+  assert.notEqual(moveRejection(room, red, red.x, red.y, red.z - 0.5, knockedUntil + 1000), 'tackled')
+  assert.equal((lastState(room, red).gauges as Record<string, number>)[red.sessionId], 0)
+
+  const clean = incoming('blue', 'special', 'blue-session', T0 + 15_000)
+  game.rally = clean.rally
+  Object.assign(red, { x: clean.contact.x + 0.3, z: clean.contact.z })
+  tennis.onTennisHit(room, clientOf(room, red), { ...aim, stroke: 'topspin' }, clean.contactAt - 100)
+  tennis.runTennis(room, match, clean.contactAt + 10)
+  const back = game.rally as { shot: { kind: string, knocked: boolean, timing: string } }
+  assert.deepEqual([back.shot.kind, back.shot.knocked, back.shot.timing], ['topspin', false, 'perfect'])
+  assert.equal(red.z, clean.contact.z)
 })

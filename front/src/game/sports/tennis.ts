@@ -36,6 +36,15 @@ export const TENNIS_HIT_COOLDOWN_MS = 400
 export const TENNIS_WHIFF_RECOVERY_MS = 700
 export const TENNIS_SERVE_WINDOW_MS = 400
 export const TENNIS_SERVE_FLOOR = 0.3
+export const TENNIS_GAUGE_FULL = 100
+
+export function pressSpecial(gauge: number | null, armed: boolean): boolean | null {
+  return (gauge ?? 0) >= TENNIS_GAUGE_FULL ? !armed : null
+}
+
+export function stillArmed(armed: boolean, gauge: number | null): boolean {
+  return armed && (gauge ?? 0) >= TENNIS_GAUGE_FULL
+}
 export const TENNIS_HIT_MAX_HEIGHT = 2.8
 const HIGH_BALL_M = 4
 const PERFECT_QUALITY = 0.85
@@ -75,7 +84,7 @@ export function ballPosition(ball: TennisBall, t: number): Point3 {
   if (t <= landing) return along(ball, t)
   const at = along(ball, landing)
   const impactVy = ball.vy - (TENNIS_GRAVITY * (landing - ball.t)) / 1000
-  const bounced = { x: at.x, y: 0, z: at.z, vx: ball.vx * TENNIS_BOUNCE_KEEP, vy: Math.abs(impactVy) * TENNIS_RESTITUTION, vz: ball.vz * TENNIS_BOUNCE_KEEP, t: landing }
+  const bounced = { ...ball, x: at.x, y: 0, z: at.z, vx: ball.vx * ball.keep, vy: Math.abs(impactVy) * ball.restitution, vz: ball.vz * ball.keep, t: landing }
   const p = along(bounced, t)
   return { ...p, y: Math.max(p.y, 0) }
 }

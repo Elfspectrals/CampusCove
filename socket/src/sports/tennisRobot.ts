@@ -1,7 +1,7 @@
 import type { RobotLevel } from './robots.ts'
 import type { Team } from './signup.ts'
 import { SPORTS_TICK_MS } from './sportsConstants.ts'
-import { COURT_HALF_LENGTH, HIT_MAX_HEIGHT, PLAY_AREA_END_MARGIN, TENNIS_HIT_COOLDOWN_MS, TENNIS_WHIFF_RECOVERY_MS, TIMING_PERFECT_MS } from './tennisConstants.ts'
+import { COURT_HALF_LENGTH, type CoveStroke, GAUGE_FULL, HIT_MAX_HEIGHT, PLAY_AREA_END_MARGIN, type ShotKind, TENNIS_HIT_COOLDOWN_MS, TENNIS_WHIFF_RECOVERY_MS, TIMING_PERFECT_MS } from './tennisConstants.ts'
 import { type Aim, type Ball, type Court, type Flight, type Rally, type Shot, ballAt, bounce, groundTime, landsIn, nearestContact, playAreaFor, sideSign, tossPeak } from './tennisRally.ts'
 
 interface RobotSkill {
@@ -14,12 +14,14 @@ interface RobotSkill {
   awayChance: number
   lobChance: number
   depthM: readonly [number, number]
+  coveMix: readonly (readonly [CoveStroke, number])[]
+  specialChance: number
 }
 
 export const TENNIS_ROBOT: Record<RobotLevel, RobotSkill> = {
-  easy: { speedMps: 2.2, reactMs: 550, timingErrorMs: 500, placeErrorM: 1, missChance: 0.25, aimWidthShare: 0.25, awayChance: 0, lobChance: 0, depthM: [6, 9] },
-  normal: { speedMps: 3, reactMs: 350, timingErrorMs: 300, placeErrorM: 0.5, missChance: 0.1, aimWidthShare: 0.6, awayChance: 0.35, lobChance: 0.05, depthM: [7, 10] },
-  hard: { speedMps: 3.8, reactMs: 200, timingErrorMs: 150, placeErrorM: 0.15, missChance: 0.04, aimWidthShare: 0.8, awayChance: 0.8, lobChance: 0.15, depthM: [8.5, 11] }
+  easy: { speedMps: 2.2, reactMs: 550, timingErrorMs: 500, placeErrorM: 1, missChance: 0.25, aimWidthShare: 0.25, awayChance: 0, lobChance: 0, depthM: [6, 9], coveMix: [['topspin', 0.7], ['slice', 0.3]], specialChance: 0.3 },
+  normal: { speedMps: 3, reactMs: 350, timingErrorMs: 300, placeErrorM: 0.5, missChance: 0.1, aimWidthShare: 0.6, awayChance: 0.35, lobChance: 0.05, depthM: [7, 10], coveMix: [['topspin', 0.4], ['slice', 0.25], ['flat', 0.2], ['lob', 0.1], ['drop', 0.05]], specialChance: 0.6 },
+  hard: { speedMps: 3.8, reactMs: 200, timingErrorMs: 150, placeErrorM: 0.15, missChance: 0.04, aimWidthShare: 0.8, awayChance: 0.8, lobChance: 0.15, depthM: [8.5, 11], coveMix: [['topspin', 0.3], ['slice', 0.2], ['flat', 0.3], ['lob', 0.1], ['drop', 0.1]], specialChance: 1 }
 }
 
 const SERVE_PAUSE_MS = 1200
@@ -52,11 +54,12 @@ export interface TennisBrain {
   nextSwingAt: number
   serveErrorMs: number
   chase: Chase | null
+  stunnedUntil: number
 }
 
 export type TennisRobotAction =
   | { kind: 'move', x: number, z: number, ry: number }
-  | { kind: 'hit', aim: Aim, lob: boolean }
+  | { kind: 'hit', aim: Aim, shot: ShotKind }
 
 export interface TennisSight {
   rally: Rally
@@ -68,10 +71,11 @@ export interface TennisSight {
   foes: Spot[]
   now: number
   random: () => number
+  cove: { gauge: number } | null
 }
 
 export function newTennisBrain(level: RobotLevel, home: Spot, now: number): TennisBrain {
-  return { level, home: { x: home.x, z: home.z }, thoughtAt: now, nextSwingAt: 0, serveErrorMs: 0, chase: null }
+  return { level, home: { x: home.x, z: home.z }, thoughtAt: now, nextSwingAt: 0, serveErrorMs: 0, chase: null, stunnedUntil: 0 }
 }
 
 export function netFacing(team: Team): number {
@@ -134,13 +138,25 @@ function openSide(court: Court, foes: Spot[], reachM: number, random: () => numb
   return [first, -first, 0].map((side) => court.cx + side * reachM).reduce((best, x) => (room(x) > room(best) ? x : best))
 }
 
-function pickShot(skill: RobotSkill, sight: TennisSight): { aim: Aim, lob: boolean } {
+function coveShot(skill: RobotSkill, gauge: number, random: () => number): ShotKind {
+  if (gauge >= GAUGE_FULL && random() < skill.specialChance) return 'special'
+  let roll = random()
+  for (const [stroke, share] of skill.coveMix) {
+    if (roll < share) return stroke
+    roll -= share
+  }
+  return skill.coveMix[0][0]
+}
+
+function pickShot(skill: RobotSkill, sight: TennisSight): { aim: Aim, shot: ShotKind } {
   const { court, team, foes, random } = sight
   const reachM = court.halfWidth * skill.aimWidthShare
   const away = foes.length > 0 && random() < skill.awayChance
   const x = away ? openSide(court, foes, reachM, random) : court.cx + spread(random) * reachM
   const depth = skill.depthM[0] + (skill.depthM[1] - skill.depthM[0]) * random()
-  return { aim: { x, z: court.netZ - sideSign(team) * depth }, lob: random() < skill.lobChance }
+  const aim = { x, z: court.netZ - sideSign(team) * depth }
+  if (sight.cove) return { aim, shot: coveShot(skill, sight.cove.gauge, random) }
+  return { aim, shot: random() < skill.lobChance ? 'lob' : 'drive' }
 }
 
 function serve(brain: TennisBrain, skill: RobotSkill, sight: TennisSight, rally: Extract<Rally, { phase: 'serve_wait' | 'toss' }>): TennisRobotAction[] {
@@ -150,11 +166,11 @@ function serve(brain: TennisBrain, skill: RobotSkill, sight: TennisSight, rally:
     if (now - rally.since < SERVE_PAUSE_MS) return []
     brain.serveErrorMs = mistiming(skill, random)
     brain.nextSwingAt = now + TENNIS_HIT_COOLDOWN_MS
-    return [{ kind: 'hit', aim: { x: court.cx, z: court.netZ }, lob: false }]
+    return [{ kind: 'hit', aim: { x: court.cx, z: court.netZ }, shot: 'drive' }]
   }
   if (now < tossPeak(rally.ball) - SPORTS_TICK_MS / 2 + brain.serveErrorMs) return []
   brain.nextSwingAt = now + TENNIS_HIT_COOLDOWN_MS
-  return [{ kind: 'hit', ...pickShot(skill, sight) }]
+  return [{ kind: 'hit', ...pickShot(skill, { ...sight, cove: null }) }]
 }
 
 function chaseOf(brain: TennisBrain, skill: RobotSkill, flight: Flight, now: number, random: () => number): Chase {
@@ -176,6 +192,7 @@ export function thinkTennis(brain: TennisBrain, sight: TennisSight): TennisRobot
   const skill = TENNIS_ROBOT[brain.level]
   const reachM = (skill.speedMps * Math.max(0, now - brain.thoughtAt)) / 1000
   brain.thoughtAt = now
+  if (now < brain.stunnedUntil) return []
   if ((rally.phase === 'serve_wait' || rally.phase === 'toss') && rally.server === sessionId) {
     brain.chase = null
     return serve(brain, skill, sight, rally)

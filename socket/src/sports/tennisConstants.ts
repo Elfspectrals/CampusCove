@@ -62,3 +62,32 @@ export const BALL_BASKETS = [
   { court: 'tennis_2', x: -442.3, z: -266.0 }
 ] as const
 export const TENNIS_GEAR = 'gear_tennis_racket'
+
+export type ShotKind = 'drive' | 'lob' | 'topspin' | 'slice' | 'flat' | 'drop' | 'special'
+export type CoveStroke = 'topspin' | 'slice' | 'flat' | 'lob' | 'drop'
+export const COVE_STROKES: readonly CoveStroke[] = ['topspin', 'slice', 'flat', 'lob', 'drop']
+
+export interface ShotSpec {
+  speed: readonly [number, number]
+  keep: number
+  restitution: number
+  netClearM: number
+  maxDepthM: number | null
+  smashes: boolean
+}
+
+export const SHOTS: Record<ShotKind, ShotSpec> = {
+  drive: { speed: DRIVE_SPEED, keep: BOUNCE_KEEP, restitution: RESTITUTION, netClearM: NET_CLEAR_M, maxDepthM: null, smashes: true },
+  lob: { speed: LOB_SPEED, keep: BOUNCE_KEEP, restitution: RESTITUTION, netClearM: NET_CLEAR_M, maxDepthM: null, smashes: false },
+  topspin: { speed: [11, 19], keep: 0.88, restitution: 0.9, netClearM: 0.6, maxDepthM: null, smashes: true },
+  slice: { speed: [9, 15], keep: 0.7, restitution: 0.45, netClearM: 0.3, maxDepthM: null, smashes: true },
+  flat: { speed: [14, 23], keep: BOUNCE_KEEP, restitution: 0.7, netClearM: 0.15, maxDepthM: null, smashes: true },
+  drop: { speed: [5, 7], keep: 0.5, restitution: 0.4, netClearM: 0.3, maxDepthM: 3.5, smashes: false },
+  special: { speed: [28, 28], keep: BOUNCE_KEEP, restitution: RESTITUTION, netClearM: 0.2, maxDepthM: null, smashes: false }
+}
+
+export const GAUGE_FULL = 100
+export const GAUGE_GAIN: Record<'smash' | 'perfect' | 'good', number> = { smash: 20, perfect: 25, good: 12 }
+export const KNOCKED_RETURN_QUALITY = 0.3
+export const KNOCK_BACK_M = 2
+export const KNOCK_ROOT_MS = 800

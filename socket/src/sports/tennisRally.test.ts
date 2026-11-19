@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { COURT_HALF_LENGTH, POINT_PAUSE_MS, REACH_M, SWING_DRIFT_M, SERVE_WAIT_MS, SERVE_WINDOW_MS, SINGLES_HALF_WIDTH, SMASH_SPEED, TOSS_FALL_MS } from './tennisConstants.ts'
-import { type Court, type Rally, ballAt, strokeOf, contactQuality, groundTime, hit, inPosition, landsIn, serveWait, shoot, step, timingFactor, timingOf, tossBall, tossPeak, trackReady } from './tennisRally.ts'
+import { type Court, type Rally, ballAt, bounce, strokeOf, contactQuality, groundTime, hit, inPosition, landsIn, serveWait, shoot, step, timingFactor, timingOf, tossBall, tossPeak, trackReady } from './tennisRally.ts'
 
 const COURT: Court = { cx: 0, netZ: 0, halfWidth: SINGLES_HALF_WIDTH }
 const T0 = 1_000_000
@@ -15,10 +15,10 @@ function flight(rally: Rally | null): Extract<Rally, { phase: 'flight' }> {
 }
 
 function served(aim = { x: 0, z: 8 }, offMs = 0): Extract<Rally, { phase: 'flight' }> {
-  const tossing = hit(serveWait('b', 'blue', T0), BLUE_SERVER, aim, false, T0, COURT)
+  const tossing = hit(serveWait('b', 'blue', T0), BLUE_SERVER, aim, 'drive', T0, COURT)
   assert.equal(tossing?.phase, 'toss')
   const peak = tossPeak((tossing as Extract<Rally, { phase: 'toss' }>).ball)
-  return flight(hit(tossing as Rally, BLUE_SERVER, aim, false, peak + offMs, COURT))
+  return flight(hit(tossing as Rally, BLUE_SERVER, aim, 'drive', peak + offMs, COURT))
 }
 
 test('a shot lands on the aimed spot', () => {
@@ -70,17 +70,17 @@ test('a serve 400 ms off the top of the toss, early or late, flies 2.8 m long an
 })
 
 test('a toss is only hit by a server still within 1 m of it', () => {
-  const tossing = hit(serveWait('b', 'blue', T0), BLUE_SERVER, { x: 0, z: 8 }, false, T0, COURT) as Extract<Rally, { phase: 'toss' }>
+  const tossing = hit(serveWait('b', 'blue', T0), BLUE_SERVER, { x: 0, z: 8 }, 'drive', T0, COURT) as Extract<Rally, { phase: 'toss' }>
   assert.equal(tossing.phase, 'toss')
   const peak = tossPeak(tossing.ball)
-  assert.equal(hit(tossing, { ...BLUE_SERVER, x: tossing.ball.x + 1.2, z: tossing.ball.z }, { x: 0, z: 8 }, false, peak, COURT), null)
-  assert.equal(hit(tossing, { ...BLUE_SERVER, x: tossing.ball.x + 0.9, z: tossing.ball.z }, { x: 0, z: 8 }, false, peak, COURT)?.phase, 'flight')
+  assert.equal(hit(tossing, { ...BLUE_SERVER, x: tossing.ball.x + 1.2, z: tossing.ball.z }, { x: 0, z: 8 }, 'drive', peak, COURT), null)
+  assert.equal(hit(tossing, { ...BLUE_SERVER, x: tossing.ball.x + 0.9, z: tossing.ball.z }, { x: 0, z: 8 }, 'drive', peak, COURT)?.phase, 'flight')
 })
 
 test('a serve or a toss by another player does nothing', () => {
   const toss: Rally = { phase: 'toss', server: 'b', team: 'blue', ball: tossBall(1, -12, T0) }
-  assert.equal(hit(toss, { ...BLUE_SERVER, sessionId: 'b2' }, { x: 0, z: 8 }, false, tossPeak(toss.ball), COURT), null)
-  assert.equal(hit(serveWait('b', 'blue', T0), RED_RECEIVER, { x: 0, z: -8 }, false, T0, COURT), null)
+  assert.equal(hit(toss, { ...BLUE_SERVER, sessionId: 'b2' }, { x: 0, z: 8 }, 'drive', tossPeak(toss.ball), COURT), null)
+  assert.equal(hit(serveWait('b', 'blue', T0), RED_RECEIVER, { x: 0, z: -8 }, 'drive', T0, COURT), null)
 })
 
 test('an untouched toss gives the point to the receivers; a server who waits 10 s tosses anyway', () => {
@@ -99,22 +99,22 @@ test('the receiver returns the ball when it is within reach on their half, the t
   const t = bounced.ball.t + 300
   const at = ballAt(bounced.ball, t)
   const receiver = { ...RED_RECEIVER, x: at.x + 0.3, z: at.z }
-  const back = flight(hit(bounced, receiver, { x: 0, z: -9 }, false, t, COURT))
+  const back = flight(hit(bounced, receiver, { x: 0, z: -9 }, 'drive', t, COURT))
   assert.equal(back.hitter, 'red')
   assert.equal(back.bounces, 0)
   const landing = ballAt(back.ball, groundTime(back.ball))
   assert.ok(Math.abs(landing.z + 9) < 1e-6)
   assert.equal(back.shot?.timing, 'perfect')
   assert.ok(Math.hypot(back.ball.vx, back.ball.vz) < 19 + 1e-6)
-  const charged = flight(hit(bounced, receiver, { x: 0, z: -9 }, false, t, COURT, true))
+  const charged = flight(hit(bounced, receiver, { x: 0, z: -9 }, 'drive', t, COURT, true))
   assert.equal(charged.shot?.timing, 'smash')
   assert.ok(Math.abs(Math.hypot(charged.ball.vx, charged.ball.vz) - SMASH_SPEED) < 1e-6)
-  const ahead = flight(step(flight(hit(bounced, receiver, { x: 0, z: -9 }, false, t - 150, COURT)), t + 20, COURT, () => receiver))
+  const ahead = flight(step(flight(hit(bounced, receiver, { x: 0, z: -9 }, 'drive', t - 150, COURT)), t + 20, COURT, () => receiver))
   assert.equal(ahead.shot?.timing, 'perfect')
   assert.ok(Math.hypot(ahead.ball.vx, ahead.ball.vz) < 19 + 1e-6)
-  assert.equal(hit(bounced, { ...receiver, x: at.x + 2.0 }, { x: 0, z: -9 }, false, t, COURT), null)
-  assert.equal(hit(bounced, { ...BLUE_SERVER, x: at.x, z: at.z }, { x: 0, z: 9 }, false, t, COURT), null)
-  assert.equal(hit(bounced, { ...receiver, z: -3 }, { x: 0, z: -9 }, false, t, COURT), null)
+  assert.equal(hit(bounced, { ...receiver, x: at.x + 2.0 }, { x: 0, z: -9 }, 'drive', t, COURT), null)
+  assert.equal(hit(bounced, { ...BLUE_SERVER, x: at.x, z: at.z }, { x: 0, z: 9 }, 'drive', t, COURT), null)
+  assert.equal(hit(bounced, { ...receiver, z: -3 }, { x: 0, z: -9 }, 'drive', t, COURT), null)
 })
 
 test('the hit is judged within 150 ms before the click, on the server clock', () => {
@@ -122,10 +122,10 @@ test('the hit is judged within 150 ms before the click, on the server clock', ()
   const bounced = flight(step(ball, groundTime(ball.ball) + 1, COURT, nowhere))
   const at = ballAt(bounced.ball, bounced.ball.t + 300)
   const receiver = { ...RED_RECEIVER, x: at.x, z: at.z }
-  const late = flight(hit(bounced, receiver, { x: 0, z: -9 }, false, bounced.ball.t + 440, COURT))
+  const late = flight(hit(bounced, receiver, { x: 0, z: -9 }, 'drive', bounced.ball.t + 440, COURT))
   assert.equal(late.hitter, 'red')
   assert.equal(late.shot?.timing, 'late')
-  assert.equal(hit(bounced, receiver, { x: 0, z: -9 }, false, bounced.ball.t + 700, COURT), null)
+  assert.equal(hit(bounced, receiver, { x: 0, z: -9 }, 'drive', bounced.ball.t + 700, COURT), null)
 })
 
 test('a click up to 350 ms before the ball passes closest commits the swing, which strikes when the ball is there; earlier is a miss', () => {
@@ -135,21 +135,21 @@ test('a click up to 350 ms before the ball passes closest commits the swing, whi
   const at = ballAt(bounced.ball, contactAt)
   const receiver = { ...RED_RECEIVER, x: at.x, z: at.z }
   const clickAt = contactAt - 300
-  const committed = flight(hit(bounced, receiver, { x: 0, z: -9 }, false, clickAt, COURT))
+  const committed = flight(hit(bounced, receiver, { x: 0, z: -9 }, 'drive', clickAt, COURT))
   assert.equal(committed.hitter, 'blue')
   assert.equal(committed.swing?.at, contactAt)
-  assert.equal(hit(committed, receiver, { x: 0, z: -9 }, false, clickAt + 50, COURT), null)
+  assert.equal(hit(committed, receiver, { x: 0, z: -9 }, 'drive', clickAt + 50, COURT), null)
   assert.equal(step(committed, contactAt - 1, COURT, nowhere), committed)
   const struck = flight(step(committed, contactAt + 20, COURT, () => receiver))
   assert.equal(struck.hitter, 'red')
   assert.equal(struck.ball.t, contactAt)
   assert.equal(struck.shot?.timing, 'early')
-  const perfect = flight(hit(bounced, receiver, { x: 0, z: -9 }, false, contactAt, COURT))
+  const perfect = flight(hit(bounced, receiver, { x: 0, z: -9 }, 'drive', contactAt, COURT))
   assert.ok(Math.hypot(struck.ball.vx, struck.ball.vz) < Math.hypot(perfect.ball.vx, perfect.ball.vz))
-  assert.equal(flight(hit(bounced, receiver, { x: 0, z: -9 }, false, contactAt - 350, COURT)).swing?.at, contactAt)
+  assert.equal(flight(hit(bounced, receiver, { x: 0, z: -9 }, 'drive', contactAt - 350, COURT)).swing?.at, contactAt)
   const within = ballAt(bounced.ball, contactAt - 360 + 350)
   assert.ok(Math.hypot(within.x - receiver.x, within.z - receiver.z) < REACH_M)
-  assert.equal(hit(bounced, receiver, { x: 0, z: -9 }, false, contactAt - 360, COURT), null)
+  assert.equal(hit(bounced, receiver, { x: 0, z: -9 }, 'drive', contactAt - 360, COURT), null)
 })
 
 test('a player who runs off after committing a swing misses: the socket strikes only from where they are at contact', () => {
@@ -158,7 +158,7 @@ test('a player who runs off after committing a swing misses: the socket strikes 
   const contactAt = bounced.ball.t + 400
   const at = ballAt(bounced.ball, contactAt)
   const receiver = { ...RED_RECEIVER, x: at.x + 0.5, z: at.z }
-  const committed = flight(hit(bounced, receiver, { x: 0, z: -9 }, false, contactAt - 300, COURT))
+  const committed = flight(hit(bounced, receiver, { x: 0, z: -9 }, 'drive', contactAt - 300, COURT))
   const ranOff = { ...receiver, x: at.x + REACH_M + SWING_DRIFT_M + 0.1 }
   const missed = flight(step(committed, contactAt + 20, COURT, () => ranOff))
   assert.equal(missed.hitter, 'blue')
@@ -208,7 +208,7 @@ test('a receiver is charged after standing 1 s where the ball comes; stepping ou
   assert.equal(trackReady(who, bounced, COURT, inPlace, start + 1070), false)
   const other = {}
   assert.equal(trackReady(other, ball, COURT, inPlace, start), false)
-  const next = { ...ball, shot: { sessionId: 'b', timing: 'good' as const } }
+  const next = { ...ball, shot: { sessionId: 'b', timing: 'good' as const, kind: 'drive' as const, knocked: false } }
   assert.equal(trackReady(other, next, COURT, inPlace, start + 1000), false)
   assert.equal(trackReady(other, serveWait('b', 'blue', T0), COURT, inPlace, start + 2000), false)
 })
@@ -219,8 +219,8 @@ test('a lob flies higher and slower than a drive to the same spot', () => {
   const t = bounced.ball.t + 300
   const at = ballAt(bounced.ball, t)
   const receiver = { ...RED_RECEIVER, x: at.x, z: at.z }
-  const drive = flight(hit(bounced, receiver, { x: 0, z: -9 }, false, t, COURT))
-  const lob = flight(hit(bounced, receiver, { x: 0, z: -9 }, true, t, COURT))
+  const drive = flight(hit(bounced, receiver, { x: 0, z: -9 }, 'drive', t, COURT))
+  const lob = flight(hit(bounced, receiver, { x: 0, z: -9 }, 'lob', t, COURT))
   assert.ok(lob.ball.vy > drive.ball.vy)
   assert.ok(groundTime(lob.ball) > groundTime(drive.ball))
 })
@@ -240,16 +240,33 @@ test('aims are kept on the receiving half; lines count as in', () => {
 
 test('the stroke shown to others: serve at the toss, forehand on the racket side, backhand on the other, lob on right click', () => {
   const waiting = serveWait('b', 'blue', T0)
-  const tossing = hit(waiting, BLUE_SERVER, { x: 0, z: 8 }, false, T0, COURT) as Rally
-  assert.equal(strokeOf(waiting, tossing, BLUE_SERVER, false), 'serve')
+  const tossing = hit(waiting, BLUE_SERVER, { x: 0, z: 8 }, 'drive', T0, COURT) as Rally
+  assert.equal(strokeOf(waiting, tossing, BLUE_SERVER, 'drive'), 'serve')
   const ball = served({ x: 0, z: 8 })
-  assert.equal(strokeOf(tossing, ball, BLUE_SERVER, false), null)
+  assert.equal(strokeOf(tossing, ball, BLUE_SERVER, 'drive'), null)
   const bounced = flight(step(ball, groundTime(ball.ball) + 1, COURT, nowhere))
   const t = bounced.ball.t + 300
   const at = ballAt(bounced.ball, t)
-  for (const [dx, lob, stroke] of [[-0.4, false, 'forehand'], [0.4, false, 'backhand'], [0.4, true, 'lob']] as const) {
+  for (const [dx, kind, stroke] of [[-0.4, 'drive', 'forehand'], [0.4, 'drive', 'backhand'], [0.4, 'lob', 'lob']] as const) {
     const receiver = { ...RED_RECEIVER, x: at.x + dx, z: at.z }
-    const back = flight(hit(bounced, receiver, { x: 0, z: -9 }, lob, t, COURT))
-    assert.equal(strokeOf(bounced, back, receiver, lob), stroke)
+    const back = flight(hit(bounced, receiver, { x: 0, z: -9 }, kind, t, COURT))
+    assert.equal(strokeOf(bounced, back, receiver, kind), stroke)
   }
+})
+
+test('Tennis Cove strokes: topspin kicks up higher than a slice off the same ball, a drop shot aimed deep still dies within 3.5 m of the net', () => {
+  const ball = served({ x: 0, z: 8 })
+  const bounced = flight(step(ball, groundTime(ball.ball) + 1, COURT, nowhere))
+  const t = bounced.ball.t + 300
+  const at = ballAt(bounced.ball, t)
+  const receiver = { ...RED_RECEIVER, x: at.x + 0.3, z: at.z }
+  const kick = (kind: 'topspin' | 'slice') => {
+    const back = flight(hit(bounced, receiver, { x: 0, z: -9 }, kind, t, COURT))
+    assert.equal(back.shot?.kind, kind)
+    return bounce(back.ball, groundTime(back.ball)).vy
+  }
+  assert.ok(kick('topspin') > kick('slice') * 1.5)
+  const drop = flight(hit(bounced, receiver, { x: 0, z: -11 }, 'drop', t, COURT))
+  const landing = ballAt(drop.ball, groundTime(drop.ball))
+  assert.ok(landing.z < 0 && landing.z >= -3.5 - 1e-6, `drop landed at ${landing.z}`)
 })

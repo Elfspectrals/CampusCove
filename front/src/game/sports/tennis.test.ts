@@ -2,7 +2,9 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import type { TennisStatePayload } from '../../types/gameRealtime'
-import { BALL_BASKETS, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, TENNIS_MARK_MS, TENNIS_LATE_ALLOWANCE_MS, TENNIS_PERFECT_TIMING_MS, TENNIS_CHARGE_MS, TENNIS_HIT_MAX_HEIGHT, TENNIS_SERVE_FLOOR, TENNIS_SERVE_WINDOW_MS, serveRing, committedSwingAt, swingClick, TENNIS_HIT_COOLDOWN_MS, TENNIS_WHIFF_RECOVERY_MS, TENNIS_SWEET_M, TENNIS_SWING_AHEAD_MS, aimMoved, ballComing, ballPosition, chargeFill, defaultAim, freeCourtAt, highBall, inPlace, interceptSpot, iServe, markOpacity, markYaw, myTeam, sideAt, swingFor, swingRing, swingTone } from './tennis.ts'
+import { BALL_BASKETS, TENNIS_GAUGE_FULL, pressSpecial, stillArmed, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, TENNIS_MARK_MS, TENNIS_LATE_ALLOWANCE_MS, TENNIS_PERFECT_TIMING_MS, TENNIS_CHARGE_MS, TENNIS_HIT_MAX_HEIGHT, TENNIS_SERVE_FLOOR, TENNIS_SERVE_WINDOW_MS, serveRing, committedSwingAt, swingClick, TENNIS_HIT_COOLDOWN_MS, TENNIS_WHIFF_RECOVERY_MS, TENNIS_SWEET_M, TENNIS_SWING_AHEAD_MS, aimMoved, ballComing, ballPosition, chargeFill, defaultAim, freeCourtAt, highBall, inPlace, interceptSpot, iServe, markOpacity, markYaw, myTeam, sideAt, swingFor, swingRing, swingTone } from './tennis.ts'
+
+const BOUNCE = { keep: TENNIS_BOUNCE_KEEP, restitution: TENNIS_RESTITUTION }
 
 const ZONE = JSON.parse(readFileSync(new URL('../../../public/assets/zones/sports_tennis.json', import.meta.url), 'utf8'))
 const RULES = JSON.parse(readFileSync(new URL('../../../public/assets/sports/rules/tennis.json', import.meta.url), 'utf8'))
@@ -19,7 +21,7 @@ function state(extra: Partial<TennisStatePayload> = {}): TennisStatePayload {
     tiebreak: false,
     serving: 'blue',
     server: null,
-    ball: { x: 0, y: 1, z: -10, vx: 0, vy: 4, vz: 15, t: 0 },
+    ball: { x: 0, y: 1, z: -10, vx: 0, vy: 4, vz: 15, t: 0, ...BOUNCE },
     hitter: 'blue',
     bounces: 0,
     shot: null,
@@ -51,7 +53,7 @@ test('the swing ring colour says what a click now would give: red miss, orange w
 
 test('on the serve the ring closes on the server as the toss rises and is green within 60 ms of its top, orange within 280 ms, red outside', () => {
   assert.deepEqual([RULES.serve.windowMs, RULES.serve.floor], [TENNIS_SERVE_WINDOW_MS, TENNIS_SERVE_FLOOR])
-  const toss = { x: 0, y: RULES.serve.tossStartY, z: 0, vx: 0, vy: RULES.serve.tossSpeedMs, vz: 0, t: 10_000 }
+  const toss = { x: 0, y: RULES.serve.tossStartY, z: 0, vx: 0, vy: RULES.serve.tossSpeedMs, vz: 0, t: 10_000, ...BOUNCE }
   const peak = 10_000 + (RULES.serve.tossSpeedMs / TENNIS_GRAVITY) * 1000
   assert.ok(Math.abs(serveRing(toss, 10_000).radius - 2.4) < 1e-9)
   assert.ok(Math.abs(serveRing(toss, peak).radius - 0.6) < 1e-9)
@@ -72,9 +74,9 @@ test('the mark charges while the player stands within 0.8 m of where the ball pa
   assert.equal(chargeFill(4500, 5000), 0.5)
   assert.equal(chargeFill(4000, 5000), 1)
   assert.equal(chargeFill(1000, 5000), 1)
-  assert.equal(highBall({ x: 0, y: 1, z: 0, vx: 0, vy: 8, vz: 5, t: 0 }), true)
-  assert.equal(highBall({ x: 0, y: 1, z: 0, vx: 0, vy: 7, vz: 5, t: 0 }), false)
-  assert.equal(highBall({ x: 0, y: 4.2, z: 0, vx: 0, vy: -3, vz: 5, t: 0 }), true)
+  assert.equal(highBall({ x: 0, y: 1, z: 0, vx: 0, vy: 8, vz: 5, t: 0, ...BOUNCE }), true)
+  assert.equal(highBall({ x: 0, y: 1, z: 0, vx: 0, vy: 7, vz: 5, t: 0, ...BOUNCE }), false)
+  assert.equal(highBall({ x: 0, y: 4.2, z: 0, vx: 0, vy: -3, vz: 5, t: 0, ...BOUNCE }), true)
 })
 
 test('a click that commits a swing roots the player until the ball passes; a click that would miss does not', () => {
@@ -122,7 +124,7 @@ test('the swing ring shows from 900 ms before the ball passes closest and shrink
 })
 
 test('the ball follows its arc, then bounces up instead of sinking before the server sends the bounce', () => {
-  const ball = { x: 0, y: 1, z: 0, vx: 0, vy: 0, vz: 10, t: 0 }
+  const ball = { x: 0, y: 1, z: 0, vx: 0, vy: 0, vz: 10, t: 0, ...BOUNCE }
   const fall = Math.sqrt(2 / TENNIS_GRAVITY) * 1000
   assert.ok(Math.abs(ballPosition(ball, 200).y - (1 - (TENNIS_GRAVITY * 0.04) / 2)) < 1e-9)
   const after = ballPosition(ball, fall + 100)
@@ -172,10 +174,10 @@ test('the mark shows where to stand: where the ball will be 350 ms after its bou
   near(interceptSpot(play, 'red', 0), { x: -0.6, z }, 'before the bounce')
   assert.equal(interceptSpot(play, 'blue', 0), null)
   assert.equal(interceptSpot({ ...play, phase: 'point' }, 'red', 0), null)
-  const bounced = { ...play, bounces: 1, ball: { x: 1, y: 0, z: 5, vx: 0, vy: 6, vz: 10, t: 1000 } }
+  const bounced = { ...play, bounces: 1, ball: { x: 1, y: 0, z: 5, vx: 0, vy: 6, vz: 10, t: 1000, ...BOUNCE } }
   near(interceptSpot(bounced, 'red', 1000), { x: 0.4, z: 8.5 }, 'after the bounce')
   near(interceptSpot(bounced, 'red', 1400), { x: 0.4, z: 10.5 }, 'chasing a ball already past')
-  const long = { ...play, bounces: 1, ball: { x: 0, y: 0, z: 11, vx: 0, vy: 6, vz: 20, t: 0 } }
+  const long = { ...play, bounces: 1, ball: { x: 0, y: 0, z: 11, vx: 0, vy: 6, vz: 20, t: 0, ...BOUNCE } }
   near(interceptSpot(long, 'red', 0), { x: -0.6, z: TENNIS_HALF_LENGTH + 3 }, 'never more than 3 m behind the baseline')
 })
 
@@ -222,4 +224,28 @@ test('an out mark lies along the direction the ball was travelling', () => {
   assert.equal(markYaw({ vx: 0, vz: 12 }), 0)
   assert.equal(markYaw({ vx: 3, vz: 0 }), Math.PI / 2)
   assert.equal(markYaw({ vx: 0, vz: -12 }), Math.PI)
+})
+
+test('the predicted bounce follows the ball it was hit with: a slice stays lower than a topspin', () => {
+  const ball = { x: 0, y: 1, z: 0, vx: 0, vy: 2, vz: 12, t: 0 }
+  const apexAfterBounce = (restitution: number) => Math.max(...Array.from({ length: 300 }, (_, i) => ballPosition({ ...ball, keep: 0.8, restitution }, 600 + i * 5).y))
+  assert.ok(apexAfterBounce(0.45) < apexAfterBounce(0.9) / 2)
+})
+
+test('Tennis Cove gauge size matches the shared rules file', () => {
+  assert.equal(RULES.cove.gauge.full, TENNIS_GAUGE_FULL)
+})
+
+test('Tennis Cove: Space arms or disarms the special only on a full gauge, and leaves the jump alone otherwise', () => {
+  assert.equal(pressSpecial(TENNIS_GAUGE_FULL, false), true)
+  assert.equal(pressSpecial(TENNIS_GAUGE_FULL, true), false)
+  assert.equal(pressSpecial(TENNIS_GAUGE_FULL - 1, false), null)
+  assert.equal(pressSpecial(null, false), null)
+})
+
+test('Tennis Cove: the special stays armed after a refused click and drops once the socket spends the gauge', () => {
+  assert.equal(stillArmed(true, TENNIS_GAUGE_FULL), true)
+  assert.equal(stillArmed(true, 0), false)
+  assert.equal(stillArmed(true, null), false)
+  assert.equal(stillArmed(false, TENNIS_GAUGE_FULL), false)
 })

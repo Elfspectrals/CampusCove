@@ -102,11 +102,12 @@ export function freeHit(room: GameRoom, player: Player, aim: { x: number, z: num
   const geometry = { cx: court.cx, netZ: TENNIS_NET_Z, halfWidth: DOUBLES_HALF_WIDTH }
   const rally = !current || current.rally.phase === 'point' ? serveWait(player.sessionId, team, now) : current.rally
   const hitter = { sessionId: player.sessionId, team, x: player.x, z: player.z }
-  const next = hit(rally, hitter, aim, lob, now, geometry, trackReady(player, rally, geometry, hitter, now))
+  const kind = lob ? 'lob' : 'drive'
+  const next = hit(rally, hitter, aim, kind, now, geometry, trackReady(player, rally, geometry, hitter, now))
   if (!next) return
   rallies.set(court.id, { court: court.id, geometry, rally: next })
   broadcastFree(room, court.id, now)
-  sendStroke(room, player.sessionId, strokeOf(rally, next, hitter, lob))
+  sendStroke(room, player.sessionId, strokeOf(rally, next, hitter, kind))
 }
 
 function tickFreeCourt(room: GameRoom, court: string, now: number): void {
