@@ -9,7 +9,6 @@ import {
   TENNIS_CALL_MS,
   TENNIS_COURTS,
   TENNIS_END_SHOWN_MS,
-  TENNIS_AUTO_RUN_SHARE,
   TENNIS_DOUBLES_HALF_WIDTH,
   TENNIS_HALF_LENGTH,
   TENNIS_NET_Z,
@@ -20,6 +19,7 @@ import {
   defaultAim,
   freeCourtAt,
   chargeFill,
+  swingClick,
   highBall,
   inPlace,
   interceptSpot,
@@ -28,9 +28,7 @@ import {
   markOpacity,
   markYaw,
   myTeam,
-  recoverySpot,
   serveRing,
-  runStep,
   sideAt,
   swingFor,
   swingRing,
@@ -40,7 +38,6 @@ import {
   type Spot,
   type TennisSwing,
 } from '../../game/sports/tennis'
-import { WALK_SPEED } from '../../game/gameRoomConstants'
 import type { SportsView } from '../../game/camera/sportsCamera'
 import { hasSportsLoan } from '../../game/sports/sportsLoans'
 import type { TennisBall, TennisFreePayload, TennisShot, TennisStatePayload, TennisTeam, TennisTiming } from '../../types/gameRealtime'
@@ -114,7 +111,6 @@ export interface TennisDeps {
   setRemoteRacket: (sessionId: string, holding: boolean) => void
   setOwnRacket: (holding: boolean) => void
   remoteSessions: () => readonly string[]
-  remotePosition: (sessionId: string) => { x: number; z: number } | null
 }
 
 interface OutMark {
@@ -208,6 +204,8 @@ export function useTennis(deps: TennisDeps) {
   let aimSide: TennisTeam | null = null
   let freeSide: { court: string; team: TennisTeam } | null = null
   let ownRacket = false
+  let swingUntil = 0
+  let nextClickAt = 0
 
   function mySessionId(): string | null {
     return deps.gameRoomRef.value?.sessionId ?? null
@@ -317,6 +315,12 @@ export function useTennis(deps: TennisDeps) {
     if (!shot || !here) return false
     const target = aimFor(here)
     const lob = e.button === RIGHT_BUTTON
+    const serverMs = Date.now() + clockOffset.value
+    if (serverMs >= nextClickAt) {
+      const click = swingClick(shot.serving ? null : incoming(here), here.team, deps.myPosition, serverMs, here.match !== null)
+      nextClickAt = serverMs + click.recoveryMs
+      swingUntil = click.rootUntil ?? swingUntil
+    }
     room.send('tennis_hit', { aimX: target.x, aimZ: target.z, lob })
     deps.onSwing(swingFor(shot.serving, lob, shot.team, deps.myPosition, shot.ball.visible ? shot.ball.position.x : null))
     return true
@@ -359,25 +363,6 @@ export function useTennis(deps: TennisDeps) {
     return rally ? { ...rally, netZ: TENNIS_NET_Z } : null
   }
 
-  function nearestOfMySide(here: Stance, spot: Spot): boolean {
-    if (!here.match) return true
-    const mine = Math.hypot(spot.x - deps.myPosition.x, spot.z - deps.myPosition.z)
-    return here.match.players.every((p) => {
-      if (p.team !== here.team || p.sessionId === mySessionId()) return true
-      const at = deps.remotePosition(p.sessionId)
-      return !at || Math.hypot(spot.x - at.x, spot.z - at.z) >= mine
-    })
-  }
-
-  function runTarget(): Spot | null {
-    const here = stance()
-    const play = here && incoming(here)
-    if (!here || !play || play.phase !== 'flight') return null
-    const spot = interceptSpot(play, here.team, Date.now() + clockOffset.value)
-    if (spot) return nearestOfMySide(here, spot) ? spot : null
-    return here.match ? recoverySpot(here.court, here.team, deps.myPosition) : null
-  }
-
   function serving(): boolean {
     const me = mySessionId()
     const s = playing()
@@ -385,9 +370,8 @@ export function useTennis(deps: TennisDeps) {
     return me !== null && [...free.value.values()].some((f) => f.phase === 'toss' && f.server === me)
   }
 
-  function autoRun(dt: number): { dx: number; dz: number } | null {
-    const spot = runTarget()
-    return spot ? runStep(deps.myPosition, spot, WALK_SPEED * TENNIS_AUTO_RUN_SHARE * dt) : null
+  function swinging(): boolean {
+    return stance() !== null && Date.now() + clockOffset.value < swingUntil
   }
 
   function placeGuides(): void {
@@ -543,5 +527,5 @@ export function useTennis(deps: TennisDeps) {
   })
   const call = computed<TennisCall>(() => (now.value < callUntil.value ? lastCall.value : null))
 
-  return { hud, cue, call, timing, freePlay, source, holdingRacket, onPointerDown, onMouseMove, cameraView, autoRun, serving, tick, handlers: { onState, onFree } }
+  return { hud, cue, call, timing, freePlay, source, holdingRacket, onPointerDown, onMouseMove, cameraView, serving, swinging, tick, handlers: { onState, onFree } }
 }

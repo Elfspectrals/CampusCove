@@ -4,7 +4,7 @@ import { type BoxingAnimator, createBoxingAnimator, loadBoxingClips } from '../.
 import { wearGlovesOn } from './boxingGloves'
 
 export interface RemoteBoxer {
-  shot: (clip: UpperShot) => void
+  shot: (clip: UpperShot, cancel?: boolean) => void
   charge: (clip: UpperCharge, on: boolean) => void
   pose: (pose: BoxerPose) => void
   dispose: () => void
@@ -16,14 +16,14 @@ export function dressBoxer(avatar: THREE.Object3D): RemoteBoxer {
   let disposed = false
   let lastPose: BoxerPose | null = null
   loadBoxingClips()
-    .then((layered) => {
+    .then((boxingClips) => {
       if (disposed) return
-      animator = createBoxingAnimator(avatar, layered)
+      animator = createBoxingAnimator(avatar, boxingClips)
       if (animator && lastPose) animator.pose(lastPose)
     })
     .catch((error: unknown) => console.error('[boxing] clips not loaded', error))
   return {
-    shot: (clip) => animator?.shot(clip),
+    shot: (clip, cancel) => animator?.shot(clip, cancel),
     charge: (clip, on) => animator?.charge(clip, on),
     pose: (pose) => {
       lastPose = pose

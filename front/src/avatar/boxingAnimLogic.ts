@@ -4,8 +4,6 @@ const STEP_BLEND_TO = 1.6
 const STEP_TIMESCALE_MIN = 0.7
 const STEP_TIMESCALE_MAX = 1.4
 
-export const LOWER_BODY_BONES = ['Hips', 'UpperLegL', 'UpperLegR', 'LowerLegL', 'LowerLegR', 'FootL', 'FootR', 'ToeL', 'ToeR'] as const
-export const UPPER_BODY_BONES = ['Spine', 'Chest', 'Neck', 'Head', 'ShoulderL', 'ShoulderR', 'UpperArmL', 'UpperArmR', 'LowerArmL', 'LowerArmR', 'HandL', 'HandR'] as const
 
 export type UpperLoop = 'Guard' | 'Block'
 export type UpperShot = 'Jab' | 'Cross' | 'Hook' | 'Uppercut' | 'DodgeL' | 'DodgeR' | 'HitReact'
@@ -27,11 +25,6 @@ export function footwork(speed: number): { idle: number; step: number; stepTimeS
   const step = smoothstep(STEP_BLEND_FROM, STEP_BLEND_TO, Math.max(0, speed))
   const stepTimeScale = Math.min(STEP_TIMESCALE_MAX, Math.max(STEP_TIMESCALE_MIN, speed / BOX_STEP_DESIGN_SPEED))
   return { idle: 1 - step, step, stepTimeScale }
-}
-
-export function keepsTrack(trackName: string, bones: readonly string[]): boolean {
-  const bone = trackName.split('.')[0]!
-  return bones.includes(bone)
 }
 
 export interface BoxerPose {
@@ -75,6 +68,10 @@ export class BoxingAnimState {
     this.guard = next.guard
     let upper: UpperClip | null = null
     const loop: UpperLoop = next.guard ? 'Block' : 'Guard'
+    if (full !== 'none' && full !== null) {
+      this.upper = loop
+      return { upper, full }
+    }
     const busy = UPPER_SHOT_CLIPS.includes(this.upper as UpperShot) || UPPER_CHARGE_CLIPS.includes(this.upper as UpperCharge)
     if (!busy && this.upper !== loop) upper = this.upper = loop
     return { upper, full }
