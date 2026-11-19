@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import type { TennisStatePayload } from '../../types/gameRealtime'
-import { BALL_BASKETS, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, TENNIS_MARK_MS, TENNIS_LATE_ALLOWANCE_MS, TENNIS_PERFECT_TIMING_MS, TENNIS_CHARGE_MS, TENNIS_HIT_MAX_HEIGHT, TENNIS_SERVE_FLOOR, TENNIS_SERVE_WINDOW_MS, serveRing, committedSwingAt, swingClick, TENNIS_HIT_COOLDOWN_MS, TENNIS_WHIFF_RECOVERY_MS, TENNIS_SWEET_M, TENNIS_SWING_AHEAD_MS, aimMoved, ballComing, ballPosition, chargeFill, defaultAim, freeCourtAt, highBall, inPlace, interceptSpot, iServe, markOpacity, markYaw, myTeam, sideAt, swingFor, swingRing, swingTone } from './tennis.ts'
+import { BALL_BASKETS, TENNIS_GAUGE_FULL, pressSpecial, stillArmed, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, TENNIS_MARK_MS, TENNIS_LATE_ALLOWANCE_MS, TENNIS_PERFECT_TIMING_MS, TENNIS_CHARGE_MS, TENNIS_HIT_MAX_HEIGHT, TENNIS_SERVE_FLOOR, TENNIS_SERVE_WINDOW_MS, serveRing, committedSwingAt, swingClick, TENNIS_HIT_COOLDOWN_MS, TENNIS_WHIFF_RECOVERY_MS, TENNIS_SWEET_M, TENNIS_SWING_AHEAD_MS, aimMoved, ballComing, ballPosition, chargeFill, defaultAim, freeCourtAt, highBall, inPlace, interceptSpot, iServe, markOpacity, markYaw, myTeam, sideAt, swingFor, swingRing, swingTone } from './tennis.ts'
 
 const BOUNCE = { keep: TENNIS_BOUNCE_KEEP, restitution: TENNIS_RESTITUTION }
 
@@ -230,4 +230,22 @@ test('the predicted bounce follows the ball it was hit with: a slice stays lower
   const ball = { x: 0, y: 1, z: 0, vx: 0, vy: 2, vz: 12, t: 0 }
   const apexAfterBounce = (restitution: number) => Math.max(...Array.from({ length: 300 }, (_, i) => ballPosition({ ...ball, keep: 0.8, restitution }, 600 + i * 5).y))
   assert.ok(apexAfterBounce(0.45) < apexAfterBounce(0.9) / 2)
+})
+
+test('Tennis Cove gauge size matches the shared rules file', () => {
+  assert.equal(RULES.cove.gauge.full, TENNIS_GAUGE_FULL)
+})
+
+test('Tennis Cove: Space arms or disarms the special only on a full gauge, and leaves the jump alone otherwise', () => {
+  assert.equal(pressSpecial(TENNIS_GAUGE_FULL, false), true)
+  assert.equal(pressSpecial(TENNIS_GAUGE_FULL, true), false)
+  assert.equal(pressSpecial(TENNIS_GAUGE_FULL - 1, false), null)
+  assert.equal(pressSpecial(null, false), null)
+})
+
+test('Tennis Cove: the special stays armed after a refused click and drops once the socket spends the gauge', () => {
+  assert.equal(stillArmed(true, TENNIS_GAUGE_FULL), true)
+  assert.equal(stillArmed(true, 0), false)
+  assert.equal(stillArmed(true, null), false)
+  assert.equal(stillArmed(false, TENNIS_GAUGE_FULL), false)
 })

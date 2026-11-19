@@ -37,6 +37,14 @@ export const TENNIS_WHIFF_RECOVERY_MS = 700
 export const TENNIS_SERVE_WINDOW_MS = 400
 export const TENNIS_SERVE_FLOOR = 0.3
 export const TENNIS_GAUGE_FULL = 100
+
+export function pressSpecial(gauge: number | null, armed: boolean): boolean | null {
+  return (gauge ?? 0) >= TENNIS_GAUGE_FULL ? !armed : null
+}
+
+export function stillArmed(armed: boolean, gauge: number | null): boolean {
+  return armed && (gauge ?? 0) >= TENNIS_GAUGE_FULL
+}
 export const TENNIS_HIT_MAX_HEIGHT = 2.8
 const HIGH_BALL_M = 4
 const PERFECT_QUALITY = 0.85

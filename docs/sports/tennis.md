@@ -235,9 +235,9 @@ The timing, the mark, the ring and the smash charge work as in Classic. A charge
 ### Gauge and special
 
 - Each player has a gauge from 0 to 100, kept by the socket per account for the match. A shot in play adds: smash +20, Perfect +25, Good +12 (Early and Late add nothing). The serve counts. The special and a knocked-back pop-up add nothing.
-- Full gauge: Space arms the special (Space again disarms it); the next rally shot is sent with `special: true`. The socket plays it only if that player's gauge is full and the ball is in flight; otherwise the shot is the stroke sent. The gauge empties when the swing is committed.
+- Full gauge: Space arms the special (Space again disarms it); with a gauge under full, Space jumps as usual. Every rally shot is then sent with `special: true` until the socket spends the gauge, so a click the socket refuses (too early, out of reach, cooldown) keeps the special armed. The socket plays it only if that player's gauge is full and the ball is in flight; otherwise the shot is the stroke sent. The gauge empties when the swing is committed.
 - The special flies at 28 m/s (faster than any flat shot) and the ball turns orange.
-- A special returned with less than a Perfect (or a smash) pops up: a lob at quality 0.3 at most, an easy ball. The returner is pushed 2 m back from the net (inside the play area) and cannot move for 0.8 s ("Knocked back!"). A Perfect sends it back as a normal shot.
+- A special returned with less than a Perfect (or a smash) pops up: a lob at quality 0.3 at most, an easy ball. The returner is pushed 2 m back from the net (inside the play area) and cannot move for 0.8 s ("Knocked back!"): the socket refuses their moves for that time (`sportsDownUntil`, as after a tackle), not only the front. A Perfect sends it back as a normal shot.
 
 ### Robots
 

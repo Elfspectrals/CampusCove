@@ -10,6 +10,7 @@ installWorld()
 const { loadWorld } = await import('../world.ts')
 await loadWorld()
 const tennis = await import('./tennis.ts')
+const { moveRejection } = await import('../movement.ts')
 const C = await import('./tennisConstants.ts')
 const { ballAt, groundTime, playAreaFor, tossPeak } = await import('./tennisRally.ts')
 
@@ -292,6 +293,9 @@ test('Tennis Cove: a special returned with less than a Perfect pops up and knock
   assert.ok(Math.abs(red.z - (weak.contact.z + C.KNOCK_BACK_M)) < 1e-9)
   assert.equal((sentOf(clientOf(room, red), 'position_correction').at(-1) as { reason: string }).reason, 'tennis_knocked')
   assert.deepEqual(sentOf(clientOf(room, red), 'tennis_knocked').at(-1), { until: weak.contactAt + 10 + C.KNOCK_ROOT_MS })
+  const knockedUntil = weak.contactAt + 10 + C.KNOCK_ROOT_MS
+  assert.equal(moveRejection(room, red, red.x, red.y, red.z - 0.5, knockedUntil - 1), 'tackled')
+  assert.notEqual(moveRejection(room, red, red.x, red.y, red.z - 0.5, knockedUntil + 1000), 'tackled')
   assert.equal((lastState(room, red).gauges as Record<string, number>)[red.sessionId], 0)
 
   const clean = incoming('blue', 'special', 'blue-session', T0 + 15_000)

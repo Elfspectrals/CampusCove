@@ -9,8 +9,9 @@ import {
   TENNIS_BALL_LOAN,
   TENNIS_CALL_MS,
   TENNIS_COURTS,
+  pressSpecial,
+  stillArmed,
   TENNIS_END_SHOWN_MS,
-  TENNIS_GAUGE_FULL,
   TENNIS_DOUBLES_HALF_WIDTH,
   TENNIS_HALF_LENGTH,
   TENNIS_NET_Z,
@@ -276,6 +277,7 @@ export function useTennis(deps: TennisDeps) {
     const before = state.value?.venue === data.venue ? state.value : undefined
     clockOffset.value = data.serverNow - Date.now()
     state.value = data
+    matchBall.material.color.setHex(data.shot?.kind === 'special' ? SPECIAL_BALL_COLOR : BALL_COLOR)
     if (data.phase === 'ended') endedAt.value = Date.now()
     struck(before ?? undefined, data, matchBall)
     if (before?.phase !== 'point') announce(data.venue, data.call, data.ball, matchBall)
@@ -343,7 +345,6 @@ export function useTennis(deps: TennisDeps) {
     }
     if (stroke) {
       room.send('tennis_hit', { aimX: target.x, aimZ: target.z, stroke, special: armed.value && !shot.serving })
-      if (!shot.serving) armed.value = false
     } else {
       room.send('tennis_hit', { aimX: target.x, aimZ: target.z, lob })
     }
@@ -361,7 +362,9 @@ export function useTennis(deps: TennisDeps) {
     const s = coveMatch()
     if (!s || !deps.pointerLocked()) return false
     if (matches('jump', e.code)) {
-      if (!e.repeat && (myGauge(s) ?? 0) >= TENNIS_GAUGE_FULL) armed.value = !armed.value
+      const next = pressSpecial(myGauge(s), armed.value)
+      if (next === null) return false
+      if (!e.repeat) armed.value = next
       return true
     }
     const stroke = COVE_KEYS.find(([action]) => matches(action, e.code))?.[1]
@@ -548,8 +551,8 @@ export function useTennis(deps: TennisDeps) {
     if (state.value?.phase === 'ended' && now.value - endedAt.value > TENNIS_END_SHOWN_MS) state.value = null
     const serverMs = now.value + clockOffset.value
     placeBall(matchBall, state.value?.phase === 'ended' ? null : (state.value?.ball ?? null), serverMs)
-    matchBall.material.color.setHex(state.value?.shot?.kind === 'special' ? SPECIAL_BALL_COLOR : BALL_COLOR)
-    if (armed.value && !coveMatch()) armed.value = false
+    const cove = coveMatch()
+    armed.value = stillArmed(armed.value, cove ? myGauge(cove) : null)
     for (const [court, mesh] of freeBalls) placeBall(mesh, free.value.get(court)?.ball ?? null, serverMs)
     const s = playing()
     const mine = s && myTeam(s, mySessionId())

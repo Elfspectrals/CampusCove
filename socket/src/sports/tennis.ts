@@ -240,6 +240,7 @@ function knockBack(room: GameRoom, match: Match, game: TennisGame, sessionId: st
   const client = room.clients.find((c) => c.sessionId === sessionId)
   if (!client) return
   player.z = z
+  player.sportsDownUntil = until
   client.send('position_correction', { x: player.x, y: player.y, z, reason: 'tennis_knocked' })
   client.send('tennis_knocked', { until })
   room.broadcastMove(client, player)
