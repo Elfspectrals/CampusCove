@@ -65,7 +65,7 @@ test('a left tap within reach and facing lands a jab on the server positions; an
   boxing.onBoxingRelease(room, clientOf(room, red), { hand: 'right' }, ROUND_START)
   throwWith(room, red, 'left', ROUND_START, rules.holdMs - 1)
   const hits = sentOf(clientOf(room, blue), 'boxing_hit') as { outcome: string, kind: string }[]
-  assert.deepEqual(hits, [{ sessionId: red.sessionId, targetSessionId: blue.sessionId, kind: 'jab', outcome: 'landed', damage: rules.punches.jab.damage, combo: null, counter: false, chain: 1 }])
+  assert.deepEqual(hits, [{ sessionId: red.sessionId, targetSessionId: blue.sessionId, kind: 'jab', outcome: 'landed', damage: rules.punches.jab.damage, combo: null, counter: false, cancel: false, chain: 1 }])
   assert.equal(lastState(room, blue).boxers[1].health, rules.health - rules.punches.jab.damage)
   blue.ry = FACING_EAST
   throwWith(room, blue, 'left', ROUND_START + 10)
@@ -89,20 +89,22 @@ test('the socket times each press: a hold of 250 ms shows a wind-up and throws a
   assert.equal((sentOf(clientOf(room, blue), 'boxing_hit').at(-1) as { kind: string }).kind, 'hook')
 })
 
-test('a release just before the cooldown ends is thrown by the tick, and a jab then a cross is a one-two', async () => {
+test('a cross released just before the jab\'s cancel window is held and thrown as a cancelled one-two; a jab mashed too early is refused and told', async () => {
   const { room, red, blue } = await bout()
   venues.tickSports(room, ROUND_START)
   faceOff(red, blue)
   throwWith(room, red, 'left', ROUND_START)
-  const cooldownEnd = ROUND_START + rules.punches.jab.cooldownMs
-  throwWith(room, red, 'right', cooldownEnd - rules.bufferMs)
+  const cancelAt = ROUND_START + rules.punches.jab.cancelMs
+  throwWith(room, red, 'right', cancelAt - rules.bufferMs)
   assert.equal(sentOf(clientOf(room, blue), 'boxing_hit').length, 1)
-  venues.tickSports(room, cooldownEnd)
-  const cross = sentOf(clientOf(room, blue), 'boxing_hit').at(-1) as { kind: string, combo: string | null, damage: number, chain: number }
-  assert.deepEqual([cross.kind, cross.combo, cross.chain], ['cross', 'one_two', 2])
-  assert.equal(cross.damage, rules.punches.cross.damage + 3)
-  throwWith(room, red, 'left', cooldownEnd + rules.punches.cross.cooldownMs - rules.bufferMs - 1)
-  venues.tickSports(room, cooldownEnd + rules.punches.cross.cooldownMs)
+  venues.tickSports(room, cancelAt + 60)
+  const cross = sentOf(clientOf(room, blue), 'boxing_hit').at(-1) as { kind: string, combo: string | null, damage: number, chain: number, cancel: boolean }
+  assert.deepEqual([cross.kind, cross.combo, cross.chain, cross.cancel], ['cross', 'one_two', 2, true])
+  assert.equal(cross.damage, Math.round((rules.punches.cross.damage + 3) * rules.cancel.damageFactor))
+  const crossCooldownEnd = cancelAt + rules.punches.cross.cooldownMs
+  throwWith(room, red, 'left', crossCooldownEnd - rules.bufferMs - 1)
+  assert.equal(sentOf(clientOf(room, red), 'boxing_early').length, 1)
+  venues.tickSports(room, crossCooldownEnd)
   assert.equal(sentOf(clientOf(room, blue), 'boxing_hit').length, 2)
 })
 
@@ -155,7 +157,7 @@ test('a parry holds the stunned attacker in place and tells both boxers; the cou
   assert.deepEqual([stunned.stunEndsAt, ready.counterEndsAt, ready.health], [T + 100 + rules.parry.stunMs, T + 100 + rules.counter.windowMs, rules.health])
   boxing.onBoxingGuard(room, clientOf(room, blue), { up: false }, T + 150)
   throwWith(room, blue, 'right', T + 200)
-  assert.deepEqual(sentOf(clientOf(room, red), 'boxing_hit').at(-1), { sessionId: blue.sessionId, targetSessionId: red.sessionId, kind: 'cross', outcome: 'landed', damage: rules.punches.cross.damage * rules.counter.damageFactor, combo: null, counter: true, chain: 1 })
+  assert.deepEqual(sentOf(clientOf(room, red), 'boxing_hit').at(-1), { sessionId: blue.sessionId, targetSessionId: red.sessionId, kind: 'cross', outcome: 'landed', damage: rules.punches.cross.damage * rules.counter.damageFactor, combo: null, counter: true, cancel: false, chain: 1 })
   boxing.onBoxingGuard(room, clientOf(room, red), { up: true }, T + 2000)
   throwWith(room, blue, 'left', T + 2600, rules.holdMs)
   assert.equal((sentOf(clientOf(room, red), 'boxing_hit').at(-1) as { outcome: string }).outcome, 'guard_broken')

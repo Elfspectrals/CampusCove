@@ -404,6 +404,7 @@ export interface GameRealtimeDeps {
     onHit: (data: BoxingHitPayload, mySessionId: string) => void
     onDodged: (data: BoxingDodgedPayload) => void
     onTired: () => void
+    onEarly: () => void
     onBagHit: (data: BoxingBagHitPayload) => void
     onBagRound: (data: BoxingBagRoundPayload) => void
     onBagEnd: (data: BoxingBagEndPayload, mySessionId: string) => void
@@ -774,7 +775,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.boxing.onState(data)
     })
     room.onMessage('boxing_hit', (data: BoxingHitPayload) => {
-      avatarsOf(data.sessionId).boxerShot(data.sessionId, punchClip(data.kind))
+      avatarsOf(data.sessionId).boxerShot(data.sessionId, punchClip(data.kind), data.cancel)
       if (data.outcome === 'landed' && data.targetSessionId !== room.sessionId) {
         const from = remotes.positionOf(data.sessionId)
         const to = remotes.positionOf(data.targetSessionId)
@@ -794,6 +795,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.boxing.onDodged(data)
     })
     room.onMessage('boxing_tired', () => deps.boxing.onTired())
+    room.onMessage('boxing_early', () => deps.boxing.onEarly())
     room.onMessage('figure_start', (data: FigureStartPayload) => deps.figure.onStart(data))
     room.onMessage('figure_state', (data: FigureStatePayload) => deps.figure.onState(data))
     room.onMessage('figure_event', (data: FigureEventPayload) => deps.figure.onEvent(data))

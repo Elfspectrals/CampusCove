@@ -12,6 +12,7 @@ import {
   type Hand,
   type Point3,
   type PunchKind,
+  type PunchTiming,
   advanceBout,
   boxerOf,
   canGetUp,
@@ -273,7 +274,7 @@ function opponentPlayer(room: GameRoom, fight: Fight, accountId: number): Player
   return other ? playerOfAccount(room, fight.match, other.accountId) : null
 }
 
-function throwPunch(room: GameRoom, fight: Fight, player: Player, attacker: Boxer, kind: PunchKind, now: number): void {
+function throwPunch(room: GameRoom, fight: Fight, player: Player, attacker: Boxer, kind: PunchKind, now: number, timing: PunchTiming = {}): void {
   const target = opponentPlayer(room, fight, player.accountId)
   if (!target) return
   const dir = punchDirection(player, target)
@@ -284,7 +285,7 @@ function throwPunch(room: GameRoom, fight: Fight, player: Player, attacker: Boxe
   }
   const defender = boxerOf(fight.bout, target.accountId)
   const healthBefore = defender?.health ?? 0
-  const outcome = punch(fight.bout, attacker, kind, reach, now)
+  const outcome = punch(fight.bout, attacker, kind, reach, now, timing)
   if (outcome === 'tired') clientOf(room, player.sessionId)?.send('boxing_tired', {})
   if (outcome === 'not_fighting' || outcome === 'cooldown' || outcome === 'tired' || outcome === 'guarding' || outcome === 'stunned') return
   if (outcome === 'parried') player.sportsDownUntil = attacker.stunnedUntil
@@ -297,6 +298,7 @@ function throwPunch(room: GameRoom, fight: Fight, player: Player, attacker: Boxe
     damage: Math.max(0, Math.round(healthBefore - (defender?.health ?? 0))),
     combo: attacker.combo,
     counter: attacker.countered,
+    cancel: attacker.cancelled,
     chain: attacker.chain.length
   })
   sendState(room, fight, now)
@@ -304,9 +306,9 @@ function throwPunch(room: GameRoom, fight: Fight, player: Player, attacker: Boxe
 
 function throwQueued(room: GameRoom, fight: Fight, now: number): void {
   for (const boxer of fight.bout.boxers) {
-    const kind = takeQueued(boxer, now)
-    const player = kind && playerOfAccount(room, fight.match, boxer.accountId)
-    if (kind && player) throwPunch(room, fight, player, boxer, kind, now)
+    const queued = takeQueued(boxer, now)
+    const player = queued && playerOfAccount(room, fight.match, boxer.accountId)
+    if (queued && player) throwPunch(room, fight, player, boxer, queued.kind, now, { at: queued.at, heldMs: queued.heldMs })
   }
 }
 
@@ -332,7 +334,8 @@ export function onBoxingPress(room: GameRoom, client: GameClient, payload: Clien
 function releaseAndThrow(room: GameRoom, fight: Fight, player: Player, boxer: Boxer, hand: Hand, now: number): void {
   if (boxer.charged[hand]) sendToHall(room, fight, 'boxing_charge', { sessionId: player.sessionId, hand, on: false })
   const released = releaseHand(fight.bout, boxer, hand, now)
-  if (released && !released.queued) throwPunch(room, fight, player, boxer, released.kind, now)
+  if (released?.timing === 'now') throwPunch(room, fight, player, boxer, released.kind, now, { heldMs: released.heldMs })
+  if (released?.timing === 'early') clientOf(room, player.sessionId)?.send('boxing_early', {})
 }
 
 export function onBoxingRelease(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {

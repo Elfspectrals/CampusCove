@@ -1093,6 +1093,7 @@ const boxing = useBoxing({
   playOn: (sound, object) => sfx.playOn(sound, object),
   say: (text) => survival.say(text),
   tiredText: () => t('sports.boxing.tired'),
+  earlyText: () => t('sports.boxing.early'),
   noGlovesText: () => t('sports.boxing.noGloves'),
   comboName: (id) => t(`sports.boxing.combo.${id}`),
   myPosition,
