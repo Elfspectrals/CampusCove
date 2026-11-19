@@ -701,6 +701,30 @@
         0.2,
         -1.405
       ]
+    },
+    {
+      "kind": "house",
+      "key": "cove_home_b05",
+      "name": "Ashbury Tudor",
+      "lot": "B-05",
+      "position": [
+        -317.0,
+        0.0,
+        -242.8
+      ],
+      "rotationY": 1.570796,
+      "door": [
+        -312.2,
+        1.25,
+        -242.8
+      ],
+      "offer": "buy",
+      "price": 13000,
+      "interiorOffset": [
+        0.0,
+        0.2,
+        -1.405
+      ]
     }
   ],
   "collision": [
@@ -1690,6 +1714,36 @@
       "cz": -224.7,
       "hx": 7.3,
       "hz": 5.305,
+      "hy": 3.0,
+      "cy": 3.0,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Cove_CH_LotB05_PostLamp",
+      "cx": -309.2,
+      "cz": -240.4,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotB05_ChimneyFront",
+      "cx": -312.65,
+      "cz": -240.45,
+      "hx": 0.65,
+      "hz": 0.35,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_House_cove_home_b05",
+      "cx": -318.505,
+      "cz": -244.8,
+      "hx": 7.2,
+      "hz": 5.505,
       "hy": 3.0,
       "cy": 3.0,
       "yaw": 1.5708

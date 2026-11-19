@@ -474,7 +474,18 @@ S.hedge_run(est, "CH_LotB04_GrassS", (119.65, -243.0), (119.65, -245.3), HM, w=0
 house_cols(HOME_B04, "LotB04")
 est.col("HousePlaceholderB04", *house_point(HOME_B04, 2.0, -1.305), 14.6, 10.61, 6.0, yaw=HOME_B04["rotationY"])
 est.cols[-1]["name"] = f"COL_House_{HOME_B04['key']}"
-HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03, VILLA_A04, HOME_B01, HOME_B02, HOME_B03, HOME_B04]
+HOME_B05 = {"key": "cove_home_b05", "name": "Ashbury Tudor", "lot": "B-05", "origin": (114.0, -260.8), "zf": 4.0,
+            "rotationY": math.pi / 2, "interiorOffset": [0.0, 0.2, -1.405], "price": 13000}
+S.rect(est, "CH_LotB05_GarageApronN", 118.0, -266.5, 120.0, -266.8, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotB05_GarageApronS", 118.0, -269.2, 120.0, -269.5, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotB05_FrontPath", 119.3, -261.6, 123.0, -260.0, Y["lot"], Y["drive"], M["drive"])
+S.street_lamp(est, "CH_LotB05_PostLamp", 121.8, -258.4, M, h=2.6)
+S.hedge_run(est, "CH_LotB05_BoxN", (119.9, -259.5), (122.4, -259.5), HM, w=0.5, mat="boxwood")
+S.hedge_run(est, "CH_LotB05_BoxS", (119.9, -262.1), (122.4, -262.1), HM, w=0.5, mat="boxwood")
+house_cols(HOME_B05, "LotB05")
+est.col("HousePlaceholderB05", *house_point(HOME_B05, 2.0, -1.505), 14.4, 11.01, 6.0, yaw=HOME_B05["rotationY"])
+est.cols[-1]["name"] = f"COL_House_{HOME_B05['key']}"
+HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03, VILLA_A04, HOME_B01, HOME_B02, HOME_B03, HOME_B04, HOME_B05]
 for h in HOUSES:
     _, _, x0, x1, z0, z1, _, _, entry, *_ = next(lot for lot in LOTS if lot[0] == h["lot"])
     door = house_point(h, 0.0, h["zf"] + 0.8)

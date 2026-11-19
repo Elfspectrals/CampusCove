@@ -422,7 +422,8 @@ executive homes `cove_home_b0N`. Sources: the style catalog, floor plans and des
 | B-02 | Maison Lavande | `cove_home_b02` | 15 500 | built (7.2c.9, lavande plan 7.2d.4, slate hip roof with dormers and Juliet balconets, perron entry), not walked in game |
 | B-03 | Nantucket Cape | `cove_home_b03` | 11 500 | built (7.2c.10, nantucket plan 7.2d.5): Cape Cod with a habitable loft, real gable dormers, wing +x, first east-facing house, not walked in game |
 | B-04 | Oak Park Prairie | `cove_home_b04` | 13 500 | built (7.2c.11, prairie plan 7.2d.6): Prairie box with 1.2 m flying eaves, ribbon windows, roman brick with walnut bands, brick-flanked stoop, wing +x with a flat slab roof, not walked in game |
-| B-05 … B-12 | see 7.2c.2 | `cove_home_b05` … `b12` | 7.2c.2 | not designed (next: B-05 Ashbury Tudor) |
+| B-05 | Ashbury Tudor | `cove_home_b05` | 13 000 | built (7.2c.12, tudor plan 7.2d.7): Tudor Revival with a steep side gable, an off-centre half-timbered cross gable carrying a front brick chimney, an arched plank door, wing +x with a steep street gable |
+| B-06 … B-12 | see 7.2c.2 | `cove_home_b06` … `b12` | 7.2c.2 | not designed (next: B-06 Nordhaven) |
 
 None of the seven houses has been walked in the game yet: buying one, the walkable terrace and gallery, the back door and
 the lock are only checked by tests and Blender renders. That playtest needs the housing seeder run on a dev database
@@ -540,7 +541,7 @@ door); the garage centre sits on the driveway, which bounds the main width: W �
 | B-02 | π | none | 0 | 5.0 | 16 | 14.4 × −5.6 | — | (0, 1.0) | 161.4 | 40.4 % |
 | B-03 | π/2 | +x | 6.5 | 5.0 | 12 | 12.0 × −5.0 (1 st.) | 4.0 × 7.0 (0), door at u 6.0 | (−2.0, 1.0) | 155.3 | 38.8 % |
 | B-04 | π/2 | +x | 5 | 4.0 | 11 | 10.6 × −5.0 | 4.0 × 7.0 (1.0) | (−2.3, 2.0) | 140.5 | 35.1 % |
-| B-05 | π/2 | +x | 5 | 5.0 | 11 | 11.0 × −5.4 | 4.0 × 7.0 (0) | (−2.5, 1.0) | 149.1 | 37.3 % |
+| B-05 | π/2 | +x | 5 | 5.0 | 11 | 10.4 × −5.4 | 4.0 × 7.0 (0) | (−2.2, 1.0) | 142.5 | 35.6 % |
 | B-06 | π/2 | −x | 6 | 4.0 | 12 | 10.0 × −5.4 | 4.0 × 7.0 (1.0) | (1.0, 2.0) | 138.1 | 34.5 % |
 | B-07 | −π/2 | +x | 6 | 4.0 | 12 | 12.0 × −5.6 | 4.0 × 6.5 (2.0) | (−2.0, 2.0) | 160.5 | 40.1 % |
 | B-08 | −π/2 | −x | 5 | 5.0 | 11 | 11.0 × −5.0 (1 st.) | 4.0 × 7.0 (0) | (2.5, 1.0) | 144.7 | 36.2 % |
@@ -553,7 +554,7 @@ R1 widths (decided 2026-11-12): B-01 keeps W 11.0; every later B lot whose row s
 B-12) changes W by at least 0.4 m when it is designed, and its row is updated then. B-02 has no wing, so its W max is the
 envelope (16.0); it takes W 14.4 because A-01 already uses 14.0 × −5.6 (7.2c.9, decided 2026-11-18). B-03 keeps W 12.0 × −5.0 (no built house uses it); B-07, planned at 12.0 × −5.6, changes
 its width by at least 0.4 m when it is designed (7.2c.10). B-04 takes W 10.6 × −5.0 (7.2c.11: W 11.0 is the most the
-envelope allows with the wing on its driveway, so the change can only be downward); B-05, B-08, B-09 and B-12 still change theirs.
+envelope allows with the wing on its driveway, so the change can only be downward); B-05 takes W 10.4 × −5.4 (7.2c.12, proposed: 10.6 would repeat B-04's width, 7.2c.12 decision 1); B-08, B-09 and B-12 still change theirs. B-06 and B-11 are both planned at 10.0 × −5.4: the second one designed changes its width by at least 0.4 m.
 
 Notes: the duplex plan works from W ≈ 9 m; the cottage plan needs **W ≥ 11.0** (its bedroom partition at −xi + 4.4 must
 clear the 1.2 m door), which is why the narrow B-11 lot (d = 4) is two-storey. On A-01 and A-04 the v1 driveway lies
@@ -2609,6 +2610,286 @@ Built: interior 8 708 triangles (under the 9.0 k budget, `flat_edges` not needed
 | Hearth, kitchen, bath fittings, wardrobes | existing `lib_interior.py` builders and `build_kitchen` | reused as they are |
 | Lot dressing: aprons, path, lamp, grass beds | existing `lib_site.py` builders, one new `HM` material | same estate furniture as the other lots |
 
+#### 7.2c.12 Ashbury Tudor on B-05 [built: cove_home_b05, for sale 13 000]
+
+**Why B-05.** It is the second house of the west band after the Cape and the Prairie, and the first **Picturesque** one: where B-03 is a grey-blue shingle gable and B-04 a low bronze roof floating over roman brick, B-05 is a
+cream render box under a steep slate roof, framed in dark oak, with one tall brick chimney on its face. It brings the features the Picturesque lots reuse (B-07 fish-scale gable, B-11 Craftsman rafter tails): half-timber panels, an
+off-centre cross gable with its own ridge height, a front chimney stack, an arched plank door, casement windows without shutters, and a steep wing gable with arched garage lites. B-05 also forms the second forced garage pair with B-06
+(R7), which fixes its wing roof and door style.
+
+Sources: [`notes/traditional_styles.md`](research/luxury-suburban-houses/notes/traditional_styles.md) (Tudor Revival: PHMC and the Dallas guide, cited; the metre values are the notes' inferences). Cues taken: steep main and cross gables at
+12:12 to 18:12 (45 to 56 degrees) with uneven ridge heights, one massive chimney on the front facade 1.0 to 1.5 m wide tapering through set-backs and capped by flue pots, dark half-timbering over light stucco on the upper floor and in
+the gables, narrow casements in groups, no shutters, a round-arched board-and-batten door. The notes give an eave of 0.2 to 0.4 m; the generator's side-gable eave is the constant `EAVE` 0.6 and is kept (changing it would touch
+every `gable_x` house). All values are design derivations to check in the first playtest.
+
+**Numbers in this section were recomputed from the generator constants and formulas** (`T` 0.2, `GAP` 0.005, `FY` 0.2, `Z_FRONT_OUT` 5.2, `EAVE` 0.6, the wing and roof builders read in `build_house_v2.py`) with a script, not
+by running Blender; the first build prints the real ones (`interior tris`, seeder bounds, door points) and they must be compared.
+
+**Rule check** (adjacent: B-04 across the lot line z -253 and B-06 across z -273; no visible pair)
+
+| Rule | B-05 | B-04 (adjacent) | B-06 (adjacent) | Result |
+|------|------|-----------------|-----------------|--------|
+| R1 | key `cove_home_b05`, palette `tudor`, plan `tudor`, **W 10.4 x back -5.4** | W 10.6 x -5.0 | W 10.0 x -5.4 (not designed) | unique among the built houses (14.0 x -5.6, 13.0 x -5.0, 13.0 x -6.0, 14.0 x -6.4, 11.0 x -5.6, 14.4 x -5.6, 12.0 x -5.0, 10.6 x -5.0); the planned 11.0 changes by 0.6 (at least 0.4); 7.2c.3 row updated |
+| R2 | Picturesque | Modern | Modern | ok |
+| R3 | W (cream render `#efe6d2`); door oak `#6b4a2e` | N, olive | D, light oak (planned) | ok; W is then on A-02, B-05, B-08, B-12 (4, the maximum, none adjacent); `#6b4a2e` is the nearest door to A-01's walnut `#5a3a22` (the other end of the estate, not a visible pair) |
+| R4 | side gable (`gable_x`), steep, slate `#565a5f`; secondary element: an off-centre steep cross gable in half-timber and a front brick chimney | hip, bronze | front gable, black | ok; roofs differ in form and colour; A-02's cross gable is centred, plain and shallow |
+| R5 | two storeys (eave 6.15 m) | two | two | west band 1-2-2-2 stands (B-04, B-05, B-06 are three two-storey homes in a row, the maximum) |
+| R6 | facade setback 5.0 | 4.0 | 4.0 (planned) | stagger 1.0 m on both sides |
+| R7 | single wing +x, flush, steep street gable (rise 2.8), oak carriage door with arched lites; frontage 2.6 m of 20 m (13 %); garage face 4.91 m behind the front line (door 0.09 m proud of the 5.0 m facade, as B-03; the 5.0 m driveway slab plus the two apron strips cover it) | flush walnut door, slab roof | flat black box, vertical cedar-slat door (planned) | ok; the forced pair B-05/B-06 differs in wing roof (gable against flat) and door style (carriage with lites against slats) |
+| R8 | entry type **arched oak doorway** (arched oak surround, plank door with iron straps, two-tread flagstone step; unique); projection 1.3 m, 3.7 m left to the front line (limits 2.8 and 1.4); chimney stack projects 0.7 m; eaves 0.6 m: front 4.4 m from the line, west rake 2.25 m from the side line (limit 1.2 m into a 2.0 m setback) | prairie stoop | not designed | ok; the nearest entry is B-02's perron (stone surround on a landing, five lots away): it differs in material (oak against cast stone), leaf (planks with straps), no landing and a step |
+| R9 | no shutters (research: Tudor has none; `shutters=False`), frames **oak** (no `frame` key: jambs and mullions take the trim colour) | bronze | black (planned) | ok; the constraint handed over by 7.2c.11 is met |
+| R10 | postbox (v1), 0.40 m lot hedges (v1), cobble driveway (v1), one 2.6 m lot lamp; two boxwood borders flanking the path | | | ok |
+| R11 | main block plan x 118.0 -> 106.99 inside the envelope x 106.5 -> 119.0, z -255.6 -> -266.0 inside z -255 -> -271; wing z -266.0 -> -270.0, eave z -270.6; stack front x 118.75; rear face 3.99 m from the rear line; 35.6 % | | | ok |
+
+**Placement**
+
+```
+Lot B-05: x 103-123, z -253 ... -273, faces E (street at x 123), envelope x 106.5 ... 119.0, z -255 ... -271 (u -8 ... +8, plan z = -263 - u)
+Rotation:      rotationY pi/2: house +x -> plan -z, house +z (front) -> plan +x (east); plan = origin + (z, -x)
+Lot point:     plan (114.0, -260.8) = world (-317.0, -242.8)    (lot centre (113, -263) + R(pi/2)(u0, v0) = (1.0, +2.2), u0 -2.2 = d 5 - (W/2 + 2.0), v0 1.0)
+               world = plan - (431, -18)
+Facade:        plan x 118.0 (setback 5.0 m; B-04 and B-06 are at 4.0 -> R6 stagger 1.0 m)
+Main block:    house x -5.2 -> 5.2, z 4.0 -> -7.01 = plan x 118.0 -> 106.99, z -255.6 -> -266.0 (10.4 x 11.01)
+Wing +x:       house x 5.2 -> 9.2, z 4.0 -> -3.0 (flush, 4.0 x 7.0) = plan x 118.0 -> 111.0, z -266.0 -> -270.0;
+               door centred at house x 7.2 = plan z -268.0 (the v1 driveway axis); door edges plan z -266.7 -> -269.3
+Driveway (v1): plan x 118 -> 123, z -266.8 -> -269.2 (axis -268.0); the door is 0.1 m wider each side: flare strips, below
+Entry:         step 2.2 x 0.9 (house x -1.1 -> 1.1, z 4.0 -> 4.9, top 0.14) + low step 2.2 x 0.4 (z 4.9 -> 5.3, top 0.07) = plan x 118.0 -> 119.3, z -259.7 -> -261.9
+Door point:    world (-312.2, 1.25, -242.8)  (= origin + R(pi/2)(0, ZF + 0.8) = plan (118.8, -260.8))
+Front stack:   house x -3.0 -> -1.7, z 3.95 -> 4.70 = plan x 117.95 -> 118.7, z -257.8 -> -259.1 (centre house x -2.35)
+interiorOffset [0, 0.2, -1.405]  (house frame, unchanged by the rotation)
+Seeder bounds: minX -4.995, maxX 8.995, minZ -5.4, maxZ 5.2, maxY 5.6 · price 13 000 · colour '#EFE6D2'
+Coverage:      10.4 x 11.01 + 4.0 x 7.0 = 142.5 m2 (35.6 %); GFA 2 x 114.5 + garage 28 = 257 m2; rear garden 3.99 m deep
+Eaves (0.6 m): main roof rake plan z -255.25 -> -266.35 (2.25 m to the lot line z -253; B-04's wing eave is at z -250.8); front eave plan x 118.6; wing east eave z -270.6 (2.4 m to the lot line z -273)
+```
+
+Derived generator values (T 0.2, GAP 0.005, FY 0.2): x_out = W/2 - T - GAP = 4.995, xi = 4.795, OZ = -1.405, ZB = -7.01, DEPTH = 11.01, ZC = -1.505, H_SHELL = 6.10, y_eave 6.15; interior zi_f 5.0, zb -5.2.
+Main roof (`gable_roof_x`, rise 5.5, `EAVE` 0.6): angle atan(5.5 / 5.505) = 45.0 degrees, ridge y 11.65 (cap top about 11.85), slab length 8.73, eave tip y 5.6 at z 4.6. Cross gable (`cx` -2.35, `cw` 4.0,
+front z 4.35, back z 0.8): the main slope is 9.35 high at z 0.8 (3.20 above the eave), so the cross rise is **3.1** (57.2 degrees, ridge y 9.25): the ridge meets the main slope at z 0.90, 0.10 m inside the gable's back end, so the prism's back triangle stays
+below the main roof (A-02 pokes 0.07 m above its slope; B-05 does not). Wing (`gable_z`, w 4.0, rise 2.8): H 3.30, y_eave 3.35, ridge 6.15 (level with the main eave), cap top 6.35, angle 54.5 degrees; the east slope with the 0.6 m eave
+ends at y 2.57 (0.77 m over a 1.8 m walker, 2.4 m from the lot line). Wing interior zf 5.0 and zb -1.19 (`zb = Z_FRONT_OUT - setback - d + 3T + 2GAP`, 6.19 m span as B-03), exterior zf_e 4.0, zb_e -3.0, xo 8.995, xi 8.795.
+
+**HOUSES entry** (new keys marked in the feature map; everything else exists):
+
+```python
+"cove_home_b05": dict(name="Ashbury Tudor", W=10.4, ZF=4.0, back=-5.4, floors=2, mirror=False, palette="tudor",
+                      roof="gable_x", rise=5.5, cross=dict(cx=-2.35, cw=4.0, rise=3.1, vent=False),
+                      chimney=None, windows="classic", flowers=False, shutters=False,
+                      chimney_front=dict(x=-2.35, w=1.3, z0=3.95, z1=4.70, base_top=4.80, mid_w=1.1, mid_top=8.00, shaft_w=0.95,
+                                         shaft_z1=4.62, top=10.20, pots=(-2.6, -2.1), pot_top=10.77),
+                      porch="arched",
+                      arched=dict(step_w=2.2, d=0.9, top=0.14, low_d=0.4, low_top=0.07, half=0.61, spring=2.0, rise=0.30,
+                                  top_y=2.62, depth=0.10, lintel_y=2.46, lintel_top=2.78),
+                      half_timber=HALF_TIMBER_B05,
+                      wing=dict(w=4.0, d=7.0, rise=2.8, side="east", timber=True, doors=1, door_w=2.6, door_h=2.3, door_style="arched"),
+                      interior=dict(plan="tudor", style="tudor",
+                                    lines=dict(hall_x=1.25, front_z=1.2, bath_z=-3.2, stair_top=2.6, fireplace_x=-2.35, hood_x=1.9),
+                                    windows=[("front", -4.5, -3.55, 0, WIN, "casement"),
+                                             ("front", 2.0, 4.2, 0, WIN, "casement"),
+                                             ("front", -4.5, -3.55, 1, WIN, "casement"),
+                                             ("front", -0.5, 0.5, 1, WIN, "casement"),
+                                             ("front", 2.0, 4.2, 1, WIN, "casement"),
+                                             ("back", -4.2, -2.4, 0, WIN, "casement"),
+                                             ("back", 2.8, 4.3, 0, (1.05, 2.15), "casement"),
+                                             ("back", -0.4, 0.4, 0, (1.5, 2.1), "window"),
+                                             ("back", -4.2, -2.4, 1, WIN, "casement"),
+                                             ("back", 2.6, 4.4, 1, WIN, "casement"),
+                                             ("back", -0.4, 0.4, 1, (1.5, 2.1), "window"),
+                                             ("west", 2.0, 3.6, 0, WIN, "casement"),
+                                             ("west", -3.8, -2.2, 0, WIN, "casement"),
+                                             ("west", 2.0, 3.6, 1, WIN, "casement"),
+                                             ("west", -3.8, -2.2, 1, WIN, "casement"),
+                                             ("east", -0.8, 0.2, 0, (0.0, DOOR_H), "door"),
+                                             ("east", 1.9, 3.5, 1, WIN, "casement"),
+                                             ("east", -3.8, -2.2, 1, WIN, "casement")])),
+```
+
+`HALF_TIMBER_B05` (a module constant above `HOUSES`, because it is long; every panel is plain data):
+
+```python
+HALF_TIMBER_B05 = dict(
+    post=0.14, layers=dict(stud=0.08, rail=0.10, brace=0.12),
+    faces=[
+        dict(name="Front", axis="x", face=4.0, out=1,
+             rails=[(-5.07, 5.07, 3.24), (-5.07, 5.07, 5.96)],
+             studs=[(-4.86, 3.38, 5.96), (-3.235, 3.38, 5.96), (-1.14, 3.38, 5.96), (1.25, 3.38, 5.96), (4.71, 3.38, 5.96)],
+             braces=[((-1.60, 3.38), (-0.70, 5.96)), ((1.78, 3.38), (0.72, 5.96)), ((4.42, 3.38), (5.00, 5.96))]),
+        dict(name="Cross", axis="x", face=4.35, out=1,
+             rails=[(-4.29, -0.41, 6.24), (-3.55, -1.15, 7.20)],
+             studs=[(-3.35, 6.38, 7.58), (-1.35, 6.38, 7.58)],
+             braces=[((-4.05, 6.40), (-3.40, 7.20)), ((-0.65, 6.40), (-1.30, 7.20))]),
+        dict(name="Wing", axis="x", face=3.99, out=1,
+             rails=[(5.25, 9.15, 3.37), (5.95, 8.45, 4.20)],
+             studs=[(7.2, 3.51, 6.03), (6.25, 3.51, 4.70), (8.15, 3.51, 4.70)],
+             braces=[((5.55, 3.51), (6.25, 4.20)), ((8.85, 3.51), (8.15, 4.20))]),
+        dict(name="GableW", axis="z", face=-5.19, out=-1,
+             rails=[(-6.855, 3.845, 6.24), (-5.905, 2.895, 7.00)],
+             studs=[(-5.705, 6.38, 7.31), (-4.305, 6.38, 8.71), (-2.905, 6.38, 10.11), (-0.105, 6.38, 10.11), (1.295, 6.38, 8.71), (2.695, 6.38, 7.31)],
+             braces=[]),
+        dict(name="GableE", axis="z", face=5.19, out=1, rails=<as GableW>, studs=<as GableW>, braces=[]),
+    ])
+```
+(the `<as GableW>` is the same list, written once and shared in the build file). Every stud stays 0.12 or more under the slope it meets: cross studs end at 7.58 (the slope is 7.70 at x -3.35 and -1.35); wing studs at 4.70 (slope 4.82) and 6.03 (6.15);
+side-gable studs at slope minus 0.14 (rise 5.5). Front stud positions fall between the window gaps and the stack (window head spans x -4.63 -> -3.42, -0.63 -> 0.63, 1.87 -> 4.33; stack ledge x -3.07 -> -1.63) and clear every window by at least 0.07 m.
+
+**Palette** (`PALETTES["tudor"]`; every key exists on another palette except `door_pat`, H4):
+
+```python
+"tudor": dict(wall="#efe6d2", wall_pat="noise", wall_acc="#e0d5ba", trim="#4a3426", roof="#565a5f", roof_acc="#474b50",
+              shutter="#4a3426", door="#6b4a2e", door_pat="planks", in_wall="#f4ecda", in_bed="#e9e0cc", floor="#8c5f36",
+              floor_acc="#724a28", cabinet="#7a5a3a", worktop="#d9d1c0", ridge="#474b50", garage="#6e4a2a", garage_panel="#583a20"),
+```
+Cream render (the existing `noise` pattern), dark oak for everything the other houses paint in `trim` (casings, floor band, corner boards, fascias, door casings, timber), slate roof (`tiles` pattern), oak front door and garage door with a plank
+texture, red brick chimney (no `chimney` key: the default `EX_Chimney` brick), foundation and steps as for every house, oak window frames (no `frame` key). There is no `chimney` or `deck` key.
+
+**Feature map**
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Two-storey shell, cut per storey, glass, casings, floor band, plinth, corner boards | exists | W 10.4, back -5.4 |
+| Side-gable roof (`gable_x`), steep rise | exists | rise 5.5 (B-01 uses 3.4) |
+| Cross gable (`cross`), off-centre | exists as a tuple `(cx, cw, rise)` | **extended**: a dict form with `timber` and `vent`, H2 |
+| Wing east, flush, `gable_z` roof with `rise`, carriage door | exists | B-03 (flush east wing); the rise 2.8 is the steepest |
+| Per-house `rotationY`, `house_point`, `house_cols`, door self-check | exists | T1; pi/2 since B-03 |
+| Half-timber panels (`half_timber`, wing `timber`) | **new** | H1 |
+| Cross gable dict form and the derived-rise assert | **new** | H2 |
+| Front chimney (`chimney_front`) with set-backs, pots and a collision | **new** | H3 |
+| Entry `porch="arched"`: arched oak surround, plank door with straps, steps; palette `door_pat` | **new** | H4 |
+| Wing `door_style="arched"` (carriage panels, arched lites), no gable vent under timber | **new** | H5 |
+| Window kind `casement`, house flag `shutters=False` | **new** | H6 |
+| Tudor interior plan (`interior.plan="tudor"`), style kit | **new** | H7, geometry in 7.2d.7 |
+| Lot dressing: boxwood borders (`HM["boxwood"]`, `hedge_run`) | exists | B-02 and B-03 use the material |
+
+**New generator options** (exterior house frame: origin at the lot point, front face z = ZF = 4.0, y up; plan = origin + R(theta)(x, z); every option is additive, a house without its key is rebuilt unchanged)
+
+*H1: half-timber* (`half_timber`, wing `timber`). `timber_frame(coll, E, face_spec, post, layers)` builds one face from plain data. Every piece is a box in `E["trim"]`, from the wall face outwards: studs `layers["stud"]` 0.08 deep, rails 0.10, braces 0.12,
+so each layer stands 0.02 (`MIN_GAP`) proud of the one it crosses and no two visible faces share a plane. Axis `"x"`: the face is the plane z = `face`, `a` is game x; axis `"z"`: the plane x = `face`, `a` is game z; `out` is the
+direction of the outside. A rail `(a0, a1, y0)` is `post` high; a stud `(a, y0, y1)` is `post` wide; a brace `((a0, y0), (a1, y1))` is an `L.beam` of section (depth, `post` - 0.02) from point to point
+(`L.beam(coll, name, (x, z, y), (x, z, y), w=depth, h=post - 0.02, E["trim"])`, whose `w` is the depth and `h` the visible width). Names `EX_Timber<Face>_Rail<i>`, `_Stud<i>`, `_Brace<i>`. Allow-list prefix `EX_Timber` (new). Collision: none (0.08 to 0.12 m
+reliefs on walls that already collide). Wing `timber=True` also drops `EX_WingGableVent` (its box would meet the collar rail), as `cross["vent"]=False` drops `EX_CrossGableVent`. Triangles: 39 beams, about 0.47 k.
+
+*H2: cross gable as a dict* (`cross=dict(cx, cw, rise, vent)`). `cross_gable` reads `spec` as a tuple or a dict (`vent` defaults to the tuple behaviour: vent on; the timber is a face of `half_timber`, so the dict has no `timber` key). When it is a dict the build asserts that the
+cross ridge meets the main slope inside the cross gable: `rise_cross <= rise_main * (1 - (ZF - 3.2 - ZC) / (DEPTH / 2)) + 0.1` (here 3.1 <= 3.20 + 0.1 = 3.30), so the back end of the prism cannot float above the main roof. The geometry is the
+existing one (prism, two slabs, trim bar at the base, 0.35 m overhang of the face); the timber panel of 7.2c.12 H1 starts above the trim bar (y 6.24 against 6.22). Nothing else changes.
+
+*H3: front chimney* (`chimney_front`). A stack that stands on the ground against the facade and rises past the cross gable; all boxes in `E["brick"]` (the red `EX_Chimney` brick), ledges and cap in `E["found"]`:
+```
+base         EX_ChimneyFrontBase     x -3.0 -> -1.7 (w 1.3), z 3.95 -> 4.70, y 0 -> 4.80
+ledge 1      EX_ChimneyFrontLedge0   1.44 wide, z 3.95 -> 4.77, y 4.80 -> 4.88
+mid tier     EX_ChimneyFrontMid      x -2.9 -> -1.8 (w 1.1), z 3.95 -> 4.70, y 4.88 -> 8.00
+ledge 2      EX_ChimneyFrontLedge1   1.24 wide, z 3.95 -> 4.74, y 8.00 -> 8.08
+shaft        EX_ChimneyFrontShaft    x -2.825 -> -1.875 (w 0.95), z 3.95 -> 4.62, y 8.08 -> 10.20
+cap          EX_ChimneyFrontCap      1.15 wide, z 3.95 -> 4.69, y 10.20 -> 10.32
+pots         EX_ChimneyFrontPot0/1   L.cyl r 0.14 at x -2.6 and -2.1, z 4.28, y 10.32 -> 10.77   (seg 8)
+```
+The base leaves the facade 0.70 m proud (R8: 2.1 m left to the 2.8 m limit; it stays inside the 4.0 m envelope line at plan x 118.7 against 119.0). The mid tier front (4.70) is deliberately proud of the main roof's
+front fascia (z 4.58 -> 4.64, y 5.77 -> 5.97) and of the cross slab ends (z 4.65), which the stack swallows, so no slice of fascia shows on its face. The top 10.77 stands 1.5 m over the cross ridge (9.25) and 0.88 m under the main ridge (11.65).
+`chimney=None` for the house, so the generic chimney loop does nothing. Collision `ChimneyFront`: x -2.35, z 4.35, sx 1.3, sz 0.7, h 3.0, written into `exterior.layout.json` through `porch_collision`-style `chimney_collision(h)` (the ext_cols list gets both). Allow-list prefix `EX_Chimney` exists.
+About 0.13 k triangles.
+
+*H4: arched entry* (`porch="arched"`, values from `h["arched"]`; palette `door_pat`). `arched_entry(coll, E, ZF, en)`:
+```
+step         EX_EntryStep      x +-1.1 (step_w), z 4.0 -> 4.9 (d), y 0 -> 0.14, E["step"], tile 1.0
+low step     EX_EntryStepLow   x +-1.1, z 4.9 -> 5.3 (low_d), y 0 -> 0.07
+arch         EX_DoorArch = L.arch_panel(coll, name, "x", ZF + 0.05, -0.61, 0.61, 2.0, 0.30, 2.62, 0.10, E["trim"])
+                               chord 1.22, rise 0.30, R = (0.3721 + 0.09) / 0.6 = 0.770, centre y 1.53, crown 2.30, top 2.62, z 4.0 -> 4.1
+lintel       EX_DoorArchHead   x +-0.8, z 4.0 -> 4.12 (0.02 proud of the arch), y 2.46 -> 2.78, E["trim"]      (replaces EX_DoorHead, whose box was y 2.46 -> 2.62)
+lanterns     EX_PorchLamp (x 1.0, existing) and EX_PorchLampB (x -1.0, y FY + 1.75, same boxes), caps at FY + 2.03
+```
+The door casings stay (x +-0.68, 0.14 wide, inner edges at +-0.61, the arch's chord); the arch panel stands 0.03 proud of them. The leaf (x +-0.59, top 2.38) stays rectangular and sits in the wall thickness (z 3.87 -> 3.93): its upper corners
+are behind the solid part of the arch panel, so from outside the door reads as arched; from inside it is the usual rectangle. The door parts change for this entry only: no glass lite of the standard door; a small grille `(0.0, 1.45, 0.30, 0.075, 0.30, E["glass"], 0.0)`
+(top 1.95 under the spring), two iron straps `(0.0, 0.45, 1.12, 0.10, 0.08, E["metal"], 0.0)` and `(0.0, 1.20, ...)`, 0.02 proud of the 0.06 leaf. `door_pat="planks"` makes `E["door"]` use the `planks` pattern (default `noise`, so every other house is unchanged). The `EX_DoorHead` box is skipped
+for this porch, and the default bushes are skipped (the site plants boxwood): `("frame", "gallery", "perron", "prairie", "arched")`. Allow-list: the steps are grounded and `EX_Door` exists, so no new prefix. About 0.3 k triangles (the arch is 8 segments, about 50).
+
+*H5: arched garage door* (wing `door_style="arched"`). A fourth style next to `carriage`, `plank` and `flush` (the assertion lists it). The carriage panel grid is kept for rows 0 to 2 (`y0 = 0.05 + r * dh / 4 + 0.08`); the top row (r 3,
+y 1.875 -> 2.27) becomes four arched lites per door instead of dark boxes: for each column `c` (px = dx - dw/2 + dw (c + 0.5) / 4)
+```
+lite   EX_GarageDoorLite{c}  box 0.47 wide (dw/4 - 0.18), 0.02 deep at zd + 0.035, y 1.875 -> 2.27, E["glass_dark"]
+arch   EX_GarageDoorArch{c}   L.arch_panel(coll, name, "x", zd + 0.055, px - 0.235, px + 0.235, 2.27 - 0.14, 0.14, 2.27, 0.02, E["garage_panel"], seg=6)
+```
+(the arch panel fills the corners above the arc, so each lite reads as round-headed). The door is `E["garage"]` oak planks (palette `garage` makes it a `planks` material already), the casings and lamps are the existing ones. Wing gable: `EX_WingGables` and the roof are the existing
+`gable_z` branch with `rise` 2.8; its fascia, ridge cap and slabs are unchanged. About 0.2 k triangles for the lites.
+
+*H6: casement windows and no shutters*. Window kind `casement` in `interior["windows"]`: in the window loop of `build_exterior`, `panes = max(1, round((b - a) / 0.55))` (narrow lights about 0.5 wide, as the research says; the existing `dress(..., panes=n)` of G1 does the mullions) and
+the kind is otherwise a plain window (sill, head, jambs, transom, glass, blocking `COL_Window_<i>`). `shutters` in the three `dress` call sites of `build_exterior` and the wing window becomes `shutters=<existing flag> and h.get("shutters", True)`, so
+the default keeps every other house identical. About 7 boxes per window.
+
+*H7: tudor interior plan.* `Plan.tudor()`, `build_tudor()` and the `tudor` style kit, 7.2d.7.
+
+Exterior triangles: **4 238 as built** (estimated 4.8 k): windows 17 x 0.1 k = 1.7 k, shell 1.4 k, roofs (steep main, cross gable, wing gable) 0.6 k, timber 0.47 k, garage door 0.35 k, arch and steps 0.3 k, stack 0.13 k, wing 0.3 k (B-04: 3.4 k built; B-02: 6.1 k).
+Interior: 7.2d.7.
+
+**Lot dressing** (`build_cove_heights_site.py`, plan coordinates, same helpers as B-04; house points through T1):
+
+```python
+HOME_B05 = {"key": "cove_home_b05", "name": "Ashbury Tudor", "lot": "B-05", "origin": (114.0, -260.8), "zf": 4.0,
+            "rotationY": math.pi / 2, "interiorOffset": [0.0, 0.2, -1.405], "price": 13000}
+S.rect(est, "CH_LotB05_GarageApronN", 118.0, -266.5, 120.0, -266.8, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotB05_GarageApronS", 118.0, -269.2, 120.0, -269.5, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotB05_FrontPath", 119.3, -261.6, 123.0, -260.0, Y["lot"], Y["drive"], M["drive"])
+S.street_lamp(est, "CH_LotB05_PostLamp", 121.8, -258.4, M, h=2.6)
+S.hedge_run(est, "CH_LotB05_BoxN", (119.9, -259.5), (122.4, -259.5), HM, w=0.5, mat="boxwood")
+S.hedge_run(est, "CH_LotB05_BoxS", (119.9, -262.1), (122.4, -262.1), HM, w=0.5, mat="boxwood")
+house_cols(HOME_B05, "LotB05")
+est.col("HousePlaceholderB05", *house_point(HOME_B05, 2.0, -1.505), 14.4, 11.01, 6.0, yaw=HOME_B05["rotationY"])
+est.cols[-1]["name"] = f"COL_House_{HOME_B05['key']}"
+HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03, VILLA_A04, HOME_B01, HOME_B02, HOME_B03, HOME_B04, HOME_B05]
+```
+The v1 driveway slab (x 118 -> 123, z -266.8 -> -269.2) stays; the two flare strips touch its edges and cover the door's 0.1 m overhang plus 0.2 m of margin (door edges z -266.7 -> -269.3), 2.0 m long, 2.4 m short of the postbox (122.6, -266.2, collision z -265.975 -> -266.425).
+The path starts on the low step's front edge (plan x 119.3) and ends on the front line, 1.6 m wide inside the 2.2 m step; the lamp stands 0.85 m clear of the north border and 3.1 m from the stack (stack plan x up to 118.7). The boxwood borders (h 0.40, walk-over, no collision, the material `HM["boxwood"]` exists) lie 0.25 m off the path
+(z -259.25 -> -259.75 and -261.85 -> -262.35) and 0.6 m beyond the step's front. `house_cols` is called because the stack writes a collision (the arched entry and the timber write none). Self-check (T1): door (118.8, -260.8) in the lot and
+`dot(door - origin, entry - centre) = 4.8 x 10 + 0 x (-5) = 48 > 0`.
+
+**Wiring and rebuild.** Files that change:
+- `map-src/CampusCove/build_house_v2.py`: `PALETTES["tudor"]`, `STYLES["tudor"]`, `HALF_TIMBER_B05` and the `cove_home_b05` entry; `timber_frame` and its call for the house and the wing (H1); the `cross` dict form (H2); `chimney_front` and `chimney_collision` (H3);
+  `arched_entry`, the `porch` dispatch, `door_pat`, the door parts and the no-bush list (H4); wing `door_style="arched"` (H5); `casement` and the `shutters` flag (H6); `Plan.tudor`, `build_tudor` and the `fit` dispatch entry (H7); allow-list prefix `EX_Timber`.
+- `map-src/CampusCove/build_cove_heights_site.py`: `HOME_B05`, its dressing, the `HOUSES` list. `lib_common.py` is not touched (no new pattern).
+- `front/src/game/assets/catalog.ts`: `'cove_home_b05'` in the key union and `house('cove_home_b05', 'Ashbury Tudor')`.
+- `backend/database/seeders/HousingUnitSeeder.php`: `['cove_home_b05', 'buy', 13000, -312.2, 1.25, -242.8, '#EFE6D2']` and
+  `'cove_home_b05' => ['minX' => -4.995, 'maxX' => 8.995, 'minZ' => -5.4, 'maxZ' => 5.2, 'maxY' => 5.6]`.
+- `backend/tests/Feature/HousingApiTest.php` (the model key list gets `'cove_home_b05'` after `b04`) and the housing test counts (backend, front) go from 18 to 19 units.
+- No change to `apply-cove-heights.mjs`, the socket or the front door code (rotation, door point, lock and open state are generic since T1); no back door, no walkable gallery.
+- Generated: `front/public/assets/houses/cove_home_b05/*`, `front/public/assets/park/cove_heights/*`, `town.collision.json`, `world.manifest.json`.
+
+Then the 7.2b sequence with `HOUSE_KEYS = ["cove_home_b05"]`, the site build, `apply-cove-heights.mjs`, `make seed`. The house build prints the seeder bounds and `interiorOffset`, the site build the door points; check them against the values above. Equivalence check: dump every HOUSES scene before and
+after H1 to H7; the eight other Cove Heights houses and `house_01` ... `house_10` must come out identical, and `cove_heights.layout.json` must only gain the B-05 entries. Risks to look at in the first render: the cross gable ridge against the main slope (the back end 0.10 m under it), the stack
+against the roof eave and the cross slabs (no fascia slice on its face), the arched door panel against the casings and the floor band, the stud and brace layers (no coplanar overlaps), the steep wing slope against the east wall windows, the 0.6 m eave on a 45 degree roof (the research asks 0.2 to 0.4 m), the roof height 11.65 against B-04's 7.9
+and B-06's front gable. Built and checked on 2026-11-19: the 18 other houses rebuild identical (36 scenes compared), seeder bounds and door point as above, `topo:check` ok, renders of the outside, the lot in the estate and both floors. Not walked in game. Playtest (`playtest-game`): walk the driveway apron and the path, pass the stack, open the arched door, walk the hall, parlour, dining, library and kitchen, pass the garage doorway into the wing, climb the stair, check the casements and the timber from the street,
+lock from inside and check that a second player without a key is refused.
+
+**Decisions** (product owner, 2026-11-19): all recommendations accepted except the roof pitch. W 10.4 x -5.4, cross gable off-centre at x -2.35 (rise 3.1) with the brick stack on its face, half-timber on all five faces,
+arch-only entry, wing street gable rise 2.8 with arched garage lites, new `tudor` plan, price 13 000, interior budget 9.0 k with `flat_edges` as the first cut, door `#6b4a2e`. **Roof rise 5.5 instead of 5.2** (reverses recommendation 2):
+exactly 45.0 degrees, ridge 11.65 (cap top about 11.85), 1.1 m above B-02, the tallest roof of the estate. What it changed in this section: the ridge and slab figures, the side-gable stud tops (7.31, 8.71, 10.11), the stack's
+clearance under the ridge (0.88 m), and the cross gable, whose back end now lies 0.10 m under the main slope instead of 0.08 m over it (3.1 stays inside the 3.30 assert). Wing, cross-gable proportions, plan, windows and
+triangle counts do not change (the roof slabs are the same boxes), and no R rule is affected: R4 compares forms and colours, not heights, R5 counts storeys.
+
+**Open decisions for the product owner, answered above** (each with a recommendation)
+1. **Width.** The planned W 11.0 is the most the envelope allows with the wing pinned on its driveway (u -8.0), and R1 asks for 0.4 m more or less. W 10.4 x -5.4 (this spec: 0.6 under, unique, and not B-04's 10.6). The alternatives are W 10.6 (shares B-04's width and differs only in depth) or W 10.2. Recommendation: **W 10.4 x -5.4**.
+2. **Roof pitch and height (superseded by the decision above: rise 5.5).** Rise 5.2 gives 43.4 degrees and a ridge at 11.35, the tallest roof of the estate (B-02 10.53); the research asks 45 to 56 degrees, so the main roof is just under it and the cross gable (57.2) just over. Rise 5.5 gives exactly 45.0 degrees and a ridge at 11.65 (the cross rise then may reach 3.3). Rise 4.6 gives 39.9 degrees, ridge 10.75, less "steep". Recommendation: **rise 5.2**; the cross gable follows (3.1 on a 4.0 m gable).
+3. **Cross gable and chimney.** Cross gable off-centre to the west (x -2.35, 4.0 wide) with the brick stack standing on its face, 0.7 m proud, 10.77 m high; the door stays in the main facade centre. The alternative is a centred cross gable over the door (no off-centre read, the stack beside it). Recommendation: **off-centre, stack on its face**.
+4. **Half-timber extent.** Front upper storey, cross gable, wing gable and both side gables (39 beams, 0.47 k triangles); ground floor, back and side walls stay plain render with oak casings. The alternative is the front and the two gables only (about 0.25 k, plain side gables, which are the largest blank walls of the house). Recommendation: **all five faces**.
+5. **Entry.** Arch-only entry (oak arched surround, plank door, flagstone steps, two lanterns) against adding a steep gabled hood over the door (about 0.4 k triangles; it has no room between the arch top 2.62 and the floor band 3.08, so the band and the front timber rail would have to move). R8 treats it as unique either way, but it stays the closest relative of B-02's perron. Recommendation: **arch only**.
+6. **Wing.** Steep street gable (rise 2.8, ridge level with the main eave) with a carriage door whose top row is arched lites, against a gentler gable (rise 1.6, as B-01 and B-03, whose roofs differ from B-05 only by 0.1 m). The steep wing is what keeps B-05 apart from B-06's flat box (R7). Recommendation: **rise 2.8, arched lites**.
+7. **Interior.** A new `tudor` plan (stair on the west wall, parlour with a front hearth under the exterior stack, deep library and kitchen, oak beams) against reusing the prairie plan unchanged (saves the plan code, but the house would read as B-04 once inside, and a mirrored stair is the cheapest honest difference). Recommendation: **new `tudor` plan**, 8.8 k triangles under the 9 k budget with `flat_edges` as the first cut.
+8. **Price, colours and budget.** 13 000 (daily tax 650, 7.2c.2), slate `#565a5f` roof, oak door `#6b4a2e` (close to A-01's walnut `#5a3a22`, at the other end of the estate; a bottle green `#3f5a3a` is the alternative if the two should be told apart), an interior budget of 9.0 k with up to 0.5 k tolerated as for B-01. Recommendation: **keep the price and the oak door, accept the tolerance**.
+
+Note found while writing: 7.2c.3 still plans B-06 and B-11 both at 10.0 x -5.4; the second one designed must change its width by at least 0.4 m (R1).
+
+**Pieces and where they come from** (every piece is a building part or a simple shape, so none is a `make model` job):
+
+| Piece | Source | Why |
+|---|---|---|
+| Shell walls, window cuts, plinth, corner boards, floor band | existing `L.wall`, `L.perimeter`, `dress()` | same builders as every house |
+| Cream render | existing `noise` pattern from the palette | a wall material |
+| Steep side-gable roof, cross gable, wing gable | existing `gable_roof_x`, `cross_gable`, `wing_exterior` | rise and width are numbers |
+| Half-timber | new `timber_frame`, existing `L.box` and `L.beam` | boxes and diagonals from data |
+| Front stack | new `chimney_front`, existing `L.box` and `L.cyl` | boxes and two pots |
+| Arched door surround, garage lites | existing `L.arch_panel` | one arch builder for the estate |
+| Plank door with straps | existing `door_parts` plus a palette key | boxes |
+| Casement windows | existing `dress()` with `panes` | more mullions on the same window |
+| Plan, rooms, walls, stair | new `Plan.tudor` from `interior["lines"]` | a two-storey plan with its own circulation |
+| Hearth, kitchen, bath fittings, beams, wardrobes | existing `lib_interior.py` builders and `build_kitchen` | reused as they are |
+| Lot dressing: aprons, path, lamp, boxwood | existing `lib_site.py` builders and `HM["boxwood"]` | same estate furniture as the other lots |
+
 #### 7.2c.5 Generator extension wishlist (impact on uniqueness ÷ effort)
 
 | # | Extension | Lots it unlocks | Impact | Effort |
@@ -2633,7 +2914,7 @@ Built: interior 8 708 triangles (under the 9.0 k budget, `flat_edges` not needed
 Recommended order: 1 → 3 → 2 (mirror + setback first) → 4 → 6 (loggia) → 7, which is exactly what Villa Serena needs, then 5
 and 8, which give the executive homes most of their character.
 
-### 7.2d Villa interiors: the estate, harbor and skyline plans and style kits [estate built for A-01 and A-02, harbor built for A-03, skyline built for A-04, tidewater built for B-01, lavande built for B-02, nantucket built for B-03]
+### 7.2d Villa interiors: the estate, harbor and skyline plans and style kits [estate built for A-01 and A-02, harbor built for A-03, skyline built for A-04, tidewater built for B-01, lavande built for B-02, nantucket built for B-03, prairie built for B-04, tudor built for B-05]
 
 Item 15 of the wishlist, first variant. The town houses keep their duplex; a villa entry with
 `interior=dict(plan="estate", style=..., stair="west"|"east", ...)` in `build_house_v2.py` gets a luxury plan instead
@@ -3853,6 +4134,139 @@ through `outer_openings` like `french`. No new interior allow-list prefix (`Wall
 
 Triangles (estimate): **about 9.0 k** interior (ground floor, upper floor, stair, garage room included, B-01 built 8.8 k with a comparable room count); the build prints `interior tris`. Cut list if
 it goes over 9.5 k: `flat_edges=True` first (saves up to 1.5 k as on B-02), then the third wardrobe and the powder wainscot.
+
+#### 7.2d.7 The tudor plan for B-05 [built]
+
+Eighth variant of wishlist item 15. A Tudor house is a cluster of low-ceilinged rooms around one big hearth, entered through a narrow oak door. The front door opens on a 2.38 m
+hall; a straight stair climbs along the **west** wall **toward the street** (B-04's climbs along the east wall), so the landing lies over the entry and the passage runs
+down the east side of the flight; the parlour (west front) has its hearth on the **front** wall, under the exterior brick chimney of 7.2c.12; the dining room is east front; the library
+and the kitchen are behind, deep rooms of 22 m2 that carry the garage doorway into the +x wing; the powder room closes the hall. Upstairs: primary suite with a sitting room, two bedrooms and
+bath 2. Sources: design derivations (the research notes give Tudor massing and windows, not floor plans).
+
+| | Prairie (B-04) | Tudor (B-05) |
+|---|---|---|
+| Storeys | 2 | 2 |
+| Hall | 2.48 m, stair along the east wall | 2.38 m, stair along the **west** wall, passage on the east side |
+| Hearth | living room back wall, breast through the suite | parlour **front** wall, flue in the exterior stack (nothing rises through the primary suite) |
+| Front rooms | living (hearth), dining, split at z 0.2 | parlour (hearth), dining, split at z 1.2 (13.0 m2 each) |
+| Back | study, kitchen (17.5 m2) | library, kitchen (22.1 m2) |
+| Garage doorway | kitchen, east wall (-1.8, -0.8) | kitchen, east wall (-0.8, 0.2) |
+| Ceilings | flat | oak beams in parlour and dining |
+
+Written for the two-storey, +x-wing, non-mirrored case (`Plan.tudor()` asserts `floors == 2`, `wing["s"] == 1` and `not mirror`; the wing assert of N2 admits `plan == "tudor"`). Like every plan it has no house literal:
+it reads the lines below from `interior["lines"]`. B-05 values: xi 4.795, zf 5.0, zb -5.2, PT 0.12, e = 0.06 (recomputed from the generator constants).
+
+```
+lines (B-05)   hall_x HX 1.25 · front_z FZ 1.2 · bath_z BZ -3.2 · stair_top ST 2.6 · fireplace_x -2.35 · hood_x 1.9
+derived        hall clear width 2(HX - e) = 2.38; hall rect z BZ + e -> zf = -3.14 -> 5.0
+               stair x SX0 = -HX + e = -1.19 -> SX1 = SX0 + STAIR_W = 0.01, run 0.2875, rise 3.0 / 16, top ST 2.6, foot SF = ST - 16 run = -2.0 (rising toward the street)
+asserts        SF - BZ = 1.2 >= 1.0 (a door beside the foot) · ST <= zf - 2.0 (2.6 <= 3.0, the door leaf and the landing) · passage east of the flight (HX - e) - (SX1 + 0.08) = 1.10 >= 0.9
+               zb + 1.6 <= BZ <= SF - 1.0 (-3.6 <= -3.2 <= -3.0) · zb + 3.0 <= FZ <= zf - 3.0 (-2.2 <= 1.2 <= 2.0) · every doorway >= MIN_DOOR 1.0
+               the garage doorway lies inside the wing (a >= zb_g + 0.15 = -1.04, b <= zf_g - 0.15 = 4.85) · every room rect has a positive size · walker 0.95 m reaches every room
+```
+
+```
+L0   x: -4.795              -1.31 -1.19  0.01         1.19 1.31             4.795   (east wall -> wing x 5.2 ... 8.995)
+z 5.0  ┌─────────────────────┬───── door ─────┬───────────────────┐
+       │ Parlour   casement  c   vestibule   c   Dining  casement │ ╲ wing:
+       │ hearth on the front │ stair ┃ passage  │                   │  garage
+z 1.26 ├────── walls ────────┤ top   ┃          ├── walls ──────────┤ (z -1.19 -> 5.0)
+       │ Library        d ───┤ (2.6) ┃ foot     ├──d  Kitchen ═ door ═ (garage doorway z -0.8 -> 0.2)
+z -3.26│                     ├─────── d ────────┤                   │
+       │                     │ Powder                               │
+z -5.2 └─────────────────────┴──────────────────┴───────────────────┘
+       c = cased opening 2.1 m · d = door 1.0 m
+```
+
+**L0 rooms** (rect x0, x1, z0, z1)
+
+| Room | Rect (formula -> B-05) | Floor | Paint / finish | Light |
+|------|------------------------|-------|----------------|-------|
+| Hall | -HX + e, HX - e, BZ + e, zf -> -1.19, 1.19, -3.14, 5.0 | wood | `hall` | manual |
+| Parlour | -xi, -HX - e, FZ + e, zf -> -4.795, -1.31, 1.26, 5.0 (13.0 m2) | wood | `parlour`, oak ceiling beams | centre |
+| Dining | HX + e, xi, FZ + e, zf -> 1.31, 4.795, 1.26, 5.0 | wood | `parlour`, oak ceiling beams | centre |
+| Library | -xi, -HX - e, zb, FZ - e -> -4.795, -1.31, -5.2, 1.14 (22.1 m2) | wood | `bed` | centre |
+| Kitchen | HX + e, xi, zb, FZ - e -> 1.31, 4.795, -5.2, 1.14 | tile | none | manual |
+| Powder | -HX + e, HX - e, zb, BZ - e -> -1.19, 1.19, -5.2, -3.26 | bath | `wainscot=True`, `baseboard=False` | centre |
+
+**L0 partitions**: `Walls_HallW` (z-axis at x -HX, **h = L1_Y** along the stair): hall -> parlour (ST + 0.2, zf - 0.1 = 2.8, 4.9, 2.4, cased), hall -> library (SF - 1.05, SF - 0.05 = -3.05, -2.05); `Walls_HallE`
+(at x HX): hall -> dining (2.8, 4.9, 2.4, cased), hall -> kitchen (-1.2, -0.2); `Walls_Front` (x-axis at z FZ, x -xi -> -HX): none; `Walls_FrontE` (x HX -> xi): a cased opening dining -> kitchen (2.4, 3.9, h 2.4);
+`Walls_BathN` (at z BZ, x -HX -> HX): hall -> powder (-0.5, 0.5). Paths: front door -> hall -> parlour and dining through the 2.1 m cased openings, hall rear -> library, kitchen and powder
+down the east passage, kitchen -> garage by the east doorway. The kitchen hall door (-1.2, -0.2) and the garage doorway (-0.8, 0.2) are on different walls, so they do not collide.
+
+**L1 rooms** (level y 3.0, height 2.6)
+
+| Room | Rect (formula -> B-05) | Floor | Notes |
+|------|------------------------|-------|-------|
+| Landing | -HX + e, HX - e, ST, zf -> -1.19, 1.19, 2.6, 5.0 | wood | `hall`, over the vestibule; the stair arrives on it; casement window over the door |
+| Corridor | SX1, HX - e, BZ + e, ST -> 0.01, 1.19, -3.14, 2.6 | wood | `hall`, beside the well, 1.18 m |
+| Well | SX0, SX1, SF, ST -> -1.19, 0.01, -2.0, 2.6 | **None** | `light=False` |
+| CorridorW | SX0, SX1, BZ + e, SF -> -1.19, 0.01, -3.14, -2.0 | wood | `hall`, the foot of the flight, door to the sitting room |
+| Primary | -xi, -HX - e, FZ + e, zf -> -4.795, -1.31, 1.26, 5.0 | wood | `bed`, 13.0 m2 |
+| Sitting | -xi, -HX - e, zb, FZ - e -> -4.795, -1.31, -5.2, 1.14 | wood | `bed`, 22.1 m2, empty, off the suite |
+| Bed2 | HX + e, xi, FZ + e, zf -> 1.31, 4.795, 1.26, 5.0 | wood | `bed`, east window over the wing roof |
+| Bed3 | HX + e, xi, zb, FZ - e -> 1.31, 4.795, -5.2, 1.14 | wood | `bed` |
+| Bath2 | -HX + e, HX - e, zb, BZ - e -> -1.19, 1.19, -5.2, -3.26 | bath | `wainscot=True`, shower, WC, vanity |
+
+L1 partitions: `Walls_UHallW` (at x -HX): landing -> primary (3.0, 4.0), corridorW -> sitting (-3.05, -2.05); `Walls_UHallE` (at x HX): landing -> bed 2 (3.0, 4.0), corridor -> bed 3 (-1.2, -0.2);
+`Walls_UFront` (at z FZ, x -xi -> -HX): primary -> sitting (-2.4, -1.4); `Walls_UFrontE` (x HX -> xi): none; `Walls_UBathN` (at z BZ, x -HX -> HX): corridor -> bath 2 (0.1, 1.1). The upper walls stand on the L0
+lines (HX, FZ, BZ), so every upper wall has a wall below it.
+
+**Windows** (`interior["windows"]`; y = WIN (0.9, 2.2) unless given; tuples as in the HOUSES entries; the kind `casement` is the new G6 of 7.2c.12)
+
+| Side | Ground floor | Upper floor |
+|------|--------------|-------------|
+| front | parlour (-4.5, -3.55); dining (2.0, 4.2) | primary (-4.5, -3.55); landing (-0.5, 0.5); bed 2 (2.0, 4.2) |
+| back | library (-4.2, -2.4); kitchen (2.8, 4.3) y (1.05, 2.15); powder (-0.4, 0.4) y (1.5, 2.1) `window` | sitting (-4.2, -2.4); bed 3 (2.6, 4.4); bath 2 (-0.4, 0.4) y (1.5, 2.1) `window` |
+| west | parlour (2.0, 3.6); library (-3.8, -2.2) | primary (2.0, 3.6); sitting (-3.8, -2.2) |
+| east | the garage doorway (-0.8, 0.2) y (0, DOOR_H), `kind="door"` | bed 2 (1.9, 3.5); bed 3 (-3.8, -2.2) |
+
+The parlour front window ends 0.2 m before the hearth (hearth x -3.33 -> -1.37, window head -3.42); the kitchen window is centred on the sink (x 3.55). The east wall has no other ground-floor window (the wing wall
+from interior z 5.0 back to -1.19); the upper east windows open above the wing slope (sills 4.03, slope at the wall 3.45).
+
+**Stair** (`build_stair`, `P.stair = dict(x0=SX0, x1=SX1, z0=SF, z1=ST, rise="+z", open=1, rail="rail", baluster=S["baluster"], newel=True, foot_rail=True, upper_edge=False)`: the arguments of B-04 with the open side on the
+passage side, x1). `Stair_Side` (x 0.05) keeps players off the flight and guards the corridor side of the well; the L0 ceiling has a hole over the flight (z SF -> ST) and a head room of at least 2.0 m under the landing.
+
+**layout.json**
+
+```
+L0 rects   (-4.795, 4.795, -5.2, 5.2) and the wing (4.795 -> 8.795, -1.19 -> 5.0)
+L1 rects   (-4.795, 4.795, -5.2, -2.0), (-4.795, -1.19, -2.0, 5.0), (0.01, 4.795, -2.0, 5.0), (-1.19, 0.01, 2.6, 5.0)
+stairs     Stair_Main x -1.19 -> 0.01, z -2.0 -> 2.6, y0 0, y1 3.0, rise "+z"
+```
+No gallery, no terrace, no back door. Wing doorway: the existing assert holds (-1.04 <= -0.8, 0.2 <= 4.85).
+
+**Fittings** (`build_tudor(B, M, P)`; positions from room rects): `LI.fireplace(... ((-2.35, parlour.z1), "-z"), 0.0, L0_H, M, "stone")` on the parlour front wall (the anchor is the room-side face, facing into the room), hearth
+x -3.33 -> -1.37 (0.06 m clear of the partition), under the exterior stack; `LI.beams` over the parlour and the dining room (`axis="z"`, even count, as `build_estate`); kitchen through `build_kitchen` unchanged (run along the
+back wall and the east return, sink under the back window) with a cooktop and `LI.range_hood` at x 1.9; powder: WC and a 0.5 m basin; bath 2: shower in the corner, WC and a 0.6 vanity; a 2.0 m wardrobe in the primary (on the partition with the sitting room, x -3.8, clear of its door), bed 2 (on the partition, x 3.0, clear of the landing door) and bed 3 (the first draft put them on the east and west walls, where they blocked the landing doors and the build refused bed 2);
+parlour, dining, library and sitting room stay empty for Cove Home furniture. No `Fit_ChimneyBreast`: the flue is in the exterior stack.
+
+**Lights**: hall front and rear, beside the stair, landing and corridor, kitchen, room centres for the rest.
+
+**Code hooks.** `Plan.__init__` dispatches `interior.plan == "tudor"` to `self.tudor()`, the wing assert admits it, `build_interior` dispatches `"tudor": build_tudor`; the window kind assert of the plan admits `"casement"`.
+No new interior allow-list prefix (`Walls_`, `Fit_`, `Stair_`, `Window_`, `Ceiling` exist). `Plan.prairie` is not touched.
+
+**Style kit** (`STYLES["tudor"]`, the keys of the prairie kit):
+
+```python
+"tudor": dict(foyer=("planks", "#6b4a2e", "#563a24", 0.8), stone="#b7ab94", rail="#3a2a1c", baluster="trim",
+              metal="#2b2622", fire="stone", island="#6b4a2e", hood="plaster", uppers="cabinet", beam="#4a3426",
+              shelf="#6b4a2e", closet="#6b4a2e", art="#7a5a3a", art2="#d9c9a3", plaster="#f1e7d0",
+              vanity_top="#e4dccb", stair_pat="planks", panel_pat="stripes", panel_acc="#d8cbb0",
+              paints=dict(hall="#e9dcc0", parlour="#e6d7b8")),
+```
+
+| Style kit | Ashbury Tudor (B-05) |
+|---|---|
+| Plan | 2.38 m hall with a straight stair on the west wall toward the street, parlour (front hearth) and dining through 2.1 m cased openings, library and kitchen behind, powder at the hall end; primary suite with sitting room, two bedrooms and bath 2 upstairs |
+| Floors | dark oak planks, tile in the kitchen and baths |
+| Walls / ceilings | warm plaster, oak ceiling beams in parlour and dining, dark oak stair rail |
+| Fireplace | ashlar-grey stone surround with an oak mantel beam, flue in the exterior stack |
+| Kitchen | oak-tone cabinets, plaster hood |
+| Baths | powder with a WC and a basin; bath 2 with a shower, WC and vanity; no tub |
+
+Triangles: **8 876** interior as built (estimated 8.8 k) (the prairie plan built 8.7 k with the same rooms; the beams add about 0.1 k, the breast is gone); the build prints `interior tris`. Cut list if it goes over 9.5 k: `flat_edges=True`
+first (saves up to 1.5 k as on B-02), then the third wardrobe and the powder wainscot.
 
 ### 7.3 Non-lot land around the bands
 
