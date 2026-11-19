@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { advanceBout, parseBoxingRules, pressHand, setGuard, startBout } from './boxingBout.ts'
+import { advanceBout, parseBoxingRules, pressHand, punch, setGuard, startBout } from './boxingBout.ts'
 import { type RobotAction, BOXING_ROBOT, newRobotBrain, thinkBoxer } from './boxingRobot.ts'
 import type { RobotLevel } from './robots.ts'
 import { boxingRulesJson } from './boxingTestRules.ts'
@@ -97,4 +97,25 @@ test('down, it presses to get up at its own pace; stunned, between rounds or wit
   foe.down = null
   bout.phase = 'rest'
   assert.deepEqual(kinds(think(ROUND + 1200)), [])
+})
+
+test('a robot cancels into the next punch of its plan, late by its level: hard by 40 ms, inside the link, easy by 250 ms', () => {
+  const close = { distM: 1, facingCos: 1, heightM: 0 }
+  for (const level of ['hard', 'easy'] as const) {
+    const { bout, self, brain, think } = setup(level)
+    punch(bout, self, 'jab', close, ROUND)
+    brain.plan = ['cross']
+    const releaseAt = self.cancelAt + BOXING_ROBOT[level].lateMs
+    const tapMs = 60
+    assert.deepEqual(kinds(think(releaseAt - tapMs - 1)), ['move'])
+    assert.deepEqual(kinds(think(releaseAt - tapMs)), ['move', 'press:right'])
+  }
+  const { bout, self, brain, think } = setup('hard')
+  punch(bout, self, 'jab', close, ROUND)
+  brain.plan = ['cross']
+  assert.ok(self.cancelAt + BOXING_ROBOT.hard.lateMs <= self.chainUntil)
+  brain.plan = ['hook']
+  const holdMs = RULES.holdMs + 120
+  assert.deepEqual(kinds(think(self.nextPunchAt + BOXING_ROBOT.hard.lateMs - holdMs - 1)), ['move'])
+  assert.deepEqual(kinds(think(self.nextPunchAt + BOXING_ROBOT.hard.lateMs - holdMs)), ['move', 'press:left'])
 })

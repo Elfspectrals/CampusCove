@@ -1,5 +1,5 @@
 import type { Bounds } from '../types.ts'
-import { type Bout, type Boxer, type Hand, type PunchKind, HEAVY_PUNCHES } from './boxingBout.ts'
+import { type Bout, type Boxer, type Hand, type PunchKind, HEAVY_PUNCHES, earliestThrowAt } from './boxingBout.ts'
 import type { RobotLevel } from './robots.ts'
 
 interface RobotSkill {
@@ -13,12 +13,13 @@ interface RobotSkill {
   breakGuardAfterMs: number
   speedMps: number
   getUpPressMs: number
+  lateMs: number
 }
 
 export const BOXING_ROBOT: Record<RobotLevel, RobotSkill> = {
-  easy: { reactMs: 650, restMs: 1600, comboLength: 1, heavyShare: 0.15, parryChance: 0, dodgeChance: 0.1, guardChance: 0.15, breakGuardAfterMs: 2500, speedMps: 2.2, getUpPressMs: 320 },
-  normal: { reactMs: 420, restMs: 1000, comboLength: 2, heavyShare: 0.25, parryChance: 0.25, dodgeChance: 0.3, guardChance: 0.35, breakGuardAfterMs: 1400, speedMps: 3, getUpPressMs: 200 },
-  hard: { reactMs: 260, restMs: 650, comboLength: 4, heavyShare: 0.3, parryChance: 0.45, dodgeChance: 0.4, guardChance: 0.1, breakGuardAfterMs: 800, speedMps: 3.8, getUpPressMs: 120 }
+  easy: { reactMs: 650, restMs: 1600, comboLength: 1, heavyShare: 0.15, parryChance: 0, dodgeChance: 0.1, guardChance: 0.15, breakGuardAfterMs: 2500, speedMps: 2.2, getUpPressMs: 320, lateMs: 250 },
+  normal: { reactMs: 420, restMs: 1000, comboLength: 2, heavyShare: 0.25, parryChance: 0.25, dodgeChance: 0.3, guardChance: 0.35, breakGuardAfterMs: 1400, speedMps: 3, getUpPressMs: 200, lateMs: 120 },
+  hard: { reactMs: 260, restMs: 650, comboLength: 4, heavyShare: 0.3, parryChance: 0.45, dodgeChance: 0.4, guardChance: 0.1, breakGuardAfterMs: 800, speedMps: 3.8, getUpPressMs: 120, lateMs: 40 }
 }
 
 const STAND_OFF_M = 1.15
@@ -157,10 +158,10 @@ function attack(brain: RobotBrain, skill: RobotSkill, sight: RobotSight, gap: nu
     if (brain.plan.length === 0) brain.restUntil = now + skill.restMs * (0.7 + 0.6 * random())
     return
   }
-  if (self.guard || gap > PUNCH_FROM_M || now < self.nextPunchAt) return
+  if (self.guard || gap > PUNCH_FROM_M) return
   const countering = now < self.counterUntil
   if (brain.plan.length === 0) {
-    if (now < brain.restUntil && !countering) return
+    if (now < self.nextPunchAt || (now < brain.restUntil && !countering)) return
     brain.plan = nextPlan(skill, sight, brain)
     if (brain.plan.length === 0) {
       brain.restUntil = now + skill.restMs
@@ -171,10 +172,14 @@ function attack(brain: RobotBrain, skill: RobotSkill, sight: RobotSight, gap: nu
       return
     }
   }
-  const kind = brain.plan.shift() as PunchKind
+  const kind = brain.plan[0] as PunchKind
+  const holdMs = HEAVY_PUNCHES.includes(kind) ? bout.rules.holdMs + WIND_UP_EXTRA_MS : TAP_MS
+  const releaseAt = now + holdMs
+  if (releaseAt < earliestThrowAt(bout.rules, self, kind, releaseAt, holdMs) + skill.lateMs) return
+  brain.plan.shift()
   const hand = HANDS_OF[kind]
   actions.push({ kind: 'press', hand })
-  brain.held = { hand, until: now + (HEAVY_PUNCHES.includes(kind) ? bout.rules.holdMs + WIND_UP_EXTRA_MS : TAP_MS) }
+  brain.held = { hand, until: releaseAt }
 }
 
 export function thinkBoxer(brain: RobotBrain, sight: RobotSight): RobotAction[] {

@@ -35,6 +35,7 @@ import {
   SWEET_M,
   SMASH_SPEED,
   SWING_AHEAD_MS,
+  SWING_DRIFT_M,
   TIMING_FLOOR,
   TIMING_PERFECT_MS,
   TOSS_FALL_MS,
@@ -233,8 +234,14 @@ export function step(rally: Rally, now: number, court: Court, where: Where): Ral
     const landing = groundTime(ball)
     if (swing && swing.at <= Math.min(landing, netAt ?? Infinity)) {
       if (now < swing.at) return current
+      const contact = ballAt(ball, swing.at)
+      const swinger = where(swing.sessionId)
+      if (!swinger || Math.hypot(contact.x - swinger.x, contact.z - swinger.z) > REACH_M + SWING_DRIFT_M) {
+        current = { ...current, swing: null }
+        continue
+      }
       const speed = swing.lob ? LOB_SPEED : swing.timing === 'smash' ? ([SMASH_SPEED, SMASH_SPEED] as const) : DRIVE_SPEED
-      return strike(court, swing.team, ballAt(ball, swing.at), swing.aim, speed, swing.quality, swing.at, { sessionId: swing.sessionId, timing: swing.timing })
+      return strike(court, swing.team, contact, swing.aim, speed, swing.quality, swing.at, { sessionId: swing.sessionId, timing: swing.timing })
     }
     if (netAt !== null && netAt <= landing) {
       if (now < netAt) return current
@@ -330,7 +337,7 @@ export function hit(rally: Rally, hitter: Hitter, aim: Aim, lob: boolean, now: n
   if (!contact) return null
   const quality = contactQuality(contact.d) * timingFactor(contact.t - now)
   const swing: Swing = { sessionId: hitter.sessionId, team: hitter.team, at: contact.t, contactX: contact.x, aim, lob, quality, timing: timingOf(contact.t - now, quality, charged) }
-  return step({ ...rally, swing }, now, court, () => null)
+  return step({ ...rally, swing }, now, court, (sessionId) => (sessionId === hitter.sessionId ? hitter : null))
 }
 
 export type Stroke = 'serve' | 'forehand' | 'backhand' | 'lob' | 'celebrate'
