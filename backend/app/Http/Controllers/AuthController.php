@@ -40,7 +40,7 @@ class AuthController extends Controller
             // one field with a show / hide toggle in the front, no confirmation field
             'password' => 'required|string|min:8',
             'referral_code' => 'nullable|string|max:12',
-            // GDPR proof of consent + minimum age (15, French digital majority)
+            // GDPR proof of consent + minimum age (18)
             'accepted_terms' => 'accepted',
             'age_confirmed' => 'accepted',
         ], [

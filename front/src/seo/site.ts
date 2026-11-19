@@ -41,7 +41,7 @@ export const SITE = {
   mailProvider: 'Brevo (Sendinblue SAS), 106 boulevard Haussmann, 75008 Paris, France — données hébergées dans l’Union européenne',
   /** Demo payment page of the gem shop (Stripe Checkout in test mode only, backend GEMS_CHECKOUT_MODE, docs/STRIPE.md). */
   paymentProvider: 'Stripe Payments Europe, Limited, 1 Grand Canal Street Lower, Grand Canal Dock, Dublin D02 H210, Irlande — https://stripe.com',
-  minimumAge: 15,
+  minimumAge: 18,
   /** Inactive accounts are anonymized after this many months (privacy policy + accounts:purge-inactive). */
   inactiveAccountMonths: 36,
   themeColor: '#0b0e2a',

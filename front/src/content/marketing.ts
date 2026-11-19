@@ -45,7 +45,7 @@ export const marketing: Record<Locale, MarketingCopy> = {
     faq: [
       { q: 'Is CampusCove free?', a: 'Yes. CampusCove is free to play and no real-money purchase is open.' },
       { q: 'Do I need to download anything?', a: 'No. CampusCove runs in your browser (Chrome, Edge, Firefox or Safari on desktop) using WebGL.' },
-      { q: 'What is the minimum age?', a: 'You must be at least 15 years old to create an account.' },
+      { q: 'What is the minimum age?', a: 'You must be at least 18 years old to create an account.' },
       { q: 'Can I play with my friends?', a: 'Yes, the town is multiplayer in real time. Add friends from the Friends page and meet them in game.' },
       { q: 'What happens to my data?', a: 'Only what the game needs is stored, with no advertising and no trackers. You can download or delete your data from your profile at any time.' },
     ],
@@ -77,7 +77,7 @@ export const marketing: Record<Locale, MarketingCopy> = {
     faq: [
       { q: 'CampusCove est-il gratuit ?', a: 'Oui. CampusCove est gratuit et aucun achat en argent réel n’est ouvert.' },
       { q: 'Faut-il télécharger quelque chose ?', a: 'Non. CampusCove fonctionne dans le navigateur (Chrome, Edge, Firefox ou Safari sur ordinateur) grâce à WebGL.' },
-      { q: 'Quel est l’âge minimum ?', a: 'Il faut avoir au moins 15 ans pour créer un compte.' },
+      { q: 'Quel est l’âge minimum ?', a: 'Il faut avoir au moins 18 ans pour créer un compte.' },
       { q: 'Puis-je jouer avec mes amis ?', a: 'Oui, la ville est multijoueur en temps réel. Ajoute tes amis depuis la page Amis et retrouve-les en jeu.' },
       { q: 'Que deviennent mes données ?', a: 'Seules les données nécessaires au jeu sont conservées, sans publicité ni traceur. Tu peux les télécharger ou les supprimer depuis ton profil à tout moment.' },
     ],
