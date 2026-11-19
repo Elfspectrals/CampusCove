@@ -7,6 +7,7 @@ Two outdoor courts, with a tennis coach between them. Shared rules in [README.md
 - Singles or doubles, chosen by the first player at the coach, with the format:
   - **one short set**: first to 4 games, tie-break at 3–3;
   - **one tie-break** to 7 points (2 clear).
+- **Rules**, also chosen at the coach: **Classic** or **Tennis Cove** (arcade shots and a special, see "Tennis Cove" below).
 - Scoring 15-30-40-game inside a set.
 - **Simplified faults**: no service box fault, any ball that lands in the opponent's half is good. A ball out, in the net or that bounces twice loses the point. Serves alternate as usual.
 
@@ -214,6 +215,53 @@ with the score, and a robot partner does not cover for the player. A robot's mis
 player, only a struck ball sends `tennis_stroke`). No robot in free play. The levels were tuned on the simulation
 above and have not been played in the game.
 
+## Tennis Cove (2026-11-19)
+
+Decision (2026-11-19): a second set of rules, Tennis Cove, chosen at the coach next to the format. The arcade feel of the Mario Tennis games, built from our own rules: several shot types and a power gauge that ends in a special shot. No power-ups on court, no star spots. Robots play it at every level. A Tennis Cove match counts for the tennis tasks like a Classic one. Free play stays Classic.
+
+### Shots and keys
+
+| Input | Shot | Speed (m/s) | After the bounce | Net margin |
+|---|---|---|---|---|
+| Left click | Topspin | 11-19 | kicks up (restitution 0.9, keeps 88 % of its speed) | 0.6 m, the safest arc |
+| Right click | Slice | 9-15 | stays low (0.45, 70 %) | 0.3 m |
+| F (`sportsThrough`) | Flat | 14-23 | normal (0.7, 80 %) | 0.15 m, the riskiest |
+| C (`sportsTackle`) | Lob | 6.5-8.5 | normal | 0.35 m |
+| X (`sportsJockey`) | Drop shot | 5-7 | dies (0.4, 50 %); lands at most 3.5 m past the net whatever the aim | 0.3 m |
+| Space (`jump`), gauge full | Arms the special for the next rally shot | 28 | normal | 0.2 m |
+
+The timing, the mark, the ring and the smash charge work as in Classic. A charged Perfect smashes at 25 m/s on a topspin, slice or flat shot; a lob, a drop shot and the special never smash. A serve is the Classic serve whatever the key.
+
+### Gauge and special
+
+- Each player has a gauge from 0 to 100, kept by the socket per account for the match. A shot in play adds: smash +20, Perfect +25, Good +12 (Early and Late add nothing). The serve counts. The special and a knocked-back pop-up add nothing.
+- Full gauge: Space arms the special (Space again disarms it); the next rally shot is sent with `special: true`. The socket plays it only if that player's gauge is full and the ball is in flight; otherwise the shot is the stroke sent. The gauge empties when the swing is committed.
+- The special flies at 28 m/s (faster than any flat shot) and the ball turns orange.
+- A special returned with less than a Perfect (or a smash) pops up: a lob at quality 0.3 at most, an easy ball. The returner is pushed 2 m back from the net (inside the play area) and cannot move for 0.8 s ("Knocked back!"). A Perfect sends it back as a normal shot.
+
+### Robots
+
+Shot mix by level: easy topspin 70 % and slice 30 %; normal topspin 40 %, slice 25 %, flat 20 %, lob 10 %, drop 5 %; hard topspin 30 %, slice 20 %, flat 30 %, lob 10 %, drop 10 %. With a full gauge the special comes on 30 % (easy), 60 % (normal) and 100 % (hard) of their rally shots, never on a serve. A knocked-back robot stands still for 0.8 s.
+
+Measured headless through the socket's match code (2026-11-19), robot against robot, 4 tie-breaks per level: about 2 to 3 minutes a match; specials 9 of 197 shots (easy), 21 of 290 (normal), 38 of 345 (hard); 3, 9 and 20 knock-backs. Hard robots send many balls out (26 of 50 points), mostly flat shots and knocked pop-ups. Not played by hand.
+
+### What the player can still do
+
+| Case | Decided | Test |
+|---|---|---|
+| A Classic hit (no stroke) in a Tennis Cove match | ignored | `tennis.test.ts` "Tennis Cove: a stroke is required…" |
+| An unknown stroke or a non-boolean `special` | ignored | same |
+| A stroke sent in a Classic match | ignored, Classic shot | same |
+| `special: true` without a full gauge | the stroke sent is played, the gauge is kept | "the special needs a full gauge…" |
+| The special armed on a serve | Classic serve, the special stays armed for the rally | front sends `special` only off the serve; the socket ignores it outside a flight |
+| A committed special whose player walks out of reach before contact | the swing is dropped and the gauge stays spent | covered by the drift rule (`tennisRally.test.ts`) |
+| A weak return of a special | pop-up, pushed back 2 m, 0.8 s without moving | "a special returned with less than a Perfect…" |
+| A knocked-back player against the back fence | pushed only to the edge of the play area | `knockBack` clamps to `playAreaFor` |
+| A modified client that keeps moving while knocked back | allowed: the 0.8 s is held by the front only, the socket judges the next hit from where the player is | not tested |
+| A robot with a full gauge on its serve | serves normally | `tennisRobot.test.ts` "a robot with a full gauge still serves…" |
+| Doubles | each player has a gauge | `stateView` sends `gauges` by session |
+| Disconnect and come back within the grace | the gauge is kept (per account) | not tested |
+
 ## Contract
 
 Socket constants: `socket/src/sports/tennisConstants.ts`, mirrored in `front/public/assets/sports/rules/tennis.json`
@@ -221,10 +269,11 @@ Socket constants: `socket/src/sports/tennisConstants.ts`, mirrored in `front/pub
 
 | Message | Direction | Payload |
 |---|---|---|
-| `tennis_hit` | client → server | `{ aimX: number, aimZ: number, lob?: boolean }` (finite numbers; the aim is clamped to the receiving half, from 1 m past the net to 3 m past its lines; the front keeps its target 0.5 m inside the lines and 1.5 m from the net). 400 ms between two hits of one player, 700 ms after a swing at nothing in a match. Only a player of a running tennis match, back on court. |
-| `tennis_state` | server → match players and players in `sports_tennis` | `{ venue, court: { cx, netZ, halfWidth }, mode, format, phase: 'serve_wait' \| 'toss' \| 'flight' \| 'point' \| 'ended', games, points (labels '0', '15', '30', '40', 'AD' or tie-break counts), tiebreak, serving, server: sessionId \| null, ball: { x, y, z, vx, vy, vz, t (server ms) } \| null, hitter, bounces: 0 \| 1, shot: { sessionId, timing: 'smash' \| 'perfect' \| 'good' \| 'early' \| 'late' } \| null (the last shot of the ball in flight), call: 'out' \| 'net' \| 'double_bounce' \| 'missed_toss' \| null, pointWinner, winner, players: [{ sessionId, team }], serverNow }`, sent at kick-off, on each toss, hit, bounce and point, and once with `phase: 'ended'`. |
+| `tennis_hit` | client → server | `{ aimX: number, aimZ: number, lob?: boolean, stroke?: 'topspin' \| 'slice' \| 'flat' \| 'lob' \| 'drop', special?: boolean }` (`stroke` is required in a Tennis Cove match and ignored otherwise; `lob` is ignored in Tennis Cove) (finite numbers; the aim is clamped to the receiving half, from 1 m past the net to 3 m past its lines; the front keeps its target 0.5 m inside the lines and 1.5 m from the net). 400 ms between two hits of one player, 700 ms after a swing at nothing in a match. Only a player of a running tennis match, back on court. |
+| `tennis_state` | server → match players and players in `sports_tennis` | `{ venue, court: { cx, netZ, halfWidth }, mode, format, phase: 'serve_wait' \| 'toss' \| 'flight' \| 'point' \| 'ended', games, points (labels '0', '15', '30', '40', 'AD' or tie-break counts), tiebreak, serving, server: sessionId \| null, ball: { x, y, z, vx, vy, vz, t (server ms), keep, restitution (the bounce of this ball) } \| null, hitter, bounces: 0 \| 1, shot: { sessionId, timing: 'smash' \| 'perfect' \| 'good' \| 'early' \| 'late', kind: 'drive' \| 'lob' \| 'topspin' \| 'slice' \| 'flat' \| 'drop' \| 'special', knocked: boolean } \| null (the last shot of the ball in flight), call: 'out' \| 'net' \| 'double_bounce' \| 'missed_toss' \| null, pointWinner, winner, players: [{ sessionId, team }], rules: 'classic' \| 'cove', gauges: { [sessionId]: 0-100 } \| null (Tennis Cove only), serverNow }`, sent at kick-off, on each toss, hit, bounce and point, and once with `phase: 'ended'`. |
 | `tennis_ball_take` | client → server | `{ court: 'tennis_1' \| 'tennis_2' }` within 2.5 m of its basket: lends `tennis_ball` (`sports_loans`), or `sports_error` (`sports_too_far`, `sports_no_pass`, `sports_no_gear`, `sports_venue_busy`). |
 | `tennis_free` | server → players in `sports_tennis` | `{ court, geometry: { cx, netZ, halfWidth } \| null, phase: 'idle' \| 'serve_wait' \| 'toss' \| 'flight' \| 'point', ball, hitter, server: sessionId \| null (who tosses), bounces, shot, call, serverNow }` for a free rally; `idle` when the court is free again. |
+| `tennis_knocked` | server → the knocked-back player | `{ until: server ms }`, with a `position_correction` (`reason: 'tennis_knocked'`); the front holds the player still until then. |
 | `tennis_stroke` | server → players in `sports_tennis` but the striker | `{ sessionId, stroke: 'serve' \| 'forehand' \| 'backhand' \| 'lob' \| 'celebrate' }`, for the third-person clip. |
 
 The client draws the ball from `ball` on the server clock (`serverNow`); the socket alone judges hits, bounces and points.

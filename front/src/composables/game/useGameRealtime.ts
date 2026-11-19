@@ -123,6 +123,7 @@ import type {
   GymEventPayload,
   GymStatePayload,
   TennisFreePayload,
+  TennisKnockedPayload,
   TennisStrokePayload,
   TennisStatePayload,
   SkateBalancePayload,
@@ -362,6 +363,7 @@ export interface GameRealtimeDeps {
     onRoomJoined: () => void
     onTennisState: (data: TennisStatePayload) => void
     onTennisFree: (data: TennisFreePayload) => void
+    onTennisKnocked: (data: TennisKnockedPayload) => void
     onRunState: (data: SportsRunStatePayload) => void
     onRunResult: (data: SportsRunResultPayload) => void
   }
@@ -718,6 +720,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('gym_error', (data: GymErrorPayload) => deps.gym.onError(data))
     room.onMessage('tennis_state', (data: TennisStatePayload) => deps.sports.onTennisState(data))
     room.onMessage('tennis_free', (data: TennisFreePayload) => deps.sports.onTennisFree(data))
+    room.onMessage('tennis_knocked', (data: TennisKnockedPayload) => deps.sports.onTennisKnocked(data))
     room.onMessage('tennis_stroke', (data: TennisStrokePayload) => {
       if (data.sessionId !== room.sessionId) remotes.tennisStroke(data.sessionId, data.stroke)
     })

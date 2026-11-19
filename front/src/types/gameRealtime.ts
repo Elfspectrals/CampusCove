@@ -908,13 +908,23 @@ export interface TennisBall {
   vy: number
   vz: number
   t: number
+  keep: number
+  restitution: number
 }
 
 export type TennisTiming = 'smash' | 'perfect' | 'good' | 'early' | 'late'
 
+export type TennisStroke = 'topspin' | 'slice' | 'flat' | 'lob' | 'drop'
+
 export interface TennisShot {
   sessionId: string
   timing: TennisTiming
+  kind: 'drive' | 'special' | TennisStroke
+  knocked: boolean
+}
+
+export interface TennisKnockedPayload {
+  until: number
 }
 
 export interface TennisStrokePayload {
@@ -954,6 +964,8 @@ export interface TennisStatePayload {
   pointWinner: TennisTeam | null
   winner: TennisTeam | null
   players: { sessionId: string; team: TennisTeam }[]
+  rules: 'classic' | 'cove'
+  gauges: Record<string, number> | null
   serverNow: number
 }
 

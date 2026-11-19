@@ -1754,6 +1754,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (pubSecretOpen.value || pubGamesOpen.value) return true
   if (dance.onKeyDown(e)) return true
   if (figure.onKeyDown(e)) return true
+  if (tennis.onKeyDown(e)) return true
   if (emoteWheel.onKeyDown(e)) return true
   if (pubQuiz.onKeyDown(e)) return true
   // Y / N answer a Drink Fast challenge
@@ -1880,7 +1881,7 @@ const movement = useGameMovement({
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * gymMatch.speedFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
-  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || gymMatch.down() || boxing.stunned() || runningRace.racing.value || dancing.value || figureActive.value || climbingNow.value || poolRace.locked.value || tennis.serving() || tennis.swinging(),
+  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || gymMatch.down() || boxing.stunned() || runningRace.racing.value || dancing.value || figureActive.value || climbingNow.value || poolRace.locked.value || tennis.serving() || tennis.swinging() || tennis.knocked(),
   flying: () => adminWatch.hasMyPower('fly'),
   afterCameraPlaced: (camera, dt) => {
     intoxication.applyToCamera(camera, dt)
@@ -2098,6 +2099,7 @@ const realtime = useGameRealtime({
     onRunResult: runningRace.onResult,
     onTennisState: tennis.handlers.onState,
     onTennisFree: tennis.handlers.onFree,
+    onTennisKnocked: tennis.handlers.onKnocked,
   },
   gym: gymMatch.handlers,
   dance: dance.handlers,

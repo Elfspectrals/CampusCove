@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Player } from '../types.ts'
 import type { RobotLevel } from './robots.ts'
+import type { ShotKind } from './tennisConstants.ts'
 import { type Match, joinLobby, markAway, markBack, openLobby, startMatch } from './signup.ts'
 import { type FakeRoom, clientOf, fakeRoom, installWorld, makePlayer, sentOf } from './testWorld.ts'
 
@@ -17,7 +18,7 @@ const { TENNIS_ROBOT, netFacing, newTennisBrain, thinkTennis } = await import('.
 
 type Rally = ReturnType<typeof serveWait>
 type Spot = { x: number, z: number }
-type Shot = { aim: Spot, lob: boolean }
+type Shot = { aim: Spot, shot: ShotKind }
 
 const T0 = 9_000_000
 const COURT = { cx: 0, netZ: 0, halfWidth: C.SINGLES_HALF_WIDTH }
@@ -28,10 +29,10 @@ const steady = () => 0.5
 
 function feed(target: Spot, speed: number): Rally {
   const { ball, netAt } = shoot(COURT, { x: 0, y: 1, z: 11 }, target, speed, T0, true)
-  return { phase: 'flight', ball, hitter: 'red', bounces: 0, netAt, swing: null, shot: { sessionId: 'human', timing: 'good' } }
+  return { phase: 'flight', ball, hitter: 'red', bounces: 0, netAt, swing: null, shot: { sessionId: 'human', timing: 'good', kind: 'drive', knocked: false } }
 }
 
-function play(level: RobotLevel, start: Rally, from: Spot, random = steady, others: { mates?: Spot[], foes?: Spot[] } = {}) {
+function play(level: RobotLevel, start: Rally, from: Spot, random = steady, others: { mates?: Spot[], foes?: Spot[], cove?: { gauge: number } } = {}) {
   const robot = { sessionId: 'robot', team: 'blue' as const, x: from.x, z: from.z }
   const brain = newTennisBrain(level, HOME, T0)
   const steps: number[] = []
@@ -42,15 +43,15 @@ function play(level: RobotLevel, start: Rally, from: Spot, random = steady, othe
   for (let now = T0; now <= T0 + 15_000; now += SPORTS_TICK_MS) {
     rally = step(rally, now, COURT, () => robot)
     if (rally.phase === 'point') break
-    for (const action of thinkTennis(brain, { rally, court: COURT, team: 'blue', sessionId: 'robot', at: robot, mates: others.mates ?? [], foes: others.foes ?? [FOE], now, random })) {
+    for (const action of thinkTennis(brain, { rally, court: COURT, team: 'blue', sessionId: 'robot', at: robot, mates: others.mates ?? [], foes: others.foes ?? [FOE], now, random, cove: others.cove ?? null })) {
       if (action.kind === 'move') {
         steps.push(Math.hypot(action.x - robot.x, action.z - robot.z))
         facings.push(action.ry)
         Object.assign(robot, { x: action.x, z: action.z })
         continue
       }
-      shots.push({ aim: action.aim, lob: action.lob })
-      const next = hit(rally, robot, action.aim, action.lob, now, COURT)
+      shots.push({ aim: action.aim, shot: action.shot })
+      const next = hit(rally, robot, action.aim, action.shot, now, COURT)
       if (!next) continue
       struck.push({ at: now, from: rally.phase })
       rally = next
@@ -63,7 +64,7 @@ test('the robot waits a moment with the ball, tosses it, serves at the top of th
   const { rally, steps, struck } = play('hard', serveWait('robot', 'blue', T0), HOME)
   assert.deepEqual(struck.map((s) => s.from), ['serve_wait', 'toss'])
   assert.ok(struck[0].at - T0 >= 1000 && struck[0].at - T0 <= 2000, `tossed after ${struck[0].at - T0} ms`)
-  const peak = tossPeak({ x: HOME.x, y: C.TOSS_START_Y, z: HOME.z, vx: 0, vy: C.TOSS_SPEED, vz: 0, t: struck[0].at })
+  const peak = tossPeak({ x: HOME.x, y: C.TOSS_START_Y, z: HOME.z, vx: 0, vy: C.TOSS_SPEED, vz: 0, t: struck[0].at, keep: C.BOUNCE_KEEP, restitution: C.RESTITUTION })
   assert.ok(Math.abs(struck[1].at - peak) <= SPORTS_TICK_MS, `served ${struck[1].at - peak} ms from the top of the toss`)
   assert.equal(steps.length, 0)
   assert.deepEqual([rally.winner, rally.call], ['blue', 'double_bounce'])
@@ -101,7 +102,7 @@ test('a ball too far for its legs bounces twice: the robot runs for it at its sp
 
 test('the robot does not start before its reaction time', () => {
   const brain = newTennisBrain('easy', HOME, T0)
-  const sight = { rally: feed({ x: 3, z: -8 }, 14), court: COURT, team: 'blue' as const, sessionId: 'robot', at: HOME, mates: [], foes: [FOE], random: steady }
+  const sight = { rally: feed({ x: 3, z: -8 }, 14), court: COURT, team: 'blue' as const, sessionId: 'robot', at: HOME, mates: [], foes: [FOE], random: steady, cove: null }
   assert.deepEqual(thinkTennis(brain, { ...sight, now: T0 }), [])
   assert.deepEqual(thinkTennis(brain, { ...sight, now: T0 + TENNIS_ROBOT.easy.reactMs - 1 }), [])
   assert.equal(thinkTennis(brain, { ...sight, now: T0 + TENNIS_ROBOT.easy.reactMs })[0]?.kind, 'move')
@@ -126,18 +127,18 @@ test('aim by level: easy plays to the middle, hard plays to the side its opponen
   const easy = play('easy', feed({ x: 0.5, z: -8 }, 14), HOME, () => 0.9, { foes })
   assert.equal(easy.shots.length, 1)
   assert.ok(Math.abs(easy.shots[0].aim.x) <= COURT.halfWidth * TENNIS_ROBOT.easy.aimWidthShare)
-  assert.equal(easy.shots[0].lob, false)
+  assert.equal(easy.shots[0].shot, 'drive')
   const hard = play('hard', feed({ x: 0.5, z: -8 }, 14), HOME, steady, { foes })
-  assert.deepEqual(hard.shots.map((s) => [s.aim.x, s.lob]), [[-COURT.halfWidth * TENNIS_ROBOT.hard.aimWidthShare, false]])
+  assert.deepEqual(hard.shots.map((s) => [s.aim.x, s.shot]), [[-COURT.halfWidth * TENNIS_ROBOT.hard.aimWidthShare, 'drive']])
   const [depthFrom, depthTo] = TENNIS_ROBOT.hard.depthM
   assert.ok(hard.shots[0].aim.z >= depthFrom && hard.shots[0].aim.z <= depthTo, 'on the opponent half, at its level depth')
   const lobbed = play('hard', feed({ x: 0.5, z: -8 }, 14), HOME, () => 0.1, { foes: [{ x: -3, z: FOE.z }] })
-  assert.deepEqual(lobbed.shots.map((s) => [s.aim.x, s.lob]), [[COURT.halfWidth * TENNIS_ROBOT.hard.aimWidthShare, true]])
+  assert.deepEqual(lobbed.shots.map((s) => [s.aim.x, s.shot]), [[COURT.halfWidth * TENNIS_ROBOT.hard.aimWidthShare, 'lob']])
 })
 
 test('in doubles the partner nearer to the ball goes for it and the other keeps its place', () => {
   const ball = feed({ x: 3, z: -8 }, 14)
-  const sight = { rally: ball, court: COURT, team: 'blue' as const, sessionId: 'robot', foes: [FOE], random: steady }
+  const sight = { rally: ball, court: COURT, team: 'blue' as const, sessionId: 'robot', foes: [FOE], random: steady, cove: null }
   const left = { x: -2.5, z: HOME.z }
   const right = { x: 2.5, z: HOME.z }
   const far = newTennisBrain('normal', left, T0)
@@ -150,10 +151,10 @@ test('in doubles the partner nearer to the ball goes for it and the other keeps 
 
 const [COURT_1] = C.TENNIS_COURTS
 
-async function robotMatch(mode: 'singles' | 'doubles', level: RobotLevel): Promise<{ room: FakeRoom, match: Match, human: Player, robots: Player[] }> {
+async function robotMatch(mode: 'singles' | 'doubles', level: RobotLevel, rules = 'classic'): Promise<{ room: FakeRoom, match: Match, human: Player, robots: Player[] }> {
   const human = await makePlayer(1, COURT_1.cx + 3, C.TENNIS_NET_Z + 5)
   const room = await fakeRoom([human])
-  const settings = { mode, format: 'tiebreak_7' }
+  const settings = { mode, format: 'tiebreak_7', rules }
   const lobby = openLobby(COURT_1.id, C.TENNIS_COACH.id, settings, tennis.playersFor(settings), { sessionId: human.sessionId, accountId: 1, name: 'P1', team: 'red' }, T0)
   lobby.robots = level
   const teams = mode === 'singles' ? ['blue' as const] : ['red' as const, 'blue' as const, 'blue' as const]
@@ -231,4 +232,25 @@ test('doubles alone: three robots take the other places and a point is played to
   assert.ok(end - T0 > 1500)
   assert.ok(point.winner === 'red' || point.winner === 'blue')
   assert.notEqual(point.call, 'missed_toss')
+})
+
+test('Tennis Cove robots mix their strokes, play the special on a full gauge by level (hard always, easy on a low roll) and stand still while knocked back', () => {
+  assert.equal(play('hard', feed({ x: 0.5, z: -8 }, 14), HOME, steady, { cove: { gauge: 0 } }).shots[0].shot, 'flat')
+  assert.equal(play('hard', feed({ x: 0.5, z: -8 }, 14), HOME, steady, { cove: { gauge: C.GAUGE_FULL } }).shots[0].shot, 'special')
+  assert.equal(play('easy', feed({ x: 0.5, z: -8 }, 14), HOME, steady, { cove: { gauge: C.GAUGE_FULL } }).shots[0].shot, 'topspin')
+  const brain = newTennisBrain('hard', HOME, T0)
+  brain.stunnedUntil = T0 + C.KNOCK_ROOT_MS
+  const sight = { rally: serveWait('x', 'red', T0), court: COURT, team: 'blue' as const, sessionId: 'robot', at: { x: 2, z: HOME.z }, mates: [], foes: [FOE], random: steady, cove: { gauge: 0 } }
+  assert.deepEqual(thinkTennis(brain, { ...sight, now: T0 + C.KNOCK_ROOT_MS - 1 }), [])
+  assert.equal(thinkTennis(brain, { ...sight, now: T0 + C.KNOCK_ROOT_MS + 100 })[0]?.kind, 'move')
+})
+
+test('Tennis Cove: a robot with a full gauge still serves, the special waits for a rally shot', async () => {
+  const { room, match, robots: [robot] } = await robotMatch('singles', 'hard', 'cove')
+  const game = tennis.startTennis(room, match, COURT_1.cx, 'blue', T0, steady)
+  game.gauges?.set(robot.accountId, C.GAUGE_FULL)
+  const phases = new Set<string>()
+  tickUntil(room, match, T0, () => phases.add(game.rally.phase) && game.rally.phase === 'point')
+  assert.deepEqual([...phases], ['serve_wait', 'toss', 'flight', 'point'])
+  assert.equal(game.gauges?.get(robot.accountId), C.GAUGE_FULL)
 })

@@ -340,6 +340,10 @@ Decision (2026-11-18): in tennis only the movement keys move a human player; the
 
 - [done] Tennis manual movement: no auto-run, the mark, ring and smash charge kept as they were, the player rooted from a committed swing until the ball passes, and the socket drops a committed swing whose player is more than 2.3 m from the contact point (`docs/sports/tennis.md`, 2026-11-18). Played in the browser against the normal robot on 2026-11-18 by a script holding only the movement keys: no move on its own, the mark and ring reached by hand, rooted through 35 swings. The three levels and doubles were measured headless through the socket's match code, not by hand. The smash charge goes from 0.6 s to 1 s (decided 2026-11-18): with manual movement most returns had become smashes.
 
+Decision (2026-11-19): tennis gets a second set of rules, Tennis Cove, chosen at the coach (Classic or Tennis Cove): shot types on their own keys (left click topspin, right click slice, F flat, C lob, X drop shot) and a gauge filled by good hits that arms a special on Space; a special returned without a Perfect pops up and pushes the player 2 m back for 0.8 s. No power-ups on court. Robots play it at every level; a match counts for the tennis tasks like a Classic one; free play stays Classic.
+
+- [done] Tennis Cove (`docs/sports/tennis.md`, "Tennis Cove"): rules setting, shot table with its own bounce per ball, gauge and special, knock-back, robot shot mix and special by level, HUD gauge, Controls tab line. Measured headless through the socket's match code, robot against robot on the three levels; not played by hand.
+
 ## Pause menu and options (done)
 
 Decision (2026-11-17): the Escape menu becomes a full-screen pause menu like the big games (Resume, Options, Leave the sport, Lobby, Log out) with the options in tabs, and a setting is only added when something that exists obeys it. The help lines of the sports leave the screen: the keys of each sport are listed in the Controls tab only (the dance lanes keep their keycaps, they are the targets). Graphics keep the three presets plus three switches (native resolution, anti-aliasing, shadows); a change reloads the game.

@@ -21,7 +21,7 @@ const emit = defineEmits<{ toggleReducedEffects: [] }>()
 const TABS = ['mouse', 'audio', 'graphics', 'interface', 'controls', 'voice'] as const
 const QUALITIES: readonly GraphicsQuality[] = ['low', 'medium', 'high']
 const VOLUMES = ['masterVolume', 'effectsVolume', 'musicVolume'] as const
-const SPORT_HELP = ['football', 'basketball', 'tennis', 'boxing', 'boxingBag', 'skating', 'running', 'climbing'] as const
+const SPORT_HELP = ['football', 'basketball', 'tennis', 'tennisCove', 'boxing', 'boxingBag', 'skating', 'running', 'climbing'] as const
 
 const { t, locale } = useI18n()
 const tab = ref<(typeof TABS)[number]>('mouse')

@@ -22,6 +22,14 @@
           "short_set_4",
           "tiebreak_7"
         ]
+      },
+      {
+        "key": "rules",
+        "label": "Rules",
+        "options": [
+          "classic",
+          "cove"
+        ]
       }
     ]
   },
@@ -113,6 +121,76 @@
     "autoTossAfterMs": 10000,
     "floor": 0.3,
     "reachM": 1.0
+  },
+  "cove": {
+    "strokes": [
+      "topspin",
+      "slice",
+      "flat",
+      "lob",
+      "drop"
+    ],
+    "shots": {
+      "topspin": {
+        "speedMs": [
+          11,
+          19
+        ],
+        "bounceKeep": 0.88,
+        "restitution": 0.9,
+        "netClearM": 0.6
+      },
+      "slice": {
+        "speedMs": [
+          9,
+          15
+        ],
+        "bounceKeep": 0.7,
+        "restitution": 0.45,
+        "netClearM": 0.3
+      },
+      "flat": {
+        "speedMs": [
+          14,
+          23
+        ],
+        "bounceKeep": 0.8,
+        "restitution": 0.7,
+        "netClearM": 0.15
+      },
+      "drop": {
+        "speedMs": [
+          5,
+          7
+        ],
+        "bounceKeep": 0.5,
+        "restitution": 0.4,
+        "netClearM": 0.3,
+        "maxDepthM": 3.5
+      },
+      "special": {
+        "speedMs": [
+          28,
+          28
+        ],
+        "bounceKeep": 0.8,
+        "restitution": 0.75,
+        "netClearM": 0.2
+      }
+    },
+    "gauge": {
+      "full": 100,
+      "gain": {
+        "smash": 20,
+        "perfect": 25,
+        "good": 12
+      }
+    },
+    "knock": {
+      "returnQuality": 0.3,
+      "backM": 2,
+      "rootMs": 800
+    }
   },
   "faults": "simplified",
   "rejoinGraceSec": 10,

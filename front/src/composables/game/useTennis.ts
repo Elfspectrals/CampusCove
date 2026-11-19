@@ -1,6 +1,7 @@
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
+import { matches } from '../../config/keybindings'
 import { isAimingAtNpc } from '../../game/pub/npcAim'
 import {
   BALL_BASKETS,
@@ -9,6 +10,7 @@ import {
   TENNIS_CALL_MS,
   TENNIS_COURTS,
   TENNIS_END_SHOWN_MS,
+  TENNIS_GAUGE_FULL,
   TENNIS_DOUBLES_HALF_WIDTH,
   TENNIS_HALF_LENGTH,
   TENNIS_NET_Z,
@@ -40,11 +42,17 @@ import {
 } from '../../game/sports/tennis'
 import type { SportsView } from '../../game/camera/sportsCamera'
 import { hasSportsLoan } from '../../game/sports/sportsLoans'
-import type { TennisBall, TennisFreePayload, TennisShot, TennisStatePayload, TennisTeam, TennisTiming } from '../../types/gameRealtime'
+import type { TennisBall, TennisFreePayload, TennisKnockedPayload, TennisShot, TennisStatePayload, TennisStroke, TennisTeam, TennisTiming } from '../../types/gameRealtime'
 import type { InteractionSource, ScreenPrompt } from './useInteractionTargets'
 
 const BALL_RADIUS_SHOWN = 0.05
 const BALL_COLOR = 0xd8f04a
+const SPECIAL_BALL_COLOR = 0xff7a1a
+const COVE_KEYS = [
+  ['sportsThrough', 'flat'],
+  ['sportsTackle', 'lob'],
+  ['sportsJockey', 'drop'],
+] as const
 const LEFT_BUTTON = 0
 const RIGHT_BUTTON = 2
 const PROMPT_HEIGHT = 1.2
@@ -85,6 +93,9 @@ export interface TennisHud {
   tossing: boolean
   pointWinner: TennisTeam | null
   winner: TennisTeam | null
+  gauge: number | null
+  armed: boolean
+  knocked: boolean
 }
 
 interface Stance {
@@ -166,7 +177,7 @@ function newShadowMesh(): THREE.Mesh {
   return mesh
 }
 
-function newBallMesh(): THREE.Mesh {
+function newBallMesh(): THREE.Mesh<THREE.SphereGeometry, THREE.MeshStandardMaterial> {
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(BALL_RADIUS_SHOWN, 12, 8), new THREE.MeshStandardMaterial({ color: BALL_COLOR, roughness: 0.6 }))
   mesh.visible = false
   return mesh
@@ -206,6 +217,8 @@ export function useTennis(deps: TennisDeps) {
   let ownRacket = false
   let swingUntil = 0
   let nextClickAt = 0
+  let knockedUntil = 0
+  const armed = ref(false)
 
   function mySessionId(): string | null {
     return deps.gameRoomRef.value?.sessionId ?? null
@@ -306,24 +319,63 @@ export function useTennis(deps: TennisDeps) {
     return { team: sideAt(deps.myPosition.z), court: { cx: court.cx, netZ: TENNIS_NET_Z }, serving, ball: freeBalls.get(court.id)! }
   }
 
-  function onPointerDown(e: MouseEvent): boolean {
+  function coveMatch(): TennisStatePayload | null {
+    const s = playing()
+    return s?.rules === 'cove' ? s : null
+  }
+
+  function myGauge(s: TennisStatePayload): number | null {
+    const me = mySessionId()
+    return s.gauges && me !== null ? (s.gauges[me] ?? null) : null
+  }
+
+  function swingWith(lob: boolean, stroke: TennisStroke | null): boolean {
     const room = deps.gameRoomRef.value
-    const camera = deps.getCamera()
-    if (!room || !camera || !deps.pointerLocked() || (e.button !== LEFT_BUTTON && e.button !== RIGHT_BUTTON)) return false
     const shot = swing()
     const here = stance()
-    if (!shot || !here) return false
+    if (!room || !deps.getCamera() || !shot || !here) return false
     const target = aimFor(here)
-    const lob = e.button === RIGHT_BUTTON
     const serverMs = Date.now() + clockOffset.value
     if (serverMs >= nextClickAt) {
       const click = swingClick(shot.serving ? null : incoming(here), here.team, deps.myPosition, serverMs, here.match !== null)
       nextClickAt = serverMs + click.recoveryMs
       swingUntil = click.rootUntil ?? swingUntil
     }
-    room.send('tennis_hit', { aimX: target.x, aimZ: target.z, lob })
+    if (stroke) {
+      room.send('tennis_hit', { aimX: target.x, aimZ: target.z, stroke, special: armed.value && !shot.serving })
+      if (!shot.serving) armed.value = false
+    } else {
+      room.send('tennis_hit', { aimX: target.x, aimZ: target.z, lob })
+    }
     deps.onSwing(swingFor(shot.serving, lob, shot.team, deps.myPosition, shot.ball.visible ? shot.ball.position.x : null))
     return true
+  }
+
+  function onPointerDown(e: MouseEvent): boolean {
+    if (!deps.pointerLocked() || (e.button !== LEFT_BUTTON && e.button !== RIGHT_BUTTON)) return false
+    if (coveMatch()) return swingWith(false, e.button === RIGHT_BUTTON ? 'slice' : 'topspin')
+    return swingWith(e.button === RIGHT_BUTTON, null)
+  }
+
+  function onKeyDown(e: KeyboardEvent): boolean {
+    const s = coveMatch()
+    if (!s || !deps.pointerLocked()) return false
+    if (matches('jump', e.code)) {
+      if (!e.repeat && (myGauge(s) ?? 0) >= TENNIS_GAUGE_FULL) armed.value = !armed.value
+      return true
+    }
+    const stroke = COVE_KEYS.find(([action]) => matches(action, e.code))?.[1]
+    if (!stroke) return false
+    if (!e.repeat) swingWith(stroke === 'lob', stroke)
+    return true
+  }
+
+  function onKnocked(data: TennisKnockedPayload): void {
+    knockedUntil = data.until
+  }
+
+  function knocked(): boolean {
+    return playing() !== null && Date.now() + clockOffset.value < knockedUntil
   }
 
   function stance(): Stance | null {
@@ -496,6 +548,8 @@ export function useTennis(deps: TennisDeps) {
     if (state.value?.phase === 'ended' && now.value - endedAt.value > TENNIS_END_SHOWN_MS) state.value = null
     const serverMs = now.value + clockOffset.value
     placeBall(matchBall, state.value?.phase === 'ended' ? null : (state.value?.ball ?? null), serverMs)
+    matchBall.material.color.setHex(state.value?.shot?.kind === 'special' ? SPECIAL_BALL_COLOR : BALL_COLOR)
+    if (armed.value && !coveMatch()) armed.value = false
     for (const [court, mesh] of freeBalls) placeBall(mesh, free.value.get(court)?.ball ?? null, serverMs)
     const s = playing()
     const mine = s && myTeam(s, mySessionId())
@@ -523,9 +577,12 @@ export function useTennis(deps: TennisDeps) {
       tossing: s.phase === 'toss',
       pointWinner: s.pointWinner,
       winner: s.phase === 'ended' ? s.winner : null,
+      gauge: myGauge(s),
+      armed: armed.value,
+      knocked: now.value + clockOffset.value < knockedUntil,
     }
   })
   const call = computed<TennisCall>(() => (now.value < callUntil.value ? lastCall.value : null))
 
-  return { hud, cue, call, timing, freePlay, source, holdingRacket, onPointerDown, onMouseMove, cameraView, serving, swinging, tick, handlers: { onState, onFree } }
+  return { hud, cue, call, timing, freePlay, source, holdingRacket, onPointerDown, onKeyDown, onMouseMove, cameraView, serving, swinging, knocked, tick, handlers: { onState, onFree, onKnocked } }
 }

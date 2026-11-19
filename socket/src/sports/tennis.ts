@@ -7,6 +7,13 @@ import { type Spot, type TennisBrain, netFacing, newTennisBrain, thinkTennis } f
 import {
   BASELINE_STANDBY_M,
   COURT_HALF_LENGTH,
+  COVE_STROKES,
+  type CoveStroke,
+  GAUGE_FULL,
+  GAUGE_GAIN,
+  KNOCK_BACK_M,
+  KNOCK_ROOT_MS,
+  type ShotKind,
   DOUBLES_HALF_WIDTH,
   DOUBLES_SPREAD_M,
   REJOIN_GRACE_MS,
@@ -25,7 +32,8 @@ import { type MatchEnd, type MatchResult, endMatch, recordMatch, registerCoach, 
 
 export const TENNIS_SETTINGS: readonly SettingSpec[] = [
   { key: 'mode', label: 'Mode', options: ['singles', 'doubles'] },
-  { key: 'format', label: 'Format', options: ['short_set_4', 'tiebreak_7'] }
+  { key: 'format', label: 'Format', options: ['short_set_4', 'tiebreak_7'] },
+  { key: 'rules', label: 'Rules', options: ['classic', 'cove'] }
 ]
 
 export interface TennisGame {
@@ -37,6 +45,7 @@ export interface TennisGame {
   lastHitAt: Map<number, number>
   brains: Map<number, TennisBrain>
   random: () => number
+  gauges: Map<number, number> | null
 }
 
 const games = new WeakMap<GameRoom, Map<string, TennisGame>>()
@@ -121,6 +130,8 @@ function stateView(match: Match, game: TennisGame, now: number, ended = false) {
     pointWinner: rally.phase === 'point' ? rally.winner : null,
     winner: game.score.winner,
     players: activePlayers(match).map(({ sessionId, team }) => ({ sessionId, team })),
+    rules: game.gauges ? 'cove' : 'classic',
+    gauges: game.gauges ? Object.fromEntries(activePlayers(match).map((p) => [p.sessionId, game.gauges?.get(p.accountId) ?? 0])) : null,
     serverNow: now
   }
 }
@@ -159,7 +170,7 @@ function robotBrains(room: GameRoom, match: Match, now: number): Map<number, Ten
 export function startTennis(room: GameRoom, match: Match, cx: number, firstServer: Team, now: number, random: () => number = Math.random): TennisGame {
   const court = courtFor(cx, match.settings)
   const score = newScore(parseFormat(match.settings.format), firstServer)
-  const game: TennisGame = { venue: match.venue, court, score, rally: serveWait('', firstServer, now), turns: { [firstServer]: 0, [other(firstServer)]: -1 } as Record<Team, number>, lastHitAt: new Map(), brains: new Map(), random }
+  const game: TennisGame = { venue: match.venue, court, score, rally: serveWait('', firstServer, now), turns: { [firstServer]: 0, [other(firstServer)]: -1 } as Record<Team, number>, lastHitAt: new Map(), brains: new Map(), random, gauges: match.settings.rules === 'cove' ? new Map() : null }
   game.rally = nextServe(room, match, game, now)
   roomGames(room).set(match.venue, game)
   stopFreeRally(room, match.venue, now)
@@ -201,9 +212,49 @@ function advanceRally(room: GameRoom, match: Match, game: TennisGame, now: numbe
     if (player && !mp.out && mp.team !== null) trackReady(player, next, game.court, { sessionId: mp.sessionId, team: mp.team, x: player.x, z: player.z }, now)
   }
   if (next === game.rally) return
+  const before = game.rally
   game.rally = next
   if (next.phase === 'point') score(game, next.winner)
+  afterShots(room, match, game, before, next, now)
   broadcast(room, match, game, now)
+}
+
+function newShot(before: Rally, after: Rally) {
+  const previous = before.phase === 'flight' ? before.shot : null
+  return after.phase === 'flight' && after.shot && after.shot !== previous ? after.shot : null
+}
+
+function knockBack(room: GameRoom, match: Match, game: TennisGame, sessionId: string, now: number): void {
+  const mp = match.players.find((p) => p.sessionId === sessionId)
+  const player = sportsPlayer(room, sessionId)
+  if (!mp || mp.team === null || !player) return
+  const area = playAreaFor(game.court.cx, game.court.netZ)
+  const z = Math.min(area.maxZ, Math.max(area.minZ, player.z + sideSign(mp.team) * KNOCK_BACK_M))
+  const until = now + KNOCK_ROOT_MS
+  const brain = game.brains.get(mp.accountId)
+  if (brain) {
+    brain.stunnedUntil = until
+    placeRobot(room, player, player.x, player.y, z, netFacing(mp.team), now)
+    return
+  }
+  const client = room.clients.find((c) => c.sessionId === sessionId)
+  if (!client) return
+  player.z = z
+  client.send('position_correction', { x: player.x, y: player.y, z, reason: 'tennis_knocked' })
+  client.send('tennis_knocked', { until })
+  room.broadcastMove(client, player)
+}
+
+function afterShots(room: GameRoom, match: Match, game: TennisGame, before: Rally, after: Rally, now: number): void {
+  const shot = newShot(before, after)
+  if (!shot || !game.gauges) return
+  if (shot.knocked) {
+    knockBack(room, match, game, shot.sessionId, now)
+    return
+  }
+  const mp = match.players.find((p) => p.sessionId === shot.sessionId)
+  if (!mp || shot.kind === 'special' || (shot.timing !== 'smash' && shot.timing !== 'perfect' && shot.timing !== 'good')) return
+  game.gauges.set(mp.accountId, Math.min(GAUGE_FULL, (game.gauges.get(mp.accountId) ?? 0) + GAUGE_GAIN[shot.timing]))
 }
 
 function spotsOf(room: GameRoom, players: MatchPlayer[]): Spot[] {
@@ -222,10 +273,11 @@ function driveRobots(room: GameRoom, match: Match, game: TennisGame, now: number
     const team = mp.team
     const mates = spotsOf(room, teamPlayers(match, team).filter((p) => p.accountId !== accountId))
     const foes = spotsOf(room, teamPlayers(match, other(team)))
-    const actions = thinkTennis(brain, { rally: game.rally, court: game.court, team, sessionId: robot.sessionId, at: robot, mates, foes, now, random: game.random })
+    const cove = game.gauges ? { gauge: game.gauges.get(accountId) ?? 0 } : null
+    const actions = thinkTennis(brain, { rally: game.rally, court: game.court, team, sessionId: robot.sessionId, at: robot, mates, foes, now, random: game.random, cove })
     for (const action of actions) {
       if (action.kind === 'move') placeRobot(room, robot, action.x, robot.y, action.z, action.ry, now)
-      else matchHit(room, match, game, team, robot, action.aim, action.lob, now)
+      else matchHit(room, match, game, team, robot, action.aim, action.shot, now)
     }
   }
 }
@@ -241,7 +293,12 @@ function finite(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v)
 }
 
-function matchHit(room: GameRoom, match: Match, game: TennisGame, team: Team, player: Player, aim: Aim, lob: boolean, now: number): void {
+function specialReady(game: TennisGame, accountId: number): boolean {
+  return game.rally.phase === 'flight' && (game.gauges?.get(accountId) ?? 0) >= GAUGE_FULL
+}
+
+function matchHit(room: GameRoom, match: Match, game: TennisGame, team: Team, player: Player, aim: Aim, kind: ShotKind, now: number): void {
+  if (kind === 'special' && !specialReady(game, player.accountId)) return
   const last = game.lastHitAt.get(player.accountId) ?? -Infinity
   if (now - last < TENNIS_HIT_COOLDOWN_MS) return
   game.lastHitAt.set(player.accountId, now)
@@ -250,25 +307,37 @@ function matchHit(room: GameRoom, match: Match, game: TennisGame, team: Team, pl
   if (game.rally.phase === 'serve_wait' && someoneAway(match)) return
   const hitter = { sessionId: player.sessionId, team, x: player.x, z: player.z }
   const before = game.rally
-  const next = hit(before, hitter, aim, lob, now, game.court, trackReady(player, before, game.court, hitter, now))
+  const next = hit(before, hitter, aim, kind, now, game.court, trackReady(player, before, game.court, hitter, now))
   if (!next) {
     if (before.phase === 'flight' && before.hitter !== team && !before.swing) game.lastHitAt.set(player.accountId, now + TENNIS_WHIFF_RECOVERY_MS - TENNIS_HIT_COOLDOWN_MS)
     return
   }
   game.rally = next
+  if (kind === 'special' && before.phase === 'flight') game.gauges?.set(player.accountId, 0)
+  afterShots(room, match, game, before, next, now)
   broadcast(room, match, game, now)
-  sendStroke(room, player.sessionId, strokeOf(before, next, hitter, lob))
+  sendStroke(room, player.sessionId, strokeOf(before, next, hitter, kind))
+}
+
+function matchShot(game: TennisGame, accountId: number, lob: boolean, stroke: CoveStroke | undefined, special: boolean): ShotKind | null {
+  if (!game.gauges) return lob ? 'lob' : 'drive'
+  if (!stroke) return null
+  return special && specialReady(game, accountId) ? 'special' : stroke
 }
 
 export function onTennisHit(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
   const player = room.players.get(client.sessionId)
   if (!player || !finite(payload?.aimX) || !finite(payload?.aimZ) || (payload?.lob !== undefined && typeof payload.lob !== 'boolean')) return
+  if (payload?.special !== undefined && typeof payload.special !== 'boolean') return
+  if (payload?.stroke !== undefined && !COVE_STROKES.includes(payload.stroke as CoveStroke)) return
+  const stroke = payload?.stroke as CoveStroke | undefined
   const aim = { x: payload.aimX, z: payload.aimZ }
   for (const [venue, game] of roomGames(room)) {
     const match = room.sports.matches.get(venue)
     const mp = match && matchPlayer(match, player.accountId)
     if (!match || !mp || mp.awaySince !== null || mp.team === null) continue
-    matchHit(room, match, game, mp.team, player, aim, payload.lob === true, now)
+    const kind = matchShot(game, player.accountId, payload.lob === true, stroke, payload.special === true)
+    if (kind) matchHit(room, match, game, mp.team, player, aim, kind, now)
     return
   }
   freeHit(room, player, aim, payload.lob === true, now)
