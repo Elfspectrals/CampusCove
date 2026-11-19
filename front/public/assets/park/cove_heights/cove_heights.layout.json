@@ -677,6 +677,30 @@
         0.2,
         -1.405
       ]
+    },
+    {
+      "kind": "house",
+      "key": "cove_home_b04",
+      "name": "Oak Park Prairie",
+      "lot": "B-04",
+      "position": [
+        -316.0,
+        0.0,
+        -222.7
+      ],
+      "rotationY": 1.570796,
+      "door": [
+        -311.2,
+        1.25,
+        -222.7
+      ],
+      "offer": "buy",
+      "price": 13500,
+      "interiorOffset": [
+        0.0,
+        0.2,
+        -1.405
+      ]
     }
   ],
   "collision": [
@@ -1605,6 +1629,66 @@
       "cx": -318.305,
       "cz": -205.0,
       "hx": 8.0,
+      "hz": 5.305,
+      "hy": 3.0,
+      "cy": 3.0,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Cove_CH_LotB04_PostLamp",
+      "cx": -309.2,
+      "cz": -220.9,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotB04_StoopCheekW",
+      "cx": -311.325,
+      "cz": -221.15,
+      "hx": 0.175,
+      "hz": 0.675,
+      "hy": 0.57,
+      "cy": 0.57,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Cove_LotB04_StoopPierW",
+      "cx": -310.65,
+      "cz": -221.15,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 1.33,
+      "cy": 1.33,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Cove_LotB04_StoopCheekE",
+      "cx": -311.325,
+      "cz": -224.25,
+      "hx": 0.175,
+      "hz": 0.675,
+      "hy": 0.57,
+      "cy": 0.57,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Cove_LotB04_StoopPierE",
+      "cx": -310.65,
+      "cz": -224.25,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 1.33,
+      "cy": 1.33,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_House_cove_home_b04",
+      "cx": -317.305,
+      "cz": -224.7,
+      "hx": 7.3,
       "hz": 5.305,
       "hy": 3.0,
       "cy": 3.0,

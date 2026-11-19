@@ -1192,6 +1192,29 @@
             0.2,
             -1.405
           ]
+        },
+        {
+          "kind": "house",
+          "key": "cove_home_b04",
+          "name": "Oak Park Prairie",
+          "position": [
+            -316,
+            0,
+            -222.7
+          ],
+          "rotationY": 1.570796,
+          "door": [
+            -311.2,
+            1.25,
+            -222.7
+          ],
+          "offer": "buy",
+          "price": 13500,
+          "interiorOffset": [
+            0,
+            0.2,
+            -1.405
+          ]
         }
       ]
     },

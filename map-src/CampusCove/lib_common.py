@@ -111,6 +111,14 @@ def make_texture(key, base, var=0.06, pattern="noise", size=64, accent=None, see
                 else:
                     tone = ((((x + shift) // 32) + course * 3) % 5 - 2) / 2 * 0.025
                     r, g, bl = r + tone, g + tone, bl + tone
+            elif pattern == "roman":
+                course = y // 8
+                shift = (course % 2) * 16
+                if y % 8 == 0 or (x + shift) % 32 == 0:
+                    r, g, bl = ar, ag, ab
+                else:
+                    tone = ((((x + shift) // 32) + course * 3) % 5 - 2) / 2 * 0.02
+                    r, g, bl = r + tone, g + tone, bl + tone
             elif pattern == "seams":
                 col = x % 32
                 if col == 0:

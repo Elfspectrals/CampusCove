@@ -120,6 +120,7 @@ HM = {  # lot landscaping around the houses (the houses themselves come from bui
     "gravel": L.make_mat("TW_CoveGravel", "#cfc6b2", 0.95, "noise", 0.10, accent="#b8ae98"),
     "hornbeam": L.make_mat("TW_CoveHornbeam", "#547f3a", 0.9, "noise", 0.07),
     "lavender": L.make_mat("TW_CoveHedgeLavender", "#9a86c4", 0.9, "noise", 0.08, accent="#7d6aa6"),
+    "prairie": L.make_mat("TW_CovePrairieHedge", "#b9a566", 0.9, "noise", 0.10, accent="#9c8a4e"),
 }
 
 LOOP_SEC = S.road_section(6.0, 0.15, 0.0, 1.5, Y)
@@ -462,7 +463,18 @@ S.hydrangeas(est, "CH_LotB03_HydrangeaS", -226.4, -223.0, 118.8, HM_BLUE, n=3, a
 est.rnd = _shared_rnd
 est.col("HousePlaceholderB03", *house_point(HOME_B03, 2.0, -1.305), 16.0, 10.61, 6.0, yaw=HOME_B03["rotationY"])
 est.cols[-1]["name"] = f"COL_House_{HOME_B03['key']}"
-HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03, VILLA_A04, HOME_B01, HOME_B02, HOME_B03]
+HOME_B04 = {"key": "cove_home_b04", "name": "Oak Park Prairie", "lot": "B-04", "origin": (115.0, -240.7), "zf": 4.0,
+            "rotationY": math.pi / 2, "interiorOffset": [0.0, 0.2, -1.405], "price": 13500}
+S.rect(est, "CH_LotB04_GarageApronN", 118.0, -246.5, 120.0, -246.8, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotB04_GarageApronS", 118.0, -249.2, 120.0, -249.5, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotB04_FrontPath", 120.6, -241.5, 123.0, -239.9, Y["lot"], Y["drive"], M["drive"])
+S.street_lamp(est, "CH_LotB04_PostLamp", 121.8, -238.9, M, h=2.6)
+S.hedge_run(est, "CH_LotB04_GrassN", (119.65, -236.2), (119.65, -238.6), HM, w=0.7, mat="prairie")
+S.hedge_run(est, "CH_LotB04_GrassS", (119.65, -243.0), (119.65, -245.3), HM, w=0.7, mat="prairie")
+house_cols(HOME_B04, "LotB04")
+est.col("HousePlaceholderB04", *house_point(HOME_B04, 2.0, -1.305), 14.6, 10.61, 6.0, yaw=HOME_B04["rotationY"])
+est.cols[-1]["name"] = f"COL_House_{HOME_B04['key']}"
+HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03, VILLA_A04, HOME_B01, HOME_B02, HOME_B03, HOME_B04]
 for h in HOUSES:
     _, _, x0, x1, z0, z1, _, _, entry, *_ = next(lot for lot in LOTS if lot[0] == h["lot"])
     door = house_point(h, 0.0, h["zf"] + 0.8)
