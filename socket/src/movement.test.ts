@@ -17,6 +17,13 @@ const manifest = {
       door: [-273.5, 1.25, -191.8],
       backDoor: [-273.5, 1.25, -178.99],
       interiorOffset: [0, 0.2, -1.405]
+    }, {
+      kind: 'house',
+      key: 'cove_home_b03',
+      position: [-317, 0, -203],
+      rotationY: 1.570796,
+      door: [-312.2, 1.25, -203],
+      interiorOffset: [0, 0.2, -1.405]
     }]
   }]
 }
@@ -43,6 +50,19 @@ const tidewater: HousingUnit = {
   interior_bounds: { minX: -9.295, maxX: 5.295, minZ: -5.6, maxZ: 5.2 }
 }
 
+const cape: HousingUnit = {
+  public_id: 'b03',
+  template_key: 'house',
+  model_key: 'cove_home_b03',
+  status: 'occupied',
+  door_locked: true,
+  occupant_account_id: 1,
+  key_holder_account_ids: [],
+  pos_x: -312.2,
+  pos_z: -203,
+  interior_bounds: { minX: -5.795, maxX: 9.795, minZ: -5.0, maxZ: 5.2 }
+}
+
 function worldZ(interiorZ: number): number {
   return -187 + 1.405 - interiorZ
 }
@@ -58,6 +78,11 @@ function player(accountId: number, z: number): Player {
 test('a house turned by pi is found 1 m inside its door, not at the door point', () => {
   assert.equal(unitAt([tidewater], -273.5, worldZ(4.0))?.public_id, 'b01')
   assert.equal(unitAt([tidewater], -273.5, -191.8), null)
+})
+
+test('a house turned by pi/2 is found 2.6 m inside its door, not at the door point', () => {
+  assert.equal(unitAt([cape], -314.405, -203)?.public_id, 'b03')
+  assert.equal(unitAt([cape], -312.2, -203), null)
 })
 
 test('the back landing of a locked house is refused without the key and open with it', () => {

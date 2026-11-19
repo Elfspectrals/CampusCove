@@ -32,6 +32,10 @@ class HousingUnitSeeder extends Seeder
         ['cove_villa_a03', 'buy', 28000, -220.8, 1.25, -286.2, '#B8875A'],
         ['cove_villa_a04', 'buy', 32000, -193.6, 1.25, -285.2, '#4A4D52'],
         ['cove_home_b01', 'buy', 14000, -273.5, 1.25, -191.8, '#F0D98C'],
+        ['cove_home_b02', 'buy', 15500, -291.0, 1.25, -190.8, '#D8D3C8'],
+        ['cove_home_b03', 'buy', 11500, -312.2, 1.25, -203.0, '#9FB3C2'],
+        ['cove_home_b04', 'buy', 13500, -311.2, 1.25, -222.7, '#C9A27A'],
+        ['cove_home_b05', 'buy', 13000, -312.2, 1.25, -242.8, '#EFE6D2'],
     ];
 
     /** @var array<string, array{minX:float,maxX:float,minZ:float,maxZ:float,maxY?:float}> */
@@ -52,6 +56,10 @@ class HousingUnitSeeder extends Seeder
         'cove_villa_a03' => ['minX' => -13.695, 'maxX' => 6.295, 'minZ' => -6.0, 'maxZ' => 5.2, 'maxY' => 5.6],
         'cove_villa_a04' => ['minX' => -14.195, 'maxX' => 6.795, 'minZ' => -6.4, 'maxZ' => 5.2, 'maxY' => 5.6],
         'cove_home_b01' => ['minX' => -9.295, 'maxX' => 5.295, 'minZ' => -5.6, 'maxZ' => 5.2, 'maxY' => 5.6],
+        'cove_home_b02' => ['minX' => -6.995, 'maxX' => 6.995, 'minZ' => -5.6, 'maxZ' => 5.2, 'maxY' => 5.6],
+        'cove_home_b03' => ['minX' => -5.795, 'maxX' => 9.795, 'minZ' => -5.0, 'maxZ' => 5.2, 'maxY' => 5.4],
+        'cove_home_b04' => ['minX' => -5.095, 'maxX' => 9.095, 'minZ' => -5.0, 'maxZ' => 5.2, 'maxY' => 5.6],
+        'cove_home_b05' => ['minX' => -4.995, 'maxX' => 8.995, 'minZ' => -5.4, 'maxZ' => 5.2, 'maxY' => 5.6],
     ];
 
     public function run(): void

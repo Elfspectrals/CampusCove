@@ -36,12 +36,14 @@ PT = 0.12
 SKIN = 0.012
 DOOR_H = 2.1
 WIN = (0.9, 2.2)
+RIBBON = (0.9, 2.1)
 ENTRANCE = (-0.6, 0.6, 0.0, 2.2)
 L0_H, L1_Y, L1_H = 2.8, 3.0, 2.6
 STAIR_W, STAIR_LEN = 1.2, 4.6
 MIN_DOOR = 1.0
 WALK_CLEAR = 0.95
 EAVE = 0.6
+DORMER_DRIP = {"hip": 0.18, "gable_x": 0.197}
 BB_H, BB_T = 0.09, 0.02
 CAS_W, CAS_T = 0.07, 0.025
 SILL_D = 0.16
@@ -105,6 +107,21 @@ PALETTES = {
                       roof_pat="seams", shutter="#2f3d34", door="#8fb8c9", in_wall="#f6f1e2", in_bed="#e3ecef",
                       floor="#b8834f", floor_acc="#9a6a3c", cabinet="#f2f0ea", worktop="#e8e6e0",
                       ridge="#8d9297", deck="#8f969a", deck_acc="#7a8185", deck_pat="planks", soffit="#8fb8c9"),
+    "lavande": dict(wall="#d8d3c8", wall_pat="ashlar", wall_acc="#bdb7aa", trim="#f2ede1", roof="#5d6670", roof_acc="#4b535c",
+                    shutter="#7f93a3", door="#3f5d73", in_wall="#f5efe3", in_bed="#e4e1ec", floor="#b4895c", floor_acc="#9a7248",
+                    cabinet="#cfd8d6", worktop="#e6e1d6", frame="#5b4a3a", ridge="#4b535c", deck="#bfb7a8", deck_acc="#aaa191",
+                    chimney="stucco"),
+    "cape": dict(wall="#9fb3c2", wall_pat="shakes", wall_acc="#869cac", trim="#f7f6f1", roof="#4b4f55", roof_acc="#3e4248",
+                 shutter="#2f3b46", door="#a33a33", in_wall="#f6f2e8", in_bed="#e6ecef", floor="#c2955f", floor_acc="#a77d49",
+                 cabinet="#eef0ee", worktop="#e9e5da", ridge="#3e4248", box="#f7f6f1", flower="#d8453f"),
+    "prairie": dict(wall="#c9a27a", wall_pat="roman", wall_acc="#a8845f", trim="#5a4632", roof="#5e5148", roof_acc="#4c4138",
+                    shutter="#5a4632", door="#4f5b3f", in_wall="#f1e8d6", in_bed="#e6e0d0", floor="#a97b4f", floor_acc="#8d6338",
+                    cabinet="#d8cbb0", worktop="#d9d3c4", frame="#4e4034", ridge="#4c4138", deck="#b7a78d", deck_acc="#a1917a",
+                    garage="#5a4632", garage_panel="#5a4632", chimney="siding"),
+    "tudor": dict(wall="#efe6d2", wall_pat="noise", wall_acc="#e0d5ba", trim="#4a3426", roof="#565a5f", roof_acc="#474b50",
+                  shutter="#4a3426", door="#6b4a2e", door_pat="planks", in_wall="#f4ecda", in_bed="#e9e0cc", floor="#8c5f36",
+                  floor_acc="#724a28", cabinet="#7a5a3a", worktop="#d9d1c0", ridge="#474b50", garage="#6e4a2a",
+                  garage_panel="#583a20"),
 }
 
 # Interior style kits of the estate plan: what makes each villa feel its own once inside (docs/GATED_COMMUNITY.md 7.2d)
@@ -142,7 +159,52 @@ STYLES = {
                       shelf="#f2f0ea", closet="#f2f0ea", art="#6f9fb2", art2="#e9d7a4", plaster="#f6f1e2",
                       vanity_top="#ecebe7", stair_pat="planks", panel_pat="stripes", panel_acc="#e4e0d4",
                       paints=dict(hall="#f3ecd6", dining="#c9dbe0", mudroom="#dfe7e3", living="#efe6cc", suite="#e4eef1")),
+    "nantucket": dict(foyer=("planks", "#b8895a", "#9a6f45", 1.0), stone="#b0644f", rail="#3a342e", baluster="trim",
+                      metal="#2b2d33", fire="stone", island="#7f93a0", hood="plaster", uppers="cabinet", beam="#6b4a2e",
+                      shelf="#f3f1ea", closet="#f3f1ea", art="#5f7f94", art2="#e8d9b0", plaster="#f6f2e6",
+                      vanity_top="#ecebe7", stair_pat="planks", panel_pat="stripes", panel_acc="#e6e4dc",
+                      paints=dict(hall="#f1ece0", living="#dfe7ec")),
+    "lavande": dict(foyer=("tiles", "#cfc6b4", "#b5ab97", 1.0), stone="#d8d3c8", rail="#3a342e", baluster="iron",
+                    metal="#8a6d3b", fire="stone", island="#6f7f8c", hood="plaster", uppers="cabinet", beam="#5b4630",
+                    shelf="#ece7da", closet="#ece7da", art="#8c7fb0", art2="#e6d9a8", plaster="#f3eddc",
+                    vanity_top="#e9e5da", stair_pat="planks", panel_pat="stripes", panel_acc="#e4e0d4",
+                    paints=dict(hall="#efe9da", dining="#cbd5db", salon="#e7e0ee", suite="#e3e9df")),
+    "prairie": dict(foyer=("planks", "#a97b4f", "#8d6338", 1.0), stone="#c9a27a", rail="#3b3129", baluster="trim",
+                    metal="#2e2a25", fire="stone", island="#6e5a45", hood="plaster", uppers="cabinet", beam="#5a4632",
+                    shelf="#e9dcc4", closet="#e9dcc4", art="#7a8a5c", art2="#d9b36a", plaster="#f1e8d6",
+                    vanity_top="#e8e2d4", stair_pat="planks", panel_pat="stripes", panel_acc="#d8cbb0",
+                    paints=dict(hall="#e9dcc4", living="#e2d3b4")),
+    "tudor": dict(foyer=("planks", "#6b4a2e", "#563a24", 0.8), stone="#b7ab94", rail="#3a2a1c", baluster="trim",
+                  metal="#2b2622", fire="stone", island="#6b4a2e", hood="plaster", uppers="cabinet", beam="#4a3426",
+                  shelf="#6b4a2e", closet="#6b4a2e", art="#7a5a3a", art2="#d9c9a3", plaster="#f1e7d0",
+                  vanity_top="#e4dccb", stair_pat="planks", panel_pat="stripes", panel_acc="#d8cbb0",
+                  paints=dict(hall="#e9dcc0", parlour="#e6d7b8")),
 }
+
+HALF_TIMBER_B05 = dict(
+    post=0.14, layers=dict(stud=0.08, rail=0.10, brace=0.12),
+    faces=[
+        dict(name="Front", axis="x", face=4.0, out=1,
+             rails=[(-5.07, 5.07, 3.24), (-5.07, 5.07, 5.96)],
+             studs=[(-4.86, 3.38, 5.96), (-3.235, 3.38, 5.96), (-1.14, 3.38, 5.96), (1.25, 3.38, 5.96), (4.71, 3.38, 5.96)],
+             braces=[((-1.60, 3.38), (-0.70, 5.96)), ((1.78, 3.38), (0.72, 5.96)), ((4.42, 3.38), (5.00, 5.96))]),
+        dict(name="Cross", axis="x", face=4.35, out=1,
+             rails=[(-4.29, -0.41, 6.24), (-3.55, -1.15, 7.20)],
+             studs=[(-3.35, 6.38, 7.58), (-1.35, 6.38, 7.58)],
+             braces=[((-4.05, 6.40), (-3.40, 7.20)), ((-0.65, 6.40), (-1.30, 7.20))]),
+        dict(name="Wing", axis="x", face=3.99, out=1,
+             rails=[(5.25, 9.15, 3.37), (5.95, 8.45, 4.20)],
+             studs=[(7.2, 3.51, 6.03), (6.25, 3.51, 4.70), (8.15, 3.51, 4.70)],
+             braces=[((5.55, 3.51), (6.25, 4.20)), ((8.85, 3.51), (8.15, 4.20))]),
+        dict(name="GableW", axis="z", face=-5.19, out=-1,
+             rails=[(-6.855, 3.845, 6.24), (-5.905, 2.895, 7.00)],
+             studs=[(-5.705, 6.38, 7.31), (-4.305, 6.38, 8.71), (-2.905, 6.38, 10.11), (-0.105, 6.38, 10.11), (1.295, 6.38, 8.71), (2.695, 6.38, 7.31)],
+             braces=[]),
+        dict(name="GableE", axis="z", face=5.19, out=1,
+             rails=[(-6.855, 3.845, 6.24), (-5.905, 2.895, 7.00)],
+             studs=[(-5.705, 6.38, 7.31), (-4.305, 6.38, 8.71), (-2.905, 6.38, 10.11), (-0.105, 6.38, 10.11), (1.295, 6.38, 8.71), (2.695, 6.38, 7.31)],
+             braces=[]),
+    ])
 
 HOUSES = {
     "house_01": dict(name="Maple Cottage", W=13.2, ZF=3.75, back=-5.0, floors=1, mirror=False, palette="classic", roof="gable_x", rise=3.0,
@@ -263,6 +325,130 @@ HOUSES = {
                                                  ("west", 1.6, 2.8, 1, WIN, "window"),
                                                  ("west", -3.3, -2.1, 1, WIN, "window"),
                                                 ])),
+    "cove_home_b02": dict(name="Maison Lavande", W=14.4, ZF=4.0, back=-5.6, floors=2, mirror=False, palette="lavande",
+                          roof="hip", rise=4.2, cross=None, windows="classic", flowers=False,
+                          chimney=((-5.7, 2.28), (5.7, 2.28)), chimney_top=9.5,
+                          porch="perron", flat_edges=True,
+                          perron=dict(w=2.6, d=1.0, top=0.18, open=1.8, jamb=0.3, spring=2.64, arch_rise=0.30, top_y=3.04,
+                                      depth=0.30, lamp_x=1.45),
+                          juliet=dict(bays=(-5.6, -2.8, 0.0, 2.8, 5.6), w=1.2, out=0.24, post=0.08, h=0.95),
+                          dormers=dict(xs=(-2.8, 0.0, 2.8), w=1.3, z=3.3, win_h=0.95, sill=0.3, rise=0.5),
+                          interior=dict(plan="lavande", style="lavande",
+                                        lines=dict(hall_x=1.6, front_z=-0.9, rear_z=-3.6, bath_z=-3.2, kitchen_x=1.66),
+                                        windows=[
+                                                 ("front", -6.15, -5.05, 0, (0.05, 2.4), "french"),
+                                                 ("front", -3.35, -2.25, 0, (0.05, 2.4), "french"),
+                                                 ("front", 2.25, 3.35, 0, (0.05, 2.4), "french"),
+                                                 ("front", 5.05, 6.15, 0, (0.05, 2.4), "french"),
+                                                 ("front", -6.15, -5.05, 1, (0.05, 2.3), "french"),
+                                                 ("front", -3.35, -2.25, 1, (0.05, 2.3), "french"),
+                                                 ("front", -0.55, 0.55, 1, (0.05, 2.3), "french"),
+                                                 ("front", 2.25, 3.35, 1, (0.05, 2.3), "french"),
+                                                 ("front", 5.05, 6.15, 1, (0.05, 2.3), "french"),
+                                                 ("back", -5.0275, -3.4275, 0, (1.05, 2.15), "window"),
+                                                 ("back", -0.4, 0.4, 0, (1.5, 2.1), "window"),
+                                                 ("back", 3.5275, 4.9275, 0, (0.05, 2.4), "french"),
+                                                 ("back", -4.9275, -3.5275, 1, WIN, "window"),
+                                                 ("back", -0.4, 0.4, 1, (1.5, 2.1), "window"),
+                                                 ("back", 3.5275, 4.9275, 1, (1.0, 2.0), "window"),
+                                                 ("east", -0.3, 0.7, 0, WIN, "window"),
+                                                 ("east", 3.45, 4.45, 0, WIN, "window"),
+                                                 ("east", -3.7, -2.5, 0, WIN, "window"),
+                                                 ("east", -0.3, 0.7, 1, WIN, "window"),
+                                                 ("east", 3.45, 4.45, 1, WIN, "window"),
+                                                 ("east", -4.7, -3.9, 1, (1.2, 2.0), "window"),
+                                                 ("west", -0.3, 0.7, 0, WIN, "window"),
+                                                 ("west", 3.45, 4.45, 0, WIN, "window"),
+                                                 ("west", -2.9, -1.9, 0, WIN, "window"),
+                                                 ("west", -0.3, 0.7, 1, WIN, "window"),
+                                                 ("west", 3.45, 4.45, 1, WIN, "window"),
+                                                 ("west", -3.7, -2.5, 1, WIN, "window"),
+                                                ])),
+    "cove_home_b03": dict(name="Nantucket Cape", W=12.0, ZF=4.0, back=-5.0, floors=1, mirror=False, palette="cape",
+                          roof="gable_x", rise=3.6, cross=None, windows="classic", flowers=True,
+                          chimney=(-2.5, 0.4), chimney_top=8.1,
+                          porch="canopy",
+                          dormers=dict(xs=(-4.6, 4.6), w=1.4, z=3.4, win_h=1.0, sill=0.3, rise=0.55, real=True, hole=(0.95, 3.3)),
+                          wing=dict(w=4.0, d=7.0, rise=1.6, side="east", doors=1, door_w=2.6, door_h=2.3, door_style="carriage"),
+                          loft=dict(height=2.2, back=-2.1, front=2.3, hole=3.0),
+                          interior=dict(plan="nantucket", style="nantucket",
+                                        lines=dict(hall_x=1.25, front_z=0.4, bath_z=-2.6, kitchen_x=1.31, stair_top=-0.84,
+                                                   fireplace_x=-2.5, hood_x=1.9),
+                                        windows=[("front", -5.15, -4.05, 0, WIN, "window"),
+                                                 ("front", -2.75, -1.65, 0, WIN, "window"),
+                                                 ("front", 1.65, 2.75, 0, WIN, "window"),
+                                                 ("front", 4.05, 5.15, 0, WIN, "window"),
+                                                 ("back", -4.1, -2.5, 0, WIN, "window"),
+                                                 ("back", -0.4, 0.4, 0, (1.5, 2.1), "window"),
+                                                 ("back", 2.6525, 4.2525, 0, (1.05, 2.15), "window"),
+                                                 ("west", 1.4, 3.0, 0, WIN, "window"),
+                                                 ("west", -3.4, -1.8, 0, WIN, "window"),
+                                                 ("east", -3.0, -1.9, 0, (1.05, 2.15), "window"),
+                                                 ("east", -0.85, 0.15, 0, (0.0, DOOR_H), "door"),
+                                                ])),
+    "cove_home_b04": dict(name="Oak Park Prairie", W=10.6, ZF=4.0, back=-5.0, floors=2, mirror=False, palette="prairie",
+                          roof="hip", rise=1.6, eave=1.2, cross=None, windows="classic", flowers=False,
+                          chimney=(-3.1, 0.4), chimney_top=8.7,
+                          porch="prairie",
+                          prairie=dict(w=3.6, d=1.6, top=0.18, cheek_x=1.55, cheek=0.35, cheek_h=0.9, pier=0.45, pier_z=5.35,
+                                       slab_y=2.66, slab_t=0.16, slab_w=3.8),
+                          bands=dict(sill=(0.82, 0.12), head=(5.52, 0.12)),
+                          wing=dict(w=4.0, d=7.0, setback=1.0, roof="slab", eave=0.8, doors=1, door_w=2.6, door_h=2.3,
+                                    door_style="flush"),
+                          interior=dict(plan="prairie", style="prairie",
+                                        lines=dict(hall_x=1.3, front_z=0.2, bath_z=-3.1, stair_top=2.7, fireplace_x=-3.1,
+                                                   hood_x=1.9),
+                                        windows=[("front", -4.55, -1.85, 0, RIBBON, "ribbon"),
+                                                 ("front", 1.85, 4.55, 0, RIBBON, "ribbon"),
+                                                 ("front", -4.55, -1.85, 1, RIBBON, "ribbon"),
+                                                 ("front", 1.85, 4.55, 1, RIBBON, "ribbon"),
+                                                 ("back", -4.2, -2.0, 0, RIBBON, "ribbon"),
+                                                 ("back", 2.7, 4.5, 0, (1.05, 2.15), "window"),
+                                                 ("back", -0.4, 0.4, 0, (1.5, 2.1), "window"),
+                                                 ("back", -4.2, -2.0, 1, RIBBON, "ribbon"),
+                                                 ("back", 2.0, 4.2, 1, RIBBON, "ribbon"),
+                                                 ("back", -0.4, 0.4, 1, (1.5, 2.1), "window"),
+                                                 ("west", 1.2, 3.8, 0, RIBBON, "ribbon"),
+                                                 ("west", -3.6, -1.6, 0, WIN, "window"),
+                                                 ("west", 1.2, 3.8, 1, RIBBON, "ribbon"),
+                                                 ("west", -3.6, -1.6, 1, WIN, "window"),
+                                                 ("east", -1.8, -0.8, 0, (0.0, DOOR_H), "door"),
+                                                 ("east", 1.2, 3.8, 1, RIBBON, "ribbon"),
+                                                 ("east", -3.6, -1.6, 1, WIN, "window"),
+                                                ])),
+    "cove_home_b05": dict(name="Ashbury Tudor", W=10.4, ZF=4.0, back=-5.4, floors=2, mirror=False, palette="tudor",
+                          roof="gable_x", rise=5.5, cross=dict(cx=-2.35, cw=4.0, rise=3.1, vent=False),
+                          chimney=None, windows="classic", flowers=False, shutters=False,
+                          chimney_front=dict(x=-2.35, w=1.3, z0=3.95, z1=4.70, base_top=4.80, mid_w=1.1, mid_top=8.00,
+                                             shaft_w=0.95, shaft_z1=4.62, top=10.20, pots=(-2.6, -2.1), pot_top=10.77),
+                          porch="arched",
+                          arched=dict(step_w=2.2, d=0.9, top=0.14, low_d=0.4, low_top=0.07, half=0.61, spring=2.0, rise=0.30,
+                                      top_y=2.62, depth=0.10, lintel_y=2.46, lintel_top=2.78),
+                          half_timber=HALF_TIMBER_B05,
+                          wing=dict(w=4.0, d=7.0, rise=2.8, side="east", timber=True, doors=1, door_w=2.6, door_h=2.3,
+                                    door_style="arched"),
+                          interior=dict(plan="tudor", style="tudor",
+                                        lines=dict(hall_x=1.25, front_z=1.2, bath_z=-3.2, stair_top=2.6, fireplace_x=-2.35,
+                                                   hood_x=1.9),
+                                        windows=[("front", -4.5, -3.55, 0, WIN, "casement"),
+                                                 ("front", 2.0, 4.2, 0, WIN, "casement"),
+                                                 ("front", -4.5, -3.55, 1, WIN, "casement"),
+                                                 ("front", -0.5, 0.5, 1, WIN, "casement"),
+                                                 ("front", 2.0, 4.2, 1, WIN, "casement"),
+                                                 ("back", -4.2, -2.4, 0, WIN, "casement"),
+                                                 ("back", 2.8, 4.3, 0, (1.05, 2.15), "casement"),
+                                                 ("back", -0.4, 0.4, 0, (1.5, 2.1), "window"),
+                                                 ("back", -4.2, -2.4, 1, WIN, "casement"),
+                                                 ("back", 2.6, 4.4, 1, WIN, "casement"),
+                                                 ("back", -0.4, 0.4, 1, (1.5, 2.1), "window"),
+                                                 ("west", 2.0, 3.6, 0, WIN, "casement"),
+                                                 ("west", -3.8, -2.2, 0, WIN, "casement"),
+                                                 ("west", 2.0, 3.6, 1, WIN, "casement"),
+                                                 ("west", -3.8, -2.2, 1, WIN, "casement"),
+                                                 ("east", -0.8, 0.2, 0, (0.0, DOOR_H), "door"),
+                                                 ("east", 1.9, 3.5, 1, WIN, "casement"),
+                                                 ("east", -3.8, -2.2, 1, WIN, "casement"),
+                                                ])),
 }
 
 
@@ -285,7 +471,10 @@ def scale_uvs(objs, k, kv=None):
 
 
 def siding_uv_scale(h):
-    return (1.5, 1.5) if PALETTES[h["palette"]]["wall_pat"] == "shakes" else (1.0, 3.0)
+    pat = PALETTES[h["palette"]]["wall_pat"]
+    if pat == "roman":
+        return (1.667, 1.667)
+    return (1.5, 1.5) if pat == "shakes" else (1.0, 3.0)
 
 
 def tri_count(objs):
@@ -297,8 +486,8 @@ def centered(c, w):
 
 
 class Mirror:
-    def __init__(self, coll, cols, m):
-        self.coll, self.cols, self.m = coll, cols, m
+    def __init__(self, coll, cols, m, bevel=True):
+        self.coll, self.cols, self.m, self.bevel = coll, cols, m, bevel
 
     def x(self, v):
         return self.m * v
@@ -307,6 +496,8 @@ class Mirror:
         return tuple(sorted((self.m * a, self.m * b)))
 
     def box(self, name, x, z, y0, sx, sz, h, mat, **kw):
+        if not self.bevel:
+            kw.pop("bevel", None)
         return L.box(self.coll, name, self.m * x, z, y0, sx, sz, h, mat, **kw)
 
     def cyl(self, name, x, z, y0, r, h, mat, **kw):
@@ -353,6 +544,9 @@ class Plan:
         self.levels = [dict(id="L0", y=0.0, height=L0_H)]
         if h["floors"] == 2:
             self.levels.append(dict(id="L1", y=L1_Y, height=L1_H))
+        elif h.get("loft"):
+            self.levels.append(dict(id="L1", y=L1_Y, height=h["loft"]["height"]))
+        self.loft = None
         self.rooms = []
         self.partitions = []
         self.windows = []
@@ -369,7 +563,7 @@ class Plan:
         if h.get("wing"):
             # walk-in garage beside the east wall, one storey: the room runs from the main shell's outer face to the
             # wing's own shell, front flush with the main front (same Z_FRONT_OUT contract), `d` deep outside
-            assert h["floors"] == 2 and not h["mirror"], "the garage wing needs a two-storey, unmirrored plan"
+            assert (h["floors"] == 2 or h.get("interior", {}).get("plan") in ("nantucket", "prairie", "tudor")) and not h["mirror"], "the garage wing needs a two-storey, unmirrored plan"
             wg = h["wing"]
             s = {"east": 1, "west": -1}[wg.get("side", "east")]
             hw = self.W / 2
@@ -392,6 +586,14 @@ class Plan:
             self.skyline()
         elif h.get("interior", {}).get("plan") == "tidewater":
             self.tidewater()
+        elif h.get("interior", {}).get("plan") == "lavande":
+            self.lavande()
+        elif h.get("interior", {}).get("plan") == "nantucket":
+            self.nantucket()
+        elif h.get("interior", {}).get("plan") == "prairie":
+            self.prairie()
+        elif h.get("interior", {}).get("plan") == "tudor":
+            self.tudor()
         elif h["floors"] == 2:
             self.duplex()
         else:
@@ -874,6 +1076,275 @@ class Plan:
                         ("StairWell", 1, (SX0 + SX1) / 2, (SF + ST) / 2)]
         self.fit = dict(plan="tidewater", S=S, I=I)
 
+    def lavande(self):
+        I = self.h["interior"]
+        S = STYLES[I["style"]]
+        assert not self.wing and self.h["floors"] == 2 and not self.h["mirror"], "the lavande plan has no wing and two storeys"
+        ln = I["lines"]
+        HX, FZ, PZ, BZ, KX = (ln[k] for k in ("hall_x", "front_z", "rear_z", "bath_z", "kitchen_x"))
+        xi, zf, zb = self.xi, self.zi_f, self.zi_b
+        e = PT / 2
+        steps, run = 16, 0.2875
+        SX0, SX1 = HX - e - STAIR_W, HX - e
+        ST = FZ + e
+        SF = ST + steps * run
+        assert SF <= zf - 1.2, ("the front door leaf must swing clear of the stair foot", SF, zf)
+        assert SX0 - 0.08 - (-HX + e) >= 0.9, ("the hall passage beside the stair is too narrow", SX0, HX)
+        assert ST >= PZ + e + 2.5, ("the landing must be 2.5 m deep", ST, PZ)
+        assert zb + 2.0 <= BZ <= FZ - 1.5, ("the dressing room and the primary bath need 2.1 m each", BZ)
+        cased = 2.4, "cased"
+
+        self.room("Hall", 0, -HX + e, HX - e, PZ + e, zf, floor="foyer", paint="hall", light=False)
+        self.room("Dining", 0, -xi, -HX - e, FZ + e, zf, paint="dining")
+        self.room("Salon", 0, HX + e, xi, FZ + e, zf, paint="salon")
+        self.room("Kitchen", 0, -xi, -HX - e, zb, FZ - e, light=False)
+        self.room("Family", 0, HX + e, xi, zb, FZ - e)
+        self.room("Powder", 0, -HX + e, HX - e, zb, PZ - e, floor="bath", wainscot=True, baseboard=False)
+        self.partition("Walls_HallW", "z", -HX, zb, zf, 0, doors=[(-3.0, -2.0), (zf - 1.18, zf - 0.1, *cased)])
+        self.partition("Walls_HallE", "z", HX, zb, zf, 0, doors=[(-3.0, -2.0), (zf - 1.18, zf - 0.1, *cased)], h=L1_Y)
+        self.partition("Walls_PowderN", "x", PZ, -HX, HX, 0, doors=[(-0.5, 0.5)])
+        self.partition("Walls_DiningBack", "x", FZ, -xi, -HX, 0, doors=[(-4.7, -3.7)])
+        self.partition("Walls_SalonBack", "x", FZ, HX, xi, 0, doors=[(3.7, 4.7)])
+
+        self.room("UpperHall", 1, -HX + e, HX - e, SF, zf, paint="hall", open=("S",))
+        self.room("Corridor", 1, -HX + e, SX0, ST, SF, open=("N", "E", "S"))
+        self.room("Landing", 1, -HX + e, HX - e, PZ + e, ST, paint="hall", open=("N",))
+        self.room("StairWell", 1, SX0, SX1, ST, SF, floor=None, paint="hall", baseboard=False, light=False)
+        self.room("Bed2", 1, -xi, -HX - e, FZ + e, zf, paint="bed")
+        self.room("Bed3", 1, -xi, -HX - e, zb, FZ - e, paint="bed")
+        self.room("Bath2", 1, -HX + e, HX - e, zb, PZ - e, floor="bath", wainscot=True, baseboard=False)
+        self.room("Suite", 1, HX + e, xi, FZ + e, zf, paint="suite")
+        self.room("Dressing", 1, HX + e, xi, BZ + e, FZ - e)
+        self.room("PrimaryBath", 1, HX + e, xi, zb, BZ - e, floor="bath", wainscot=True, baseboard=False)
+        self.partition("Walls_L1W", "z", -HX, zb, zf, 1, doors=[(-2.7, -1.7), (1.2, 2.2)])
+        self.partition("Walls_L1E", "z", HX, zb, zf, 1, doors=[(-2.7, -1.7)])
+        self.partition("Walls_Bath2N", "x", PZ, -HX, HX, 1, doors=[(-0.5, 0.5)])
+        self.partition("Walls_Bed23", "x", FZ, -xi, -HX, 1)
+        self.partition("Walls_SuiteS", "x", FZ, HX, xi, 1, doors=[(3.7, 4.7)])
+        self.partition("Walls_PrimaryBathN", "x", BZ, HX, xi, 1, doors=[(2.9, 3.9)])
+        bad = [r["name"] for r in self.rooms if not (r["rect"][1] > r["rect"][0] and r["rect"][3] > r["rect"][2])]
+        assert not bad, ("lavande rooms without a positive size", bad)
+
+        for side, a, b, level, y, kind in I["windows"]:
+            assert kind in ("window", "french"), ("unknown window kind", kind)
+            self.window(side, a, b, level, y, kind)
+
+        self.stair = dict(x0=SX0, x1=SX1, z0=ST, z1=SF, rise="-z", open=-1, rail="rail", baluster=S["baluster"], newel=True,
+                          foot_rail=True, upper_edge=False)
+        self.l1_rects = [(-xi, xi, zb, ST), (-xi, SX0, ST, zf), (SX1, xi, ST, zf), (SX0, SX1, SF, zf)]
+        sink_x = (xi + HX + e) / 2
+        self.kitchen = dict(x0=KX, ret_z=zb + 1.6, sink_x=sink_x, hood=(2.5, 0.9), uppers=S["uppers"], west=True)
+        self.lights += [("HallFront", 0, 0.0, (SF + zf) / 2), ("HallMid", 0, (-HX + e + SX0) / 2, (ST + SF) / 2),
+                        ("HallRear", 0, 0.0, (PZ + e + ST) / 2), ("Kitchen", 0, -sink_x, -2.2),
+                        ("StairWell", 1, (SX0 + SX1) / 2, (ST + SF) / 2)]
+        self.fit = dict(plan="lavande", S=S, I=I)
+
+    def nantucket(self):
+        h = self.h
+        I = h["interior"]
+        S = STYLES[I["style"]]
+        lf = h["loft"]
+        assert self.wing and self.wing["s"] == 1 and h["floors"] == 1 and not h["mirror"], "the nantucket plan is a one-storey, unmirrored plan with an east wing and a loft"
+        ln = I["lines"]
+        HX, FZ, BZ, KX, ST = (ln[k] for k in ("hall_x", "front_z", "bath_z", "kitchen_x", "stair_top"))
+        LB, LF = lf["back"], lf["front"]
+        xi, zf, zb = self.xi, self.zi_f, self.zi_b
+        e = PT / 2
+        steps, run = 16, 0.2875
+        SX0, SX1 = HX - e - STAIR_W, HX - e
+        SF = ST + steps * run
+        assert SF <= zf - 1.2, ("the front door leaf must swing clear of the stair foot", SF, zf)
+        assert SX0 - 0.08 - (-HX + e) >= 0.9, ("the hall passage beside the stair is too narrow", SX0, HX)
+        assert zb + 3.0 <= FZ <= zf - 3.0, ("the front and back rooms need 3.0 m", FZ)
+        assert zb + 1.8 <= BZ <= FZ - 2.0, ("the bath needs 1.8 m and the passage 2.0 m", BZ)
+        assert LB + 1.0 <= ST <= LF - 1.0, ("the stair top must leave a landing and a well", ST)
+        oz = h["ZF"] - T - GAP - Z_FRONT_OUT
+        zbe = oz + h["back"] - GAP - T
+        zc = (h["ZF"] + zbe) / 2
+        t = h["rise"] / ((h["ZF"] - zbe) / 2)
+        y_eave = FY + L0_H + 0.3 + 0.05
+        ceil_top = FY + L1_Y + lf["height"]
+        for zi in (LB, LF):
+            under = y_eave + h["rise"] + 0.1 - 0.0967 - t * abs(zi + oz - zc)
+            assert ceil_top <= under, ("the loft ceiling is under the roof only up to the roof underside", zi, ceil_top, under)
+        dm = h["dormers"]
+        e_roof = h.get("eave", EAVE)
+        y_roof = y_eave + DORMER_DRIP["gable_x"] - e_roof * t + (h["ZF"] + e_roof - dm["z"]) * t
+        self.niche_window = (y_roof + dm["sill"] - FY, y_roof + dm["sill"] + dm["win_h"] - FY)
+        zn = dm["z"] - 0.14 - oz
+        nx = [(x - 0.55, x + 0.55) for x in dm["xs"]]
+        cased = 2.4, "cased"
+
+        self.room("Hall", 0, -HX + e, HX - e, BZ + e, zf, paint="hall", light=False)
+        self.room("Living", 0, -xi, -HX - e, FZ + e, zf, paint="living")
+        self.room("Bed2", 0, HX + e, xi, FZ + e, zf, paint="bed")
+        self.room("Bed1", 0, -xi, -HX - e, zb, FZ - e, paint="bed")
+        self.room("Kitchen", 0, KX, xi, zb, FZ - e, floor="tile", light=False)
+        self.room("Bath", 0, -HX + e, HX - e, zb, BZ - e, floor="bath", wainscot=True, baseboard=False)
+        self.partition("Walls_HallW", "z", -HX, zb, zf, 0, doors=[(zf - 1.18, zf - 0.1, *cased), (-2.4, -1.4)])
+        self.partition("Walls_HallE", "z", HX, zb, zf, 0, doors=[(zf - 1.18, zf - 0.1, *cased), (-2.4, -1.4)], h=L1_Y)
+        self.partition("Walls_Front", "x", FZ, -xi, -HX, 0)
+        self.partition("Walls_FrontE", "x", FZ, HX, xi, 0)
+        self.partition("Walls_BathN", "x", BZ, -HX, HX, 0, doors=[(-0.5, 0.5)])
+
+        self.room("LoftLanding", 1, -HX + e, HX - e, LB, ST, paint="hall", open=("N",))
+        self.room("LoftWalk", 1, -HX + e, SX0, ST, LF, paint="hall", open=("S", "E"))
+        self.room("LoftWell", 1, SX0, SX1, ST, LF, floor=None, paint="hall", baseboard=False, light=False)
+        self.room("LoftBed3", 1, -xi, -HX - e, LB, LF, paint="bed")
+        self.room("LoftSitting", 1, HX + e, xi, LB, LF, paint="bed")
+        for k, (x0, x1) in enumerate(nx):
+            self.room(f"Niche{k}", 1, x0, x1, LF + e, zn, paint=None, baseboard=False, light=False, open=("S", "W", "E", "N"))
+        self.partition("Walls_LoftBack", "x", LB - e, -xi, xi, 1)
+        self.partition("Walls_LoftFront", "x", LF + e, -xi, xi, 1, doors=[(x0, x1, 2.0, "cased") for x0, x1 in nx])
+        self.partition("Walls_LoftW", "z", -HX, LB - PT, LF + PT, 1, doors=[(-1.95, -0.95)])
+        self.partition("Walls_LoftE", "z", HX, LB - PT, LF + PT, 1, doors=[(-1.95, -0.95)])
+        bad = [r["name"] for r in self.rooms if not (r["rect"][1] > r["rect"][0] and r["rect"][3] > r["rect"][2])]
+        assert not bad, ("nantucket rooms without a positive size", bad)
+
+        for side, a, b, level, y, kind in I["windows"]:
+            assert kind in ("window", "door"), ("unknown window kind", kind)
+            self.window(side, a, b, level, y, kind)
+
+        self.stair = dict(x0=SX0, x1=SX1, z0=ST, z1=SF, rise="-z", open=-1, rail="rail", baluster=S["baluster"], newel=True,
+                          foot_rail=False, upper_edge=False, upper_z=(ST, LF))
+        self.l1_rects = [(-xi, xi, LB, ST), (-xi, SX0, ST, LF), (SX1, xi, ST, LF)] + [(x0, x1, LF, zn) for x0, x1 in nx]
+        self.loft = dict(back=LB, front=LF, niches=[dict(x0=x0, x1=x1, z0=LF + PT, z1=zn) for x0, x1 in nx], hole=lf["hole"],
+                         stack=(h["chimney"][0], zc + h["chimney"][1] - oz))
+        sink_x = (KX + xi) / 2
+        self.kitchen = dict(x0=KX, ret_z=zb + 1.6, sink_x=sink_x, hood=(ln["hood_x"], 0.9), uppers=S["uppers"])
+        self.lights += [("HallFront", 0, 0.0, (SF + zf) / 2), ("HallMid", 0, (-HX + e + SX0) / 2, (ST + SF) / 2),
+                        ("HallRear", 0, 0.0, (BZ + e + ST) / 2), ("Kitchen", 0, sink_x, (zb + FZ) / 2),
+                        ("LoftHall", 1, 0.0, (LB + ST) / 2), ("LoftWalk", 1, (-HX + e + SX0) / 2, (ST + LF) / 2)]
+        self.fit = dict(plan="nantucket", S=S, I=I)
+
+    def prairie(self):
+        h = self.h
+        I = h["interior"]
+        S = STYLES[I["style"]]
+        assert self.wing and self.wing["s"] == 1 and h["floors"] == 2 and not h["mirror"], "the prairie plan is a two-storey, unmirrored plan with an east wing"
+        ln = I["lines"]
+        HX, FZ, BZ, ST = (ln[k] for k in ("hall_x", "front_z", "bath_z", "stair_top"))
+        xi, zf, zb = self.xi, self.zi_f, self.zi_b
+        e = PT / 2
+        steps, run = 16, 0.2875
+        SX0, SX1 = HX - e - STAIR_W, HX - e
+        SF = ST - steps * run
+        assert SF >= BZ + 1.0, ("the prairie stair needs a landing at its foot", SF, BZ)
+        assert ST <= zf - 2.0, ("the front door leaf must swing clear of the stair top", ST, zf)
+        assert SX0 - 0.08 - (-HX + e) >= 0.9, ("the hall passage beside the stair is too narrow", SX0, HX)
+        assert zb + 3.0 <= FZ <= zf - 3.0, ("the front and back rooms need 3.0 m", FZ)
+        assert zb + 1.6 <= BZ <= SF - 1.0, ("the powder room needs 1.6 m and the foot of the stair a door", BZ)
+        cased = 2.4, "cased"
+
+        self.room("Hall", 0, -HX + e, HX - e, BZ + e, zf, paint="hall", light=False)
+        self.room("Living", 0, -xi, -HX - e, FZ + e, zf, paint="living")
+        self.room("Dining", 0, HX + e, xi, FZ + e, zf, paint="living")
+        self.room("Study", 0, -xi, -HX - e, zb, FZ - e, paint="bed")
+        self.room("Kitchen", 0, HX + e, xi, zb, FZ - e, floor="tile", light=False)
+        self.room("Powder", 0, -HX + e, HX - e, zb, BZ - e, floor="bath", wainscot=True, baseboard=False)
+        self.partition("Walls_HallW", "z", -HX, zb, zf, 0, doors=[(ST + 0.2, zf - 0.1, *cased), (SF, SF + 1.0)])
+        self.partition("Walls_HallE", "z", HX, zb, zf, 0, doors=[(ST + 0.2, zf - 0.1, *cased), (SF - 1.05, SF - 0.05)], h=L1_Y)
+        self.partition("Walls_Front", "x", FZ, -xi, -HX, 0)
+        self.partition("Walls_FrontE", "x", FZ, HX, xi, 0, doors=[(2.4, 3.9, *cased)])
+        self.partition("Walls_BathN", "x", BZ, -HX, HX, 0, doors=[(-0.5, 0.5)])
+
+        self.room("Landing", 1, -HX + e, HX - e, ST, zf, paint="hall", open=("S",))
+        self.room("Corridor", 1, -HX + e, SX0, BZ + e, ST, open=("N", "E"))
+        self.room("CorridorBack", 1, SX0, SX1, BZ + e, SF, open=("W", "N"), light=False)
+        self.room("StairWell", 1, SX0, SX1, SF, ST, floor=None, paint="hall", baseboard=False, light=False)
+        self.room("Primary", 1, -xi, -HX - e, FZ + e, zf, paint="bed")
+        self.room("Sitting", 1, -xi, -HX - e, zb, FZ - e, paint="bed")
+        self.room("Bed2", 1, HX + e, xi, FZ + e, zf, paint="bed")
+        self.room("Bed3", 1, HX + e, xi, zb, FZ - e, paint="bed")
+        self.room("Bath2", 1, -HX + e, HX - e, zb, BZ - e, floor="bath", wainscot=True, baseboard=False)
+        self.partition("Walls_UHallW", "z", -HX, zb, zf, 1, doors=[(ST + 0.3, ST + 1.3), (SF - 1.05, SF - 0.05)])
+        self.partition("Walls_UHallE", "z", HX, zb, zf, 1, doors=[(ST + 0.3, ST + 1.3), (SF - 1.05, SF - 0.05)])
+        self.partition("Walls_UFront", "x", FZ, -xi, -HX, 1, doors=[(-2.55, -1.55)])
+        self.partition("Walls_UFrontE", "x", FZ, HX, xi, 1)
+        self.partition("Walls_UBathN", "x", BZ, -HX, HX, 1, doors=[(-0.9, 0.1)])
+        bad = [r["name"] for r in self.rooms if not (r["rect"][1] > r["rect"][0] and r["rect"][3] > r["rect"][2])]
+        assert not bad, ("prairie rooms without a positive size", bad)
+
+        for side, a, b, level, y, kind in I["windows"]:
+            assert kind in ("window", "door", "ribbon"), ("unknown window kind", kind)
+            self.window(side, a, b, level, y, kind)
+
+        self.stair = dict(x0=SX0, x1=SX1, z0=SF, z1=ST, rise="+z", open=-1, rail="rail", baluster=S["baluster"], newel=True,
+                          foot_rail=True, upper_edge=False)
+        self.l1_rects = [(-xi, xi, zb, SF), (-xi, SX0, SF, zf), (SX1, xi, SF, zf), (SX0, SX1, ST, zf)]
+        oz = h["ZF"] - T - GAP - Z_FRONT_OUT
+        zbe = oz + h["back"] - GAP - T
+        zc = (h["ZF"] + zbe) / 2
+        self.stack = (h["chimney"][0], zc + h["chimney"][1] - oz)
+        k0 = HX + e
+        sink_x = (k0 + xi) / 2 + 0.5
+        self.kitchen = dict(x0=k0, ret_z=zb + 1.6, sink_x=sink_x, hood=(ln["hood_x"], 0.9), uppers=S["uppers"])
+        self.lights += [("HallFront", 0, 0.0, (ST + zf) / 2), ("HallBack", 0, (-HX + e + SX0) / 2, (BZ + e + ST) / 2),
+                        ("Kitchen", 0, sink_x, (zb + FZ) / 2), ("StairWell", 1, (SX0 + SX1) / 2, (SF + ST) / 2)]
+        self.fit = dict(plan="prairie", S=S, I=I)
+
+    def tudor(self):
+        h = self.h
+        I = h["interior"]
+        S = STYLES[I["style"]]
+        assert self.wing and self.wing["s"] == 1 and h["floors"] == 2 and not h["mirror"], "the tudor plan is a two-storey, unmirrored plan with an east wing"
+        ln = I["lines"]
+        HX, FZ, BZ, ST = (ln[k] for k in ("hall_x", "front_z", "bath_z", "stair_top"))
+        xi, zf, zb = self.xi, self.zi_f, self.zi_b
+        e = PT / 2
+        steps, run = 16, 0.2875
+        SX0, SX1 = -HX + e, -HX + e + STAIR_W
+        SF = ST - steps * run
+        assert SF >= BZ + 1.0, ("the tudor stair needs a landing at its foot", SF, BZ)
+        assert ST <= zf - 2.0, ("the front door leaf must swing clear of the stair top", ST, zf)
+        assert (HX - e) - (SX1 + 0.08) >= 0.9, ("the hall passage beside the stair is too narrow", SX1, HX)
+        assert zb + 3.0 <= FZ <= zf - 3.0, ("the front and back rooms need 3.0 m", FZ)
+        assert zb + 1.6 <= BZ <= SF - 1.0, ("the powder room needs 1.6 m and the foot of the stair a door", BZ)
+        cased = 2.4, "cased"
+
+        self.room("Hall", 0, -HX + e, HX - e, BZ + e, zf, paint="hall", light=False)
+        self.room("Parlour", 0, -xi, -HX - e, FZ + e, zf, paint="parlour")
+        self.room("Dining", 0, HX + e, xi, FZ + e, zf, paint="parlour")
+        self.room("Library", 0, -xi, -HX - e, zb, FZ - e, paint="bed")
+        self.room("Kitchen", 0, HX + e, xi, zb, FZ - e, floor="tile", light=False)
+        self.room("Powder", 0, -HX + e, HX - e, zb, BZ - e, floor="bath", wainscot=True, baseboard=False)
+        self.partition("Walls_HallW", "z", -HX, zb, zf, 0, doors=[(ST + 0.2, zf - 0.1, *cased), (SF - 1.05, SF - 0.05)], h=L1_Y)
+        self.partition("Walls_HallE", "z", HX, zb, zf, 0, doors=[(ST + 0.2, zf - 0.1, *cased), (-1.2, -0.2)])
+        self.partition("Walls_Front", "x", FZ, -xi, -HX, 0)
+        self.partition("Walls_FrontE", "x", FZ, HX, xi, 0, doors=[(2.4, 3.9, *cased)])
+        self.partition("Walls_BathN", "x", BZ, -HX, HX, 0, doors=[(-0.5, 0.5)])
+
+        self.room("Landing", 1, -HX + e, HX - e, ST, zf, paint="hall", open=("S",))
+        self.room("Corridor", 1, SX1, HX - e, BZ + e, ST, open=("N", "W"))
+        self.room("CorridorBack", 1, SX0, SX1, BZ + e, SF, open=("E", "N"), light=False)
+        self.room("StairWell", 1, SX0, SX1, SF, ST, floor=None, paint="hall", baseboard=False, light=False)
+        self.room("Primary", 1, -xi, -HX - e, FZ + e, zf, paint="bed")
+        self.room("Sitting", 1, -xi, -HX - e, zb, FZ - e, paint="bed")
+        self.room("Bed2", 1, HX + e, xi, FZ + e, zf, paint="bed")
+        self.room("Bed3", 1, HX + e, xi, zb, FZ - e, paint="bed")
+        self.room("Bath2", 1, -HX + e, HX - e, zb, BZ - e, floor="bath", wainscot=True, baseboard=False)
+        self.partition("Walls_UHallW", "z", -HX, zb, zf, 1, doors=[(3.0, 4.0), (SF - 1.05, SF - 0.05)])
+        self.partition("Walls_UHallE", "z", HX, zb, zf, 1, doors=[(3.0, 4.0), (-1.2, -0.2)])
+        self.partition("Walls_UFront", "x", FZ, -xi, -HX, 1, doors=[(-2.4, -1.4)])
+        self.partition("Walls_UFrontE", "x", FZ, HX, xi, 1)
+        self.partition("Walls_UBathN", "x", BZ, -HX, HX, 1, doors=[(0.1, 1.1)])
+        bad = [r["name"] for r in self.rooms if not (r["rect"][1] > r["rect"][0] and r["rect"][3] > r["rect"][2])]
+        assert not bad, ("tudor rooms without a positive size", bad)
+
+        for side, a, b, level, y, kind in I["windows"]:
+            assert kind in ("window", "door", "casement"), ("unknown window kind", kind)
+            self.window(side, a, b, level, y, kind)
+
+        self.stair = dict(x0=SX0, x1=SX1, z0=SF, z1=ST, rise="+z", open=1, rail="rail", baluster=S["baluster"], newel=True,
+                          foot_rail=True, upper_edge=False)
+        self.l1_rects = [(-xi, xi, zb, SF), (-xi, SX0, SF, zf), (SX1, xi, SF, zf), (SX0, SX1, ST, zf)]
+        k0 = HX + e
+        sink_x = (k0 + xi) / 2 + 0.5
+        self.kitchen = dict(x0=k0, ret_z=zb + 1.6, sink_x=sink_x, hood=(ln["hood_x"], 0.9), uppers=S["uppers"])
+        self.lights += [("HallFront", 0, 0.0, (ST + zf) / 2), ("HallBack", 0, (SX1 + HX - e) / 2, (BZ + e + ST) / 2),
+                        ("Kitchen", 0, sink_x, (zb + FZ) / 2), ("StairWell", 1, (SX0 + SX1) / 2, (SF + ST) / 2)]
+        self.fit = dict(plan="tudor", S=S, I=I)
+
     def outer_openings(self, side, level):
         ops = [(w["a"], w["b"], w["y0"], w["y1"]) for w in self.windows if w["side"] == side and w["level"] == level]
         if side == "front" and level == 0:
@@ -892,7 +1363,7 @@ class Plan:
         levels[0]["rects"] += [r(*q) for q in self.l0_rects]
         stairs = []
         if self.l1_rects:
-            levels.append(dict(id="L1", y=L1_Y, height=L1_H, rects=[r(*q) for q in self.l1_rects]))
+            levels.append(dict(id="L1", y=L1_Y, height=self.levels[1]["height"], rects=[r(*q) for q in self.l1_rects]))
             if self.flights:
                 stairs += [dict(name=f["name"], **r(f["x0"], f["x1"], f["z0"], f["z1"]), y0=f["y0"], y1=f["y1"], rise=f["rise"])
                            for f in self.flights]
@@ -911,7 +1382,8 @@ def build_interior(key, h, P):
     coll = bpy.data.collections.new("Interior")
     sc.collection.children.link(coll)
     cols = L.Collisions(coll)
-    B = Mirror(coll, cols, -1 if h["mirror"] else 1)
+    bevel = not h.get("flat_edges")
+    B = Mirror(coll, cols, -1 if h["mirror"] else 1, bevel)
     C = PALETTES[h["palette"]]
     M = {
         "wall": L.make_mat(f"IN_{key}_WallMain", C["in_wall"], 0.9, "noise", 0.02),
@@ -994,12 +1466,20 @@ def build_interior(key, h, P):
         if rm["level"] == 1:
             io.append(B.box(f"Ceiling_Under{rm['name']}", (x0 + x1) / 2, (z0 + z1) / 2, L0_H, x1 - x0, z1 - z0, 0.1, M["ceil"], tile=2.0))
     top_level = len(P.levels) - 1
-    io.append(B.box("Ceiling", 0, (Z_FRONT_OUT + P.z_back_out) / 2, lvl_y[top_level] + lvl_h[top_level], 2 * x_out, Z_FRONT_OUT - P.z_back_out, 0.1, M["ceil"], tile=2.0))
+    if P.loft:
+        io += loft_ceilings(B, M, P)
+    else:
+        io.append(B.box("Ceiling", 0, (Z_FRONT_OUT + P.z_back_out) / 2, lvl_y[top_level] + lvl_h[top_level], 2 * x_out, Z_FRONT_OUT - P.z_back_out, 0.1, M["ceil"], tile=2.0))
 
     for li, lv in enumerate(P.levels):
         h_wall = L1_Y if (two and li == 0) else lv["height"]
         y0 = lv["y"]
         sfx = f"_L{li}" if two else ""
+        if li == 1 and P.loft:
+            z0w, z1w = P.loft["back"] - PT, P.loft["front"] + PT
+            io += B.wall(f"Walls_W{sfx}", "z", -xi - T / 2, T, z0w, z1w, h_wall, M["wall"], openings=P.outer_openings("west", li), y0=y0)
+            io += B.wall(f"Walls_E{sfx}", "z", xi + T / 2, T, z0w, z1w, h_wall, M["wall"], openings=P.outer_openings("east", li), y0=y0)
+            continue
         io += B.wall(f"Walls_Front{sfx}", "x", zf + T / 2, T, -x_out, x_out, h_wall, M["wall"], openings=P.outer_openings("front", li), y0=y0)
         io += B.wall(f"Walls_Back{sfx}", "x", zb - T / 2, T, -x_out, x_out, h_wall, M["wall"], openings=P.outer_openings("back", li), y0=y0)
         io += B.wall(f"Walls_W{sfx}", "z", -xi - T / 2, T, zb, zf, h_wall, M["wall"], openings=P.outer_openings("west", li), y0=y0)
@@ -1133,7 +1613,7 @@ def build_interior(key, h, P):
             trims.append(B.box(f"Window_{i}_Sill", sill, (a + b) / 2, y0 - 0.03, SILL_D, b - a + 0.16, 0.03, M["trim"]))
     io += trims
 
-    io += build_kitchen(Mirror(coll, cols, -1) if P.kitchen.get("west") else B, M, P)
+    io += build_kitchen(Mirror(coll, cols, -1, bevel) if P.kitchen.get("west") else B, M, P)
     if P.bath:
         io += build_bath(B, M, P)
     if P.stair:
@@ -1147,7 +1627,9 @@ def build_interior(key, h, P):
     if gallery_walkable(h):
         gallery_walkable_collisions(B, P)
     if P.fit:
-        io += {"harbor": build_harbor, "skyline": build_skyline, "tidewater": build_tidewater}.get(P.fit.get("plan"), build_estate)(B, M, P)
+        io += {"harbor": build_harbor, "skyline": build_skyline, "tidewater": build_tidewater,
+                                                "lavande": build_lavande, "nantucket": build_nantucket,
+                                                "prairie": build_prairie, "tudor": build_tudor}.get(P.fit.get("plan"), build_estate)(B, M, P)
 
     for name, lv, lx, lz in P.lights:
         sfx = f"_L{lv}" if two else ""
@@ -1283,14 +1765,15 @@ def build_stair(B, M, P):
     out.append(B.box("Stair_PostFoot", rail_x, foot + sgn * 0.05, 0.0, 0.1, 0.1, 1.15, M["stair"]))
     if s.get("newel"):
         out.append(B.box("Stair_PostFootCap", rail_x, foot + sgn * 0.05, 1.15, 0.16, 0.16, 0.06, rail))
-    B.col("Stair_Side", rail_x, (z0 + z1) / 2, 0.0, 0.08, z1 - z0, L1_Y + L1_H)
+    B.col("Stair_Side", rail_x, (z0 + z1) / 2, 0.0, 0.08, z1 - z0, L1_Y + P.levels[-1]["height"])
     if s.get("back_col"):  # the part of the flight that rises out of the hall into the great room: block under it
         assert sgn < 0, "back_col is drawn for a stair rising toward -z"
         B.col("Stair_Back", (x0 + x1) / 2, z0 + s["back_col"] / 2, 0.0, x1 - x0, s["back_col"], 2.3)
+    u0, u1 = s.get("upper_z", (z0, z1))
     for i in range(6):
-        zz = z0 + (z1 - z0) * (i + 0.5) / 6
+        zz = u0 + (u1 - u0) * (i + 0.5) / 6
         out.append(B.box(f"Stair_UpperBaluster{i}", rail_x, zz, L1_Y, bw, bw, 1.0, bal))
-    out.append(B.box("Stair_UpperRail", rail_x, (z0 + z1) / 2, L1_Y + 1.0, 0.07, z1 - z0, 0.06, rail))
+    out.append(B.box("Stair_UpperRail", rail_x, (u0 + u1) / 2, L1_Y + 1.0, 0.07, u1 - u0, 0.06, rail))
     if s.get("foot_rail", True):
         out.append(B.box("Stair_FootRail", (x0 + x1) / 2 + 0.03, foot - sgn * 0.04, L1_Y, x1 - x0 + 0.06, 0.08, 1.06, M["trim"]))
         B.col("Stair_FootRail", (x0 + x1) / 2, foot - sgn * 0.04, L1_Y, x1 - x0, 0.08, 1.1)
@@ -1522,6 +2005,143 @@ def build_tidewater(B, M, P):
     return out
 
 
+def build_lavande(B, M, P):
+    def rect(nm, level):
+        return next(r for r in P.rooms if r["name"] == nm and r["level"] == level)["rect"]
+
+    Y1 = L1_Y
+    S = P.fit["S"]
+    k = P.kitchen
+    din, sal, kit, fam, pw = (rect(nm, 0) for nm in ("Dining", "Salon", "Kitchen", "Family", "Powder"))
+    b2, b3, bath2, dr, pb = (rect(nm, 1) for nm in ("Bed2", "Bed3", "Bath2", "Dressing", "PrimaryBath"))
+    out = LI.fireplace(B, "Fit_FireplaceDining", ((din[0], (din[2] + din[3]) / 2), "+x"), 0.0, L0_H, M, S["fire"])
+    out += LI.fireplace(B, "Fit_FireplaceSalon", ((sal[1], (sal[2] + sal[3]) / 2), "-x"), 0.0, L0_H, M, S["fire"])
+    hood_x = -k["hood"][0]
+    out.append(B.box("Fit_Cooktop", hood_x, kit[2] + 0.33, K_H + 0.04, 0.76, 0.5, 0.012, M["dark"]))
+    out += LI.range_hood(B, "Fit_Hood", ((hood_x, kit[2]), "+z"), 0.0, L0_H, M, S["hood"])
+    out += LI.island(B, "Fit_Island", -k["sink_x"], kit[2] + K_D + 1.55, 0.0, 2.0, 0.9, M, pendants=2, ceil_y=L0_H)
+    out += LI.beams(B, "Fit_BeamsFamily", fam[0], fam[1], fam[2], fam[3], L0_H, M)
+    out += LI.wc(B, "Fit_PowderWC", ((pw[0], (pw[2] + pw[3]) / 2), "+x"), 0.0, M)
+    out += LI.vanity(B, "Fit_PowderVanity", ((pw[1], (pw[2] + pw[3]) / 2), "-x"), 0.0, 0.6, M)
+    out += LI.wardrobe(B, "Fit_WardrobeBed2", (((b2[0] + b2[1]) / 2, b2[2]), "+z"), Y1, 2.0, M)
+    out += LI.wardrobe(B, "Fit_WardrobeBed3", (((b3[0] + b3[1]) / 2, b3[3]), "-z"), Y1, 2.0, M)
+    out += LI.shower(B, "Fit_Bath2Shower", (bath2[0], bath2[2]), 1, 1, Y1, M)
+    out += LI.wc(B, "Fit_Bath2WC", ((bath2[1], bath2[2] + 0.55), "-x"), Y1, M)
+    out += LI.vanity(B, "Fit_Bath2Vanity", ((bath2[1], bath2[2] + 1.45), "-x"), Y1, 0.9, M)
+    out += LI.tub(B, "Fit_Tub", (pb[0] + pb[1]) / 2, pb[2] + 0.7, Y1, 1.7, 0.8, "x", M)
+    out += LI.vanity(B, "Fit_SuiteVanity", ((pb[1], (pb[2] + pb[3]) / 2), "-x"), Y1, 1.5, M, basins=2, depth=0.55)
+    out += LI.shower(B, "Fit_SuiteShower", (pb[0], pb[3]), 1, -1, Y1, M)
+    out += LI.wc(B, "Fit_SuiteWC", ((pb[0], pb[2] + 0.75), "+x"), Y1, M)
+    out += LI.wardrobe(B, "Fit_WardrobeDressingA", ((dr[1], -2.05), "-x"), Y1, 1.7, M)
+    out += LI.wardrobe(B, "Fit_WardrobeDressingB", ((5.2, dr[2]), "+z"), Y1, 1.8, M)
+    return out
+
+
+def build_prairie(B, M, P):
+    def rect(nm, level):
+        return next(r for r in P.rooms if r["name"] == nm and r["level"] == level)["rect"]
+
+    Y1 = L1_Y
+    S = P.fit["S"]
+    k = P.kitchen
+    liv, kit, pw = (rect(nm, 0) for nm in ("Living", "Kitchen", "Powder"))
+    pr, b2, b3, bath2 = (rect(nm, 1) for nm in ("Primary", "Bed2", "Bed3", "Bath2"))
+    hx = P.h["interior"]["lines"]["fireplace_x"]
+    out = LI.fireplace(B, "Fit_FireplaceLiving", ((hx, liv[2]), "+z"), 0.0, L0_H, M, S["fire"])
+    out.append(B.box("Fit_Cooktop", k["hood"][0], kit[2] + 0.33, K_H + 0.04, 0.76, 0.5, 0.012, M["dark"]))
+    out += LI.range_hood(B, "Fit_Hood", ((k["hood"][0], kit[2]), "+z"), 0.0, L0_H, M, S["hood"])
+    out += LI.wc(B, "Fit_PowderWC", ((pw[0], (pw[2] + pw[3]) / 2), "+x"), 0.0, M)
+    out += LI.vanity(B, "Fit_PowderVanity", ((pw[1], (pw[2] + pw[3]) / 2), "-x"), 0.0, 0.5, M)
+    out += LI.wardrobe(B, "Fit_WardrobePrimary", ((pr[1], pr[2] + 1.5), "-x"), Y1, 2.0, M)
+    out += LI.wardrobe(B, "Fit_WardrobeBed2", ((b2[0], b2[2] + 1.5), "+x"), Y1, 2.0, M)
+    out += LI.wardrobe(B, "Fit_WardrobeBed3", (((b3[0] + b3[1]) / 2, b3[3]), "-z"), Y1, 2.0, M)
+    out += LI.shower(B, "Fit_Bath2Shower", (bath2[0], bath2[2]), 1, 1, Y1, M)
+    out += LI.wc(B, "Fit_Bath2WC", ((bath2[1], bath2[2] + 0.45), "-x"), Y1, M)
+    out += LI.vanity(B, "Fit_Bath2Vanity", ((bath2[1], bath2[2] + 1.3), "-x"), Y1, 0.6, M)
+    sx, sz = P.stack
+    out.append(B.box("Fit_ChimneyBreast", sx, sz, Y1, 0.9, 0.9, P.levels[1]["height"], M["stone"]))
+    B.col("Fit_ChimneyBreast", sx, sz, Y1, 0.9, 0.9, P.levels[1]["height"])
+    return out
+
+
+def build_tudor(B, M, P):
+    def rect(nm, level):
+        return next(r for r in P.rooms if r["name"] == nm and r["level"] == level)["rect"]
+
+    Y1 = L1_Y
+    S = P.fit["S"]
+    k = P.kitchen
+    par, din, kit, pw = (rect(nm, 0) for nm in ("Parlour", "Dining", "Kitchen", "Powder"))
+    pr, b2, b3, bath2 = (rect(nm, 1) for nm in ("Primary", "Bed2", "Bed3", "Bath2"))
+    hx = P.h["interior"]["lines"]["fireplace_x"]
+    out = LI.fireplace(B, "Fit_FireplaceParlour", ((hx, par[3]), "-z"), 0.0, L0_H, M, S["fire"])
+    for nm, r in (("Parlour", par), ("Dining", din)):
+        n = max(2, 2 * round((r[1] - r[0]) / 2.6))
+        out += LI.beams(B, f"Fit_Beam{nm}", r[0], r[1], r[2], r[3], L0_H, M, axis="z", spacing=(r[1] - r[0]) / n)
+    out.append(B.box("Fit_Cooktop", k["hood"][0], kit[2] + 0.33, K_H + 0.04, 0.76, 0.5, 0.012, M["dark"]))
+    out += LI.range_hood(B, "Fit_Hood", ((k["hood"][0], kit[2]), "+z"), 0.0, L0_H, M, S["hood"])
+    out += LI.wc(B, "Fit_PowderWC", ((pw[0], (pw[2] + pw[3]) / 2), "+x"), 0.0, M)
+    out += LI.vanity(B, "Fit_PowderVanity", ((pw[1], (pw[2] + pw[3]) / 2), "-x"), 0.0, 0.5, M)
+    out += LI.wardrobe(B, "Fit_WardrobePrimary", ((-3.8, pr[2]), "+z"), Y1, 2.0, M)
+    out += LI.wardrobe(B, "Fit_WardrobeBed2", ((3.0, b2[2]), "+z"), Y1, 2.0, M)
+    out += LI.wardrobe(B, "Fit_WardrobeBed3", (((b3[0] + b3[1]) / 2, b3[3]), "-z"), Y1, 2.0, M)
+    out += LI.shower(B, "Fit_Bath2Shower", (bath2[0], bath2[2]), 1, 1, Y1, M)
+    out += LI.wc(B, "Fit_Bath2WC", ((bath2[1], bath2[2] + 0.45), "-x"), Y1, M)
+    out += LI.vanity(B, "Fit_Bath2Vanity", ((bath2[1], bath2[2] + 1.3), "-x"), Y1, 0.6, M)
+    return out
+
+
+def loft_ceilings(B, M, P):
+    lf = P.loft
+    x_out, e = P.x_out, PT / 2
+    zb0, zb1 = P.z_back_out, lf["back"] - e
+    zf0, zf1 = lf["front"] + e, Z_FRONT_OUT
+    y_top = L1_Y + P.levels[1]["height"]
+    sx0, sx1, hole = P.stair["x0"], P.stair["x1"], lf["hole"]
+    out = [B.box("Ceiling", 0, (lf["back"] - PT + lf["front"] + PT) / 2, y_top, 2 * x_out, lf["front"] - lf["back"] + 2 * PT, 0.1, M["ceil"], tile=2.0),
+           B.box("Ceiling_Back", 0, (zb0 + zb1) / 2, L0_H, 2 * x_out, zb1 - zb0, 0.1, M["ceil"], tile=2.0),
+           B.box("Ceiling_FrontW", (-x_out + sx0) / 2, (zf0 + zf1) / 2, L0_H, sx0 + x_out, zf1 - zf0, 0.1, M["ceil"], tile=2.0),
+           B.box("Ceiling_FrontE", (sx1 + x_out) / 2, (zf0 + zf1) / 2, L0_H, x_out - sx1, zf1 - zf0, 0.1, M["ceil"], tile=2.0),
+           B.box("Ceiling_FrontMid", (sx0 + sx1) / 2, (hole + zf1) / 2, L0_H, sx1 - sx0, zf1 - hole, 0.1, M["ceil"], tile=2.0)]
+    for k, n in enumerate(lf["niches"]):
+        out.append(B.box(f"Ceiling_Niche{k}", (n["x0"] + n["x1"]) / 2, (n["z0"] + n["z1"]) / 2, y_top, n["x1"] - n["x0"] + 0.1, n["z1"] - n["z0"], 0.1, M["ceil"], tile=2.0))
+    return out
+
+
+def build_nantucket(B, M, P):
+    def rect(nm, level):
+        return next(r for r in P.rooms if r["name"] == nm and r["level"] == level)["rect"]
+
+    S = P.fit["S"]
+    k = P.kitchen
+    lf = P.loft
+    liv, bed1, bed2, kit, bath = (rect(nm, 0) for nm in ("Living", "Bed1", "Bed2", "Kitchen", "Bath"))
+    hx, hz = P.h["interior"]["lines"]["fireplace_x"], liv[2]
+    out = LI.fireplace(B, "Fit_FireplaceLiving", ((hx, hz), "+z"), 0.0, L0_H, M, S["fire"])
+    out.append(B.box("Fit_Cooktop", k["hood"][0], kit[2] + 0.33, K_H + 0.04, 0.76, 0.5, 0.012, M["dark"]))
+    out += LI.range_hood(B, "Fit_Hood", ((k["hood"][0], kit[2]), "+z"), 0.0, L0_H, M, S["hood"])
+    out += LI.shower(B, "Fit_BathShower", (bath[0], bath[2]), 1, 1, 0.0, M)
+    out += LI.wc(B, "Fit_BathWC", ((bath[1], bath[2] + 0.45), "-x"), 0.0, M)
+    out += LI.vanity(B, "Fit_BathVanity", ((bath[1], bath[2] + 1.55), "-x"), 0.0, 0.6, M)
+    out += LI.wardrobe(B, "Fit_WardrobeBed1", (((bed1[0] + bed1[1]) / 2, bed1[3]), "-z"), 0.0, 2.0, M)
+    out += LI.wardrobe(B, "Fit_WardrobeBed2", (((bed2[0] + bed2[1]) / 2, bed2[2]), "+z"), 0.0, 2.0, M)
+    sx, sz = lf["stack"]
+    out.append(B.box("Fit_ChimneyBreast", sx, sz, L1_Y, 0.9, 0.9, P.levels[1]["height"], M["stone"]))
+    B.col("Fit_ChimneyBreast", sx, sz, L1_Y, 0.9, 0.9, P.levels[1]["height"])
+    height = P.levels[1]["height"]
+    for i, n in enumerate(lf["niches"]):
+        xc, zc = (n["x0"] + n["x1"]) / 2, (n["z0"] + n["z1"]) / 2
+        for nm, sgn in (("W", -1), ("E", 1)):
+            out += B.wall(f"Walls_Niche{i}{nm}", "z", xc + sgn * 0.56, 0.04, n["z0"], n["z1"], height, M["wall"], y0=L1_Y)
+        B.col(f"Window_Niche{i}_Block", xc, n["z1"] + 0.05, L1_Y, n["x1"] - n["x0"], 0.1, height)
+        y0, y1 = P.niche_window
+        for nm, x, wd, hh, yy in (("CasA", xc - 0.45 - CAS_W / 2, CAS_W, y1 - y0, y0), ("CasB", xc + 0.45 + CAS_W / 2, CAS_W, y1 - y0, y0),
+                                  ("CasH", xc, 0.9 + 2 * CAS_W, CAS_W, y1)):
+            out.append(B.box(f"Window_Niche{i}_{nm}", x, n["z1"] - CAS_T / 2, yy, wd, CAS_T, hh, M["trim"]))
+        out.append(B.box(f"Window_Niche{i}_Sill", xc, n["z1"] - SILL_D / 2 + 0.02, y0 - 0.03, 0.9 + 0.16, SILL_D, 0.03, M["trim"]))
+    return out
+
+
 def gallery_walkable(h):
     if h["porch"] != "gallery":
         return False
@@ -1685,6 +2305,15 @@ def wing_exterior(coll, E, h, P, ZF, OZ):
                 WB.box("EX_WingParapetCapE", x1 - 0.05, zc, H + 0.55, 0.34, g["d"] + 0.24, 0.06, E["trim"])]
         if walkable:
             out += wing_terrace(coll, WB, E, P, OZ)
+    elif g.get("roof") == "slab":
+        e_w = g["eave"]
+        x_b = x1 + e_w
+        zf_s, zb_s = zf_e + e_w, zb_e - e_w
+        y_top = H + top_t
+        out.append(WB.box("EX_WingRoofSlab", (x0 + x_b) / 2, (zf_s + zb_s) / 2, y_top, x_b - x0, zf_s - zb_s, 0.15, E["roof"], tile=0.7))
+        out += [WB.box("EX_WingFasciaF", (x0 + x_b) / 2, zf_s - 0.02, y_top - 0.04, x_b - x0, 0.06, 0.20, E["trim"]),
+                WB.box("EX_WingFasciaB", (x0 + x_b) / 2, zb_s + 0.02, y_top - 0.04, x_b - x0, 0.06, 0.20, E["trim"]),
+                WB.box("EX_WingFasciaE", x_b - 0.02, (zf_s + zb_s) / 2, y_top - 0.04, 0.06, zf_s - zb_s - 0.1, 0.20, E["trim"])]
     else:
         # roof: ridge along z over the wing centre; the west slope stops at the main wall, the east one overhangs
         rise, y_eave = g["rise"], H + 0.05
@@ -1703,14 +2332,15 @@ def wing_exterior(coll, E, h, P, ZF, OZ):
         scale_uvs([gab], *siding_uv)
         out.append(gab)
         out.append(WB.box("EX_WingRidgeCap", cx, zc, y_eave + rise + 0.08, 0.22, g["d"] + 0.95, 0.12, E["ridge"]))
-        out.append(WB.box("EX_WingGableVent", cx, zf_e + 0.03, y_eave + rise * 0.35, 0.9, 0.04, 0.7, E["shutter"]))
+        if not g.get("timber"):
+            out.append(WB.box("EX_WingGableVent", cx, zf_e + 0.03, y_eave + rise * 0.35, 0.9, 0.04, 0.7, E["shutter"]))
         out.append(WB.box("EX_WingFascia", cx, zf_e + 0.45, y_eave - 0.12, x1 - x0 + 0.5, 0.08, 0.14, E["trim"]))
     # closed garage door(s), proud of the front shell: carriage style (panels + lites) or vertical planks with iron straps
     dw, dh = g["door_w"], g["door_h"]
     zd = zf_e + 0.03
     xs = garage_door_xs(g, cx)
     style = g.get("door_style", "carriage")
-    assert style in ("carriage", "plank", "flush"), ("unknown garage door style", style)
+    assert style in ("carriage", "plank", "flush", "arched"), ("unknown garage door style", style)
     for di, dx in enumerate(xs):
         sfx = str(di) if len(xs) > 1 else ""
         slab_o = WB.box(f"EX_GarageDoor{sfx}", dx, zd, 0.05, dw, 0.06, dh, E["garage"], tile=0.5)
@@ -1719,6 +2349,15 @@ def wing_exterior(coll, E, h, P, ZF, OZ):
             L.rot_uvs90([slab_o])
             for k, yy in enumerate((0.55, 1.85)):
                 out.append(WB.box(f"EX_GarageDoorStrap{sfx}{k}", dx, zd + 0.04, yy, dw - 0.4, 0.02, 0.06, E["metal"]))
+        elif style == "arched":
+            lite_w, lite_h, lite_y = dw / 4 - 0.18, dh / 4 - 0.18, 0.05 + 3 * dh / 4 + 0.1
+            for c in range(4):
+                px = dx - dw / 2 + dw * (c + 0.5) / 4
+                for r in range(3):
+                    out.append(WB.box(f"EX_GarageDoorPanel{sfx}{r}{c}", px, zd + 0.035, 0.05 + r * dh / 4 + 0.08, lite_w, 0.02, lite_h, E["garage_panel"]))
+                out.append(WB.box(f"EX_GarageDoorLite{sfx}{c}", px, zd + 0.035, lite_y, lite_w, 0.02, lite_h, E["glass_dark"]))
+                out.append(L.arch_panel(coll, f"EX_GarageDoorArch{sfx}{c}", "x", zd + 0.055, WB.x(px) - lite_w / 2, WB.x(px) + lite_w / 2,
+                                        lite_y + lite_h - 0.14, 0.14, lite_y + lite_h, 0.02, E["garage_panel"], seg=6))
         elif style == "carriage":
             for r in range(4):
                 for c in range(4):
@@ -1731,7 +2370,7 @@ def wing_exterior(coll, E, h, P, ZF, OZ):
         out.append(WB.box(f"EX_GarageLamp{k}", x, zf_e + 0.08, 1.95, 0.16, 0.12, 0.28, E["lamp"]))
         out.append(WB.box(f"EX_GarageLampCap{k}", x, zf_e + 0.08, 2.23, 0.2, 0.16, 0.04, E["metal"]))
     for i, (a, b, y0, y1) in enumerate(g["windows"]):
-        out += dress(WB, E, h, f"EX_WingWin{i}", "z", x1, a + OZ, b + OZ, y0, y1, 1, shutters=True)
+        out += dress(WB, E, h, f"EX_WingWin{i}", "z", x1, a + OZ, b + OZ, y0, y1, 1, shutters=h.get("shutters", True))
     return out
 
 
@@ -1771,14 +2410,14 @@ def build_exterior(key, h, P):
         "trim": L.make_mat(f"EX_{key}_Trim", C["trim"], 0.45, "noise", 0.01),
         "roof": L.make_mat(f"EX_{key}_Roof", C["roof"], 0.85, C.get("roof_pat", "tiles"), 0.06, accent=C["roof_acc"]),
         "shutter": L.make_mat(f"EX_{key}_Shutter", C["shutter"], 0.6, "stripes", 0.03, accent=C["shutter"]),
-        "door": L.make_mat(f"EX_{key}_Door", C["door"], 0.45, "noise", 0.03),
+        "door": L.make_mat(f"EX_{key}_Door", C["door"], 0.45, C.get("door_pat", "noise"), 0.03),
         "glass": L.make_mat(f"EX_{key}_Glass", "#bfe6f2", 0.1, "noise", 0.01, alpha=0.22),
         "metal": L.make_mat("EX_MetalDark", "#2b2d33", 0.4, "noise", 0.03),
         "deck": L.make_mat("EX_PorchDeck", "#a77b52", 0.8, "planks", 0.04, accent="#8a6442"),
         "brick": L.make_mat("EX_Chimney", "#a85a45", 0.8, "tiles", 0.05, accent="#8f4a38"),
         "lamp": L.make_mat("EX_PorchLamp", "#fff1c9", 0.4, "noise", 0.0, emit="#ffe2a8", emit_strength=2.0),
-        "box": L.make_mat("EX_FlowerBox", "#7a5638", 0.7, "planks", 0.03, accent="#5e4129"),
-        "flower": L.make_mat("EX_Flowers", "#f07fa8", 0.8, "checker", 0.05, accent="#f6d04d"),
+        "box": L.make_mat(f"EX_{key}_FlowerBox" if "box" in C else "EX_FlowerBox", C.get("box", "#7a5638"), 0.7, "planks", 0.03, accent="#5e4129"),
+        "flower": L.make_mat(f"EX_{key}_Flowers" if "flower" in C else "EX_Flowers", C.get("flower", "#f07fa8"), 0.8, "checker", 0.05, accent="#f6d04d"),
         "leaf": L.make_mat("EX_Bush", "#4f9d54", 0.9, "noise", 0.06),
         "step": L.make_mat("EX_Paving", "#b8b2a6", 0.9, "tiles", 0.03, accent="#a49e92"),
         "wood": L.make_mat("EX_PergolaWood", "#8a6442", 0.7, "planks", 0.03, accent="#6f4f33"),
@@ -1803,7 +2442,7 @@ def build_exterior(key, h, P):
     ZB = OZ + P.z_back_out - GAP - T
     DEPTH = ZF - ZB
     ZC = (ZF + ZB) / 2
-    two = len(P.levels) == 2
+    two = len(P.levels) == 2 and not h.get("loft")
     H_SHELL = FY + (L1_Y + L1_H if two else L0_H) + 0.3
     hw = W / 2
     xo = []
@@ -1837,7 +2476,7 @@ def build_exterior(key, h, P):
         scale_uvs(shell, 1.0, 3.0)
     elif C["wall_pat"] == "tiles":
         scale_uvs(shell, 3.0, 6.0)
-    elif C["wall_pat"] == "shakes":
+    elif C["wall_pat"] in ("shakes", "roman"):
         scale_uvs(shell, *siding_uv_scale(h))
     xo += shell
     if h.get("clad"):
@@ -1856,10 +2495,18 @@ def build_exterior(key, h, P):
         if "neon" in E:
             xo += L.perimeter(coll, "EX_NeonBand", W + 0.12, ZF + 0.06, ZB - 0.06, band_y + 0.05, 0.05, 0.05, E["neon"])
 
+    if h.get("bands"):
+        xo += wall_bands(coll, E, h, W, ZF, ZB)
+
     y_eave = H_SHELL + 0.05
     if h["roof"] == "gable_x":
-        xo += gable_roof_x(coll, B, E, W, DEPTH, ZC, y_eave, h["rise"])
+        dm = h.get("dormers")
+        holes = [(x, (dm["w"] - 0.24) / 2, *dm["hole"]) for x in dm["xs"]] if dm and dm.get("real") else ()
+        xo += gable_roof_x(coll, B, E, W, DEPTH, ZC, y_eave, h["rise"], holes)
         if h["cross"]:
+            if isinstance(h["cross"], dict):
+                cross_max = h["rise"] * (1 - (ZF - 3.2 - ZC) / (DEPTH / 2)) + 0.1
+                assert h["cross"]["rise"] <= cross_max, ("the cross ridge must meet the main slope inside the cross gable", h["cross"]["rise"], cross_max)
             xo += cross_gable(coll, B, E, h["cross"], ZF, y_eave)
     elif h["roof"] == "hip":
         xo += hip_roof_main(coll, E, h, W, DEPTH, ZC, y_eave, h["rise"])
@@ -1872,44 +2519,58 @@ def build_exterior(key, h, P):
         xo += flat_roof_stepped(coll, B, E, h, W, DEPTH, ZC, H_SHELL, ZF, ZB)
     else:
         xo += flat_roof(coll, B, E, W, DEPTH, ZC, H_SHELL, ZF, ZB)
+    if h.get("dormers"):
+        assert h["roof"] in ("hip", "gable_x"), ("dormers sit on the front slope of a hip or side-gable roof", h["roof"])
+        xo += dormer_row(coll, E, h, W, DEPTH, ZC, y_eave)
     if h["chimney"]:
-        cx, dz = h["chimney"]
-        if h["roof"] == "gambrel_x":
-            top = y_eave + h["rise"] + 1.1
-        else:
-            top = y_eave + (h.get("rise", 0) * 0.75 if h["roof"] != "flat" else 0.6) + 1.2
-        stucco = C.get("chimney") == "stucco"
-        xo.append(B.box("EX_Chimney", cx, ZC + dz, y_eave - 0.3, 0.9, 0.9, top - y_eave + 0.3, E["siding"] if stucco else E["brick"], bevel=0.02, tile=0.5))
-        xo.append(B.box("EX_ChimneyCap", cx, ZC + dz, top, 1.08, 1.08, 0.12, E["trim"] if stucco else E["found"]))
-        if stucco:  # small hipped hood on the cap
-            xo.append(L.hip_roof(coll, "EX_ChimneyHood", B.x(cx), ZC + dz, top + 0.18, 1.2, 1.2, 0.24, 0.06, E["roof"]))
+        chimneys = h["chimney"] if isinstance(h["chimney"][0], tuple) else (h["chimney"],)
+        for ci, (cx, dz) in enumerate(chimneys):
+            sfx = str(ci) if ci else ""
+            if h["roof"] == "gambrel_x":
+                top = y_eave + h["rise"] + 1.1
+            else:
+                top = y_eave + (h.get("rise", 0) * 0.75 if h["roof"] != "flat" else 0.6) + 1.2
+            top = h.get("chimney_top", top)
+            kind = C.get("chimney")
+            stucco = kind == "stucco"
+            masonry = kind in ("stucco", "siding")
+            xo.append(B.box(f"EX_Chimney{sfx}", cx, ZC + dz, y_eave - 0.3, 0.9, 0.9, top - y_eave + 0.3, E["siding"] if masonry else E["brick"], bevel=0.02, tile=0.5))
+            xo.append(B.box(f"EX_ChimneyCap{sfx}", cx, ZC + dz, top, 1.08, 1.08, 0.12, E["trim"] if stucco else E["found"]))
+            if stucco:  # small hipped hood on the cap
+                xo.append(L.hip_roof(coll, f"EX_ChimneyHood{sfx}", B.x(cx), ZC + dz, top + 0.18, 1.2, 1.2, 0.24, 0.06, E["roof"]))
 
     for i, w in enumerate(P.windows):
         if w["kind"] in ("door", "exit"):
             continue
+        ribbon = w["kind"] == "ribbon"
+        panes = max(1, round((w["b"] - w["a"]) / 0.9)) if ribbon else max(1, round((w["b"] - w["a"]) / 0.55)) if w["kind"] == "casement" else 1
+        shutters_on = h.get("shutters", True)
         nm = f"EX_Win{i:02d}"
         y = P.levels[w["level"]]["y"]
         small = (w["b"] - w["a"]) < 1.0
         args = (w["a"], w["b"], w["y0"] + y, w["y1"] + y)
         if w["side"] == "front":
-            xo += dress(B, E, h, nm, "x", ZF, *args, 1, shutters=True, flower=h["flowers"] and w["level"] == 0 and not small,
-                        french=w["kind"] in ("french", "terrace"))
+            xo += dress(B, E, h, nm, "x", ZF, *args, 1, shutters=not ribbon and shutters_on, flower=h["flowers"] and w["level"] == 0 and not small,
+                        french=w["kind"] in ("french", "terrace"), panes=panes)
         elif w["side"] == "back":
-            xo += dress(B, E, h, nm, "x", ZB, *args, -1, shutters=not small)
+            xo += dress(B, E, h, nm, "x", ZB, *args, -1, shutters=not small and not ribbon and shutters_on, panes=panes)
         else:
             sgn = -1 if w["side"] == "west" else 1
             to_floor = w["kind"] in ("french", "terrace")
             xo += dress(B, E, h, nm, "z", sgn * hw, args[0] + OZ, args[1] + OZ, args[2], args[3], sgn,
-                        shutters=not small and not to_floor, french=to_floor)
+                        shutters=not small and not to_floor and not ribbon and shutters_on, french=to_floor, panes=panes)
 
     zf_c = ZF - T / 2
-    xo.append(L.hinged_door(coll, door_parts(E, 0.0, 0.45), -0.59, zf_c, FY))
+    leaf = door_parts_planks(E) if h["porch"] == "arched" else door_parts(E, 0.0, 0.45)
+    xo.append(L.hinged_door(coll, leaf, -0.59, zf_c, FY))
     for i, x in enumerate((-0.68, 0.68)):
         xo.append(L.box(coll, f"EX_DoorCasing{i}", x, ZF + 0.03, FY, 0.14, 0.08, 2.26, E["trim"]))
-    xo.append(L.box(coll, "EX_DoorHead", 0, ZF + 0.04, FY + 2.26, 1.6, 0.1, 0.16, E["trim"]))
+    if h["porch"] != "arched":
+        xo.append(L.box(coll, "EX_DoorHead", 0, ZF + 0.04, FY + 2.26, 1.6, 0.1, 0.16, E["trim"]))
     xo.append(L.box(coll, "EX_Threshold", 0, ZF - 0.2, 0.0, 1.2, 0.44, FY, E["trim"]))
-    xo.append(L.box(coll, "EX_PorchLamp", 1.0, ZF + 0.08, FY + 1.75, 0.16, 0.12, 0.28, E["lamp"]))
-    xo.append(L.box(coll, "EX_PorchLampCap", 1.0, ZF + 0.08, FY + 2.03, 0.2, 0.16, 0.04, E["metal"]))
+    if h["porch"] != "perron":
+        xo.append(L.box(coll, "EX_PorchLamp", 1.0, ZF + 0.08, FY + 1.75, 0.16, 0.12, 0.28, E["lamp"]))
+        xo.append(L.box(coll, "EX_PorchLampCap", 1.0, ZF + 0.08, FY + 2.03, 0.2, 0.16, 0.04, E["metal"]))
     if h["porch"] == "porch":
         xo += porch(coll, E, ZF, h["porch_w"])
     elif h["porch"] == "loggia":
@@ -1922,12 +2583,24 @@ def build_exterior(key, h, P):
         xo += frame_porch(coll, B, E, ZF, h["frame"])
     elif h["porch"] == "gallery":
         xo += gallery_porch(coll, B, E, h)
+    elif h["porch"] == "perron":
+        xo += perron_entry(coll, E, ZF, h["perron"])
+    elif h["porch"] == "prairie":
+        xo += prairie_entry(coll, E, ZF, h["prairie"])
+    elif h["porch"] == "arched":
+        xo += arched_entry(coll, E, ZF, h["arched"])
     else:
         xo += pergola(coll, E, ZF)
+    if h.get("juliet"):
+        xo += juliet_balconets(coll, E, ZF, h["juliet"])
     if P.wing:
         xo += wing_exterior(coll, E, h, P, ZF, OZ)
     if bd:
         xo += back_door_exterior(coll, B, E, ZB, bd)
+    if h.get("chimney_front"):
+        xo += chimney_front(coll, E, h["chimney_front"])
+    if h.get("half_timber"):
+        xo += timber_frames(coll, E, h["half_timber"])
     pw = h.get("porch_w", 3.0) if h["porch"] == "porch" else 3.0 if h["porch"] == "canopy" else 7.4
     bushes = ((-pw / 2 - 0.7, ZF + 0.6), (pw / 2 + 0.7, ZF + 0.6), (-hw + 0.4, ZF + 0.5), (hw - 0.4, ZF + 0.5))
     if h["porch"] == "loggia":  # the loggia covers the inner pair
@@ -1935,7 +2608,7 @@ def build_exterior(key, h, P):
     elif h["porch"] == "wrap":
         ws = wrap_side(h["wrap"])
         bushes = ((h["wrap"]["x0"] - ws * 0.8, ZF + 0.6), (-ws * (hw - 0.4), ZF + 0.5))
-    elif h["porch"] in ("frame", "gallery"):
+    elif h["porch"] in ("frame", "gallery", "perron", "prairie", "arched"):
         bushes = ()
     for i, (bx_, bz_) in enumerate(bushes):
         xo.append(L.cyl(coll, f"EX_BushBase{i}", bx_, bz_, 0.0, 0.42, 0.35, E["leaf"], seg=7))
@@ -1944,7 +2617,7 @@ def build_exterior(key, h, P):
     bad = L.check_grounded(xo, allow=("EX_Shell", "EX_Roof", "EX_Gables", "EX_CrossGable", "EX_Ridge", "EX_Fascia", "EX_Chimney", "EX_GableVent", "EX_Win", "Door",
                                       "EX_Door", "EX_PorchLamp", "EX_PorchPost", "EX_Rail", "EX_Baluster", "EX_PorchRoof", "EX_PorchBeam", "EX_Bush", "EX_Corner",
                                       "EX_FloorBand", "EX_NeonBand", "EX_Parapet", "EX_Canopy", "EX_Pergola", "EX_RoofVent", "EX_Wing", "EX_Loggia", "EX_Balcony",
-                                      "EX_Garage", "EX_Clad", "EX_Frame", "EX_Gallery", "EX_Back"))
+                                      "EX_Garage", "EX_Clad", "EX_Frame", "EX_Gallery", "EX_Back", "EX_Perron", "EX_Juliet", "EX_Dormer", "EX_Band", "EX_Stoop", "EX_Timber"))
     assert not bad, bad
     return sc, xo, [0.0, round(FY, 4), round(OZ, 4)], dict(W=W, DEPTH=DEPTH, ZC=ZC, H=H_SHELL, ZB=ZB)
 
@@ -1956,12 +2629,43 @@ def slab(coll, name, sx, length, thick, mat, rot, loc, tile=2.0):
     return o
 
 
-def gable_roof_x(coll, B, E, W, DEPTH, ZC, y_eave, rise):
+def front_slabs_cut(coll, E, W, ZC, y_eave, rise, DEPTH, half, holes):
+    angle = math.atan2(rise, DEPTH / 2)
+    cos, t = math.cos(angle), math.tan(angle)
+    h_mid = y_eave + rise * (1 - (half / 2) / (DEPTH / 2)) + 0.1
+    gz = ZC + half / 2
+    z_start, z_end = ZC - 0.05 * cos, ZC + half + 0.05 * cos
+    zh0, zh1 = holes[0][2], holes[0][3]
+    edge = (W + 0.7) / 2
+    cuts = sorted((x - hw, x + hw) for x, hw, *_ in holes)
+    spans, x_prev = [], -edge
+    for a, b in cuts:
+        spans.append((x_prev, a))
+        x_prev = b
+    spans.append((x_prev, edge))
+    out = []
+
+    def piece(nm, xa, xb, za, zb):
+        zc = (za + zb) / 2
+        out.append(slab(coll, nm, xb - xa, (zb - za) / cos, 0.16, E["roof"], (angle, 0, 0), L.b((xa + xb) / 2, zc, h_mid + (gz - zc) * t), tile=0.7))
+
+    piece("EX_RoofFront", -edge, edge, zh1, z_end)
+    piece("EX_RoofFrontUp", -edge, edge, z_start, zh0)
+    for k, (xa, xb) in enumerate(spans):
+        piece(f"EX_RoofFrontMid{k}", xa, xb, zh0, zh1)
+    return out
+
+
+def gable_roof_x(coll, B, E, W, DEPTH, ZC, y_eave, rise, holes=()):
     out = []
     half = DEPTH / 2 + EAVE
     angle = math.atan2(rise, DEPTH / 2)
     slope_len = half / math.cos(angle) + 0.1
+    if holes:
+        out += front_slabs_cut(coll, E, W, ZC, y_eave, rise, DEPTH, half, holes)
     for nm, sgn in (("Front", 1), ("Back", -1)):
+        if holes and sgn == 1:
+            continue
         gz = ZC + sgn * half / 2
         h_mid = y_eave + rise * (1 - (half / 2) / (DEPTH / 2)) + 0.1
         out.append(slab(coll, f"EX_Roof{nm}", W + 0.7, slope_len, 0.16, E["roof"], (sgn * angle, 0, 0), L.b(0, gz, h_mid), tile=0.7))
@@ -2028,7 +2732,8 @@ def gambrel_roof_x(coll, E, h, W, DEPTH, ZC, y_eave):
 
 
 def cross_gable(coll, B, E, spec, ZF, y_eave):
-    cx, cw, rise = spec
+    opts = spec if isinstance(spec, dict) else dict(cx=spec[0], cw=spec[1], rise=spec[2])
+    cx, cw, rise = opts["cx"], opts["cw"], opts["rise"]
     out = []
     front, back = ZF + 0.35, ZF - 3.2
     ln = front - back
@@ -2042,7 +2747,8 @@ def cross_gable(coll, B, E, spec, ZF, y_eave):
         r = ch / 2
         hh = y_eave + rise * (1 - r / (cw / 2)) + 0.09
         out.append(slab(coll, f"EX_RoofCross{nm}", ch / math.cos(angle) + 0.1, ln + 0.3, 0.14, E["roof"], (0, sgn * angle, 0), L.b(B.x(cx) + sgn * r, zc + 0.15, hh), tile=0.7))
-    out.append(B.box("EX_CrossGableVent", cx, front + 0.02, y_eave + rise * 0.24, 0.8, 0.05, 0.7, E["shutter"]))
+    if opts.get("vent", True):
+        out.append(B.box("EX_CrossGableVent", cx, front + 0.02, y_eave + rise * 0.24, 0.8, 0.05, 0.7, E["shutter"]))
     out.append(B.box("EX_CrossGableTrim", cx, front + 0.03, y_eave - 0.05, cw + 0.2, 0.08, 0.12, E["trim"]))
     return out
 
@@ -2114,7 +2820,7 @@ def frame_porch(coll, B, E, ZF, fr):
             piece("EX_EntryPad", pa, pb, ZF, z1, 0.0, 0.12, E["step"])]
 
 
-def dress(B, E, h, name, axis, face, a, b, y0, y1, outward, shutters=True, flower=False, french=False):
+def dress(B, E, h, name, axis, face, a, b, y0, y1, outward, shutters=True, flower=False, french=False, panes=1):
     modern = h["windows"] == "modern"
     FR = 0.06 if modern else 0.1
     yy0, yy1 = y0 + FY, y1 + FY
@@ -2134,8 +2840,11 @@ def dress(B, E, h, name, axis, face, a, b, y0, y1, outward, shutters=True, flowe
     out += [bx("JambA", a - FR / 2, yy0, FR, yy1 - yy0, mat=frame),
             bx("JambB", b + FR / 2, yy0, FR, yy1 - yy0, mat=frame)]
     if not modern:
-        out += [bx("Mullion", mid, yy0, 0.05, yy1 - yy0, depth=0.04, off=-0.07, mat=frame),
-                bx("Transom", mid, yy0 + (yy1 - yy0) * 0.62, w, 0.05, depth=0.04, off=-0.07, mat=frame)]
+        if panes == 1:
+            out.append(bx("Mullion", mid, yy0, 0.05, yy1 - yy0, depth=0.04, off=-0.07, mat=frame))
+        else:
+            out += [bx(f"Mullion{k}", a + w * k / panes, yy0, 0.05, yy1 - yy0, depth=0.04, off=-0.07, mat=frame) for k in range(1, panes)]
+        out.append(bx("Transom", mid, yy0 + (yy1 - yy0) * 0.62, w, 0.05, depth=0.04, off=-0.07, mat=frame))
         if shutters and h["palette"] != "scandi":
             sw = min(0.55, w * 0.38)
             out.append(bx("ShutterA", a - FR - sw / 2 - 0.02, yy0, sw, yy1 - yy0, depth=0.04, mat=E["shutter"]))
@@ -2173,6 +2882,85 @@ def hip_roof_main(coll, E, h, W, DEPTH, ZC, y_eave, rise):
     for k, (cx_, cz_) in enumerate(corners):
         rx, rz = (r0 if cx_ < 0 else r1) if along_x else (r0 if cz_ < ZC else r1)
         out.append(L.beam(coll, f"EX_RidgeHip{k}", (rx, rz, y_ridge + 0.02), (cx_, cz_, y_drip + 0.02), 0.2, 0.1, E["ridge"]))
+    return out
+
+
+def perron_entry(coll, E, ZF, pn):
+    half = pn["open"] / 2
+    out = [L.box(coll, "EX_PerronLanding", 0, ZF + pn["d"] / 2, 0.0, pn["w"], pn["d"], pn["top"], E["deck"], tile=1.0)]
+    for nm, sx in (("W", -1), ("E", 1)):
+        out.append(L.box(coll, f"EX_PerronJamb{nm}", sx * (half + pn["jamb"] / 2), ZF + pn["depth"] / 2, pn["top"], pn["jamb"],
+                         pn["depth"], pn["spring"] - pn["top"], E["trim"]))
+    out.append(L.arch_panel(coll, "EX_PerronArch", "x", ZF + pn["depth"] / 2, -half, half, pn["spring"], pn["arch_rise"],
+                            pn["top_y"], pn["depth"], E["trim"]))
+    crown = pn["spring"] + pn["arch_rise"]
+    out.append(L.box(coll, "EX_PerronKeystone", 0, ZF + (pn["depth"] + 0.01) / 2, crown - 0.1, 0.22, pn["depth"] + 0.01,
+                     pn["top_y"] + 0.02 - (crown - 0.1), E["trim"]))
+    for k, sx in enumerate((-1, 1)):
+        x = sx * pn["lamp_x"]
+        out.append(L.box(coll, f"EX_PerronLamp{k}", x, ZF + 0.08, FY + 1.75, 0.12, 0.12, 0.28, E["lamp"]))
+        out.append(L.box(coll, f"EX_PerronLampCap{k}", x, ZF + 0.08, FY + 2.03, 0.16, 0.16, 0.04, E["metal"]))
+    return out
+
+
+def juliet_balconets(coll, E, ZF, ju):
+    out = []
+    y_deck = FY + L1_Y
+    half = ju["w"] / 2
+    for k, x in enumerate(ju["bays"]):
+        pts = [(x - half, ZF + 0.12), (x - half, ZF + ju["out"]), (x + half, ZF + ju["out"]), (x + half, ZF + 0.12)]
+        out += L.railing(coll, f"EX_Juliet{k}", pts, y_deck, ju["h"], 0.14, E["frame"], post=ju["post"], bar=0.025)
+        out.append(L.box(coll, f"EX_JulietSill{k}", x, ZF + (0.05 + ju["out"] + 0.06) / 2, y_deck - 0.08, ju["w"] + 0.24,
+                         ju["out"] + 0.06 - 0.05, 0.10, E["trim"]))
+    return out
+
+
+def dormer_row(coll, E, h, W, DEPTH, ZC, y_eave):
+    dm = h["dormers"]
+    e = h.get("eave", EAVE)
+    t = h["rise"] / (min(W, DEPTH) / 2)
+    y_drip = y_eave + DORMER_DRIP[h["roof"]] - e * t
+    z_drip = ZC + DEPTH / 2 + e
+    roof_y = lambda z: y_drip + (z_drip - z) * t
+    zf, w, rise = dm["z"], dm["w"], dm["rise"]
+    ww = w - 0.5
+    y_roof = roof_y(zf)
+    y0 = y_roof + dm["sill"]
+    y1 = y0 + dm["win_h"]
+    y_top = y1 + 0.22
+    ln = (y_top + rise + 0.25 - y_roof) / t
+    angle = math.atan2(rise, w / 2)
+    ch = w / 2 + 0.12
+    r = ch / 2
+    out = []
+    for k, x in enumerate(dm["xs"]):
+        n = f"EX_Dormer{k}"
+        if dm.get("real"):
+            jamb = w / 2 - ww / 2
+            out.append(L.box(coll, f"{n}_FrontSill", x, zf - 0.07, y_roof - 0.06, w, 0.14, y0 - y_roof + 0.06, E["siding"], tile=1.0))
+            out.append(L.box(coll, f"{n}_FrontHead", x, zf - 0.07, y1, w, 0.14, y_top - y1, E["siding"], tile=1.0))
+            for nm, sx in (("A", -1), ("B", 1)):
+                out.append(L.box(coll, f"{n}_FrontJamb{nm}", x + sx * (ww / 2 + jamb / 2), zf - 0.07, y0, jamb, 0.14, y1 - y0, E["siding"], tile=1.0))
+            out.append(L.box(coll, f"{n}_Glass", x, zf - 0.07, y0, ww, 0.02, y1 - y0, E["glass"]))
+        else:
+            out.append(L.box(coll, f"{n}_Front", x, zf - 0.07, y_roof - 0.06, w, 0.14, y_top - y_roof + 0.06, E["siding"], tile=1.0))
+        for nm, sx in (("W", -1), ("E", 1)):
+            out.append(L.box(coll, f"{n}_Cheek{nm}", x + sx * (w / 2 - 0.06), zf - 0.14 - (ln - 0.14) / 2, y_roof - 0.06, 0.12,
+                             ln - 0.14, y_top - y_roof + 0.06, E["siding"], tile=1.0))
+        out.append(L.gable_roof(coll, f"{n}_Gable", x, zf - ln / 2, y_top, w - 0.02, ln, rise, E["siding"], ridge_axis="z"))
+        for nm, sgn in (("W", -1), ("E", 1)):
+            out.append(slab(coll, f"{n}_Roof{nm}", ch / math.cos(angle) + 0.1, ln + 0.15, 0.14, E["roof"], (0, sgn * angle, 0),
+                            L.b(x + sgn * r, zf + 0.075 - ln / 2, y_top + rise * (1 - r / (w / 2)) + 0.09), tile=0.7))
+        out.append(L.box(coll, f"{n}_Ridge", x, zf + 0.075 - ln / 2, y_top + rise + 0.07, 0.18, ln + 0.15, 0.1, E["ridge"]))
+        out.append(L.box(coll, f"{n}_Cornice", x, zf + 0.05, y_top - 0.06, w + 0.2, 0.1, 0.1, E["trim"]))
+        if not dm.get("real"):
+            out.append(L.box(coll, f"{n}_Lite", x, zf + 0.01, y0, ww, 0.02, y1 - y0, E["glass_dark"]))
+        for nm, sx in (("A", -1), ("B", 1)):
+            out.append(L.box(coll, f"{n}_Casing{nm}", x + sx * (ww / 2 + 0.03), zf + 0.02, y0, 0.06, 0.04, y1 - y0 + 0.07, E["trim"]))
+        out.append(L.box(coll, f"{n}_Head", x, zf + 0.02, y1, ww + 0.12, 0.04, 0.07, E["trim"]))
+        out.append(L.box(coll, f"{n}_Sill", x, zf + 0.06, y0 - 0.05, ww + 0.16, 0.12, 0.05, E["trim"]))
+        out.append(L.box(coll, f"{n}_Mullion", x, zf + 0.035, y0, 0.04, 0.03, y1 - y0, E["frame"]))
+        out.append(L.box(coll, f"{n}_Transom", x, zf + 0.035, y0 + (y1 - y0) * 0.62, ww, 0.03, 0.04, E["frame"]))
     return out
 
 
@@ -2351,12 +3139,130 @@ def gallery_collision(h):
     return [{k: round(v, 4) if isinstance(v, float) else v for k, v in b.items()} for b in boxes]
 
 
+def door_parts_planks(E):
+    return [(0.0, 0.0, 1.18, 0.06, 2.18, E["door"], 0.02),
+            (0.0, 1.45, 0.30, 0.075, 0.30, E["glass"], 0.0),
+            (0.0, 0.45, 1.12, 0.10, 0.08, E["metal"], 0.0),
+            (0.0, 1.20, 1.12, 0.10, 0.08, E["metal"], 0.0),
+            (0.45, 0.95, 0.05, 0.14, 0.05, E["metal"], 0.0)]
+
+
+def arched_entry(coll, E, ZF, en):
+    z1 = ZF + en["d"]
+    depth = en["depth"]
+    return [L.box(coll, "EX_EntryStep", 0, (ZF + z1) / 2, 0.0, en["step_w"], en["d"], en["top"], E["step"], tile=1.0),
+            L.box(coll, "EX_EntryStepLow", 0, z1 + en["low_d"] / 2, 0.0, en["step_w"], en["low_d"], en["low_top"], E["step"], tile=1.0),
+            L.arch_panel(coll, "EX_DoorArch", "x", ZF + depth / 2, -en["half"], en["half"], en["spring"], en["rise"], en["top_y"], depth, E["trim"]),
+            L.box(coll, "EX_DoorArchHead", 0, ZF + (depth + 0.02) / 2, en["lintel_y"], 1.6, depth + 0.02, en["lintel_top"] - en["lintel_y"], E["trim"]),
+            L.box(coll, "EX_PorchLampB", -1.0, ZF + 0.08, FY + 1.75, 0.16, 0.12, 0.28, E["lamp"]),
+            L.box(coll, "EX_PorchLampCapB", -1.0, ZF + 0.08, FY + 2.03, 0.2, 0.16, 0.04, E["metal"])]
+
+
+def chimney_front(coll, E, cf):
+    x, w, z0, z1 = cf["x"], cf["w"], cf["z0"], cf["z1"]
+    out = []
+
+    def block(name, bw, front, y0, y1, mat):
+        out.append(L.box(coll, name, x, (z0 + front) / 2, y0, bw, front - z0, y1 - y0, mat, tile=0.5))
+
+    block("EX_ChimneyFrontBase", w, z1, 0.0, cf["base_top"], E["brick"])
+    block("EX_ChimneyFrontLedge0", w + 0.14, z1 + 0.07, cf["base_top"], cf["base_top"] + 0.08, E["found"])
+    block("EX_ChimneyFrontMid", cf["mid_w"], z1, cf["base_top"] + 0.08, cf["mid_top"], E["brick"])
+    block("EX_ChimneyFrontLedge1", cf["mid_w"] + 0.14, z1 + 0.04, cf["mid_top"], cf["mid_top"] + 0.08, E["found"])
+    block("EX_ChimneyFrontShaft", cf["shaft_w"], cf["shaft_z1"], cf["mid_top"] + 0.08, cf["top"], E["brick"])
+    block("EX_ChimneyFrontCap", cf["shaft_w"] + 0.2, cf["shaft_z1"] + 0.07, cf["top"], cf["top"] + 0.12, E["found"])
+    for k, px in enumerate(cf["pots"]):
+        out.append(L.cyl(coll, f"EX_ChimneyFrontPot{k}", px, (z0 + cf["shaft_z1"]) / 2, cf["top"] + 0.12, 0.14, cf["pot_top"] - cf["top"] - 0.12, E["brick"], seg=8))
+    return out
+
+
+def chimney_collision(h):
+    cf = h["chimney_front"]
+    return [dict(name="ChimneyFront", x=cf["x"], z=round((h["ZF"] + cf["z1"]) / 2, 4), sx=cf["w"], sz=round(cf["z1"] - h["ZF"], 4), h=3.0)]
+
+
+def timber_frames(coll, E, ht):
+    post, layers = ht["post"], ht["layers"]
+    out = []
+    for spec in ht["faces"]:
+        axis, face, sgn = spec["axis"], spec["face"], spec["out"]
+        name = f"EX_Timber{spec['name']}"
+
+        def centre(depth):
+            return face + sgn * depth / 2
+
+        for i, (a0, a1, y0) in enumerate(spec["rails"]):
+            d = layers["rail"]
+            if axis == "x":
+                out.append(L.box(coll, f"{name}_Rail{i}", (a0 + a1) / 2, centre(d), y0, a1 - a0, d, post, E["trim"]))
+            else:
+                out.append(L.box(coll, f"{name}_Rail{i}", centre(d), (a0 + a1) / 2, y0, d, a1 - a0, post, E["trim"]))
+        for i, (a, y0, y1) in enumerate(spec["studs"]):
+            d = layers["stud"]
+            if axis == "x":
+                out.append(L.box(coll, f"{name}_Stud{i}", a, centre(d), y0, post, d, y1 - y0, E["trim"]))
+            else:
+                out.append(L.box(coll, f"{name}_Stud{i}", centre(d), a, y0, d, post, y1 - y0, E["trim"]))
+        for i, ((a0, y0), (a1, y1)) in enumerate(spec["braces"]):
+            d = layers["brace"]
+            if axis == "x":
+                out.append(L.beam(coll, f"{name}_Brace{i}", (a0, centre(d), y0), (a1, centre(d), y1), d, post - 0.02, E["trim"]))
+            else:
+                out.append(L.beam(coll, f"{name}_Brace{i}", (centre(d), a0, y0), (centre(d), a1, y1), d, post - 0.02, E["trim"]))
+    return out
+
+
 def porch_collision(h, P):
+    cols = chimney_collision(h) if h.get("chimney_front") else []
     if h["porch"] == "wrap":
-        return wrap_porch_collision(h["ZF"], P.W / 2, h["wrap"])
+        return cols + wrap_porch_collision(h["ZF"], P.W / 2, h["wrap"])
     if h["porch"] == "gallery":
-        return gallery_collision(h)
-    return []
+        return cols + gallery_collision(h)
+    if h["porch"] == "prairie":
+        return cols + prairie_collision(h)
+    return cols
+
+
+def prairie_entry(coll, E, ZF, pn):
+    cx, ch, pz = pn["cheek_x"], pn["cheek"], pn["pier_z"]
+    pier, top = pn["pier"], pn["top"]
+    y_slab = pn["slab_y"]
+    out = [L.box(coll, "EX_StoopSlab", 0, ZF + pn["d"] / 2, 0.0, pn["w"], pn["d"], top, E["step"], tile=1.0),
+           L.box(coll, "EX_StoopCanopy", 0, ZF + (pz + 0.45 - ZF) / 2, y_slab, pn["slab_w"], pz + 0.45 - ZF, pn["slab_t"], E["trim"])]
+    for nm, sx in (("W", -1), ("E", 1)):
+        out.append(L.box(coll, f"EX_StoopCheek{nm}", sx * cx, (ZF + pz) / 2, top, ch, pz - ZF, pn["cheek_h"], E["siding"]))
+        out.append(L.box(coll, f"EX_StoopCoping{nm}", sx * cx, (ZF + pz) / 2, top + pn["cheek_h"], pier, pz - ZF, 0.06, E["found"]))
+        out.append(L.box(coll, f"EX_StoopPier{nm}", sx * cx, pz, top, pier, pier, y_slab - 0.06 - top, E["siding"]))
+        out.append(L.box(coll, f"EX_StoopPierCap{nm}", sx * cx, pz, y_slab - 0.06, pier + 0.1, pier + 0.1, 0.06, E["found"]))
+    return out
+
+
+def prairie_collision(h):
+    pn = h["prairie"]
+    cx, ch, pz, pier, top = pn["cheek_x"], pn["cheek"], pn["pier_z"], pn["pier"], pn["top"]
+    boxes = []
+    for nm, sx in (("W", -1), ("E", 1)):
+        boxes.append(dict(name=f"StoopCheek{nm}", x=sx * cx, z=(h["ZF"] + pz) / 2, sx=ch, sz=pz - h["ZF"], h=top + pn["cheek_h"] + 0.06))
+        boxes.append(dict(name=f"StoopPier{nm}", x=sx * cx, z=pz, sx=pier, sz=pier, h=pn["slab_y"]))
+    return [{k: round(v, 4) if isinstance(v, float) else v for k, v in b.items()} for b in boxes]
+
+
+def wall_bands(coll, E, h, W, ZF, ZB):
+    hw = W / 2
+    y_head, h_head = h["bands"]["head"]
+    y_sill, h_sill = h["bands"]["sill"]
+    g = h["wing"]
+    zf_e = ZF - g["setback"]
+    zb_e = zf_e - g["d"]
+    out = L.perimeter(coll, "EX_BandHead", W + 0.1, ZF + 0.05, ZB - 0.05, y_head, h_head, 0.1, E["trim"])
+    out += [L.box(coll, "EX_BandSillFront0", (-hw - 0.05 - 0.7) / 2, ZF, y_sill, hw + 0.05 - 0.7, 0.1, h_sill, E["trim"]),
+            L.box(coll, "EX_BandSillFront1", (hw + 0.05 + 0.7) / 2, ZF, y_sill, hw + 0.05 - 0.7, 0.1, h_sill, E["trim"]),
+            L.box(coll, "EX_BandSillBack", 0, ZB, y_sill, W + 0.1, 0.1, h_sill, E["trim"]),
+            L.box(coll, "EX_BandSillW", -hw, (ZF + ZB) / 2, y_sill, 0.1, ZF - ZB - 0.1, h_sill, E["trim"])]
+    z_hi, z_lo = zf_e + 0.2, zb_e - 0.2
+    out.append(L.box(coll, "EX_BandSillEF", hw, (z_hi + ZF - 0.05) / 2, y_sill, 0.1, ZF - 0.05 - z_hi, h_sill, E["trim"]))
+    out.append(L.box(coll, "EX_BandSillEB", hw, (ZB + 0.05 + z_lo) / 2, y_sill, 0.1, z_lo - ZB - 0.05, h_sill, E["trim"]))
+    return out
 
 
 def door_parts(E, x, handle):

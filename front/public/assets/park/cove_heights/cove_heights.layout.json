@@ -629,6 +629,102 @@
         1.25,
         -178.99
       ]
+    },
+    {
+      "kind": "house",
+      "key": "cove_home_b02",
+      "name": "Maison Lavande",
+      "lot": "B-02",
+      "position": [
+        -291.0,
+        0.0,
+        -186.0
+      ],
+      "rotationY": 3.141593,
+      "door": [
+        -291.0,
+        1.25,
+        -190.8
+      ],
+      "offer": "buy",
+      "price": 15500,
+      "interiorOffset": [
+        0.0,
+        0.2,
+        -1.405
+      ]
+    },
+    {
+      "kind": "house",
+      "key": "cove_home_b03",
+      "name": "Nantucket Cape",
+      "lot": "B-03",
+      "position": [
+        -317.0,
+        0.0,
+        -203.0
+      ],
+      "rotationY": 1.570796,
+      "door": [
+        -312.2,
+        1.25,
+        -203.0
+      ],
+      "offer": "buy",
+      "price": 11500,
+      "interiorOffset": [
+        0.0,
+        0.2,
+        -1.405
+      ]
+    },
+    {
+      "kind": "house",
+      "key": "cove_home_b04",
+      "name": "Oak Park Prairie",
+      "lot": "B-04",
+      "position": [
+        -316.0,
+        0.0,
+        -222.7
+      ],
+      "rotationY": 1.570796,
+      "door": [
+        -311.2,
+        1.25,
+        -222.7
+      ],
+      "offer": "buy",
+      "price": 13500,
+      "interiorOffset": [
+        0.0,
+        0.2,
+        -1.405
+      ]
+    },
+    {
+      "kind": "house",
+      "key": "cove_home_b05",
+      "name": "Ashbury Tudor",
+      "lot": "B-05",
+      "position": [
+        -317.0,
+        0.0,
+        -242.8
+      ],
+      "rotationY": 1.570796,
+      "door": [
+        -312.2,
+        1.25,
+        -242.8
+      ],
+      "offer": "buy",
+      "price": 13000,
+      "interiorOffset": [
+        0.0,
+        0.2,
+        -1.405
+      ]
     }
   ],
   "collision": [
@@ -1491,6 +1587,166 @@
       "hy": 3.0,
       "cy": 3.0,
       "yaw": 3.1416
+    },
+    {
+      "name": "COL_Cove_CH_LotB02_HornbeamW",
+      "cx": -296.9,
+      "cz": -192.8,
+      "hx": 1.3,
+      "hz": 0.3,
+      "hy": 0.81,
+      "cy": 0.81,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Cove_CH_LotB02_HornbeamE",
+      "cx": -285.1,
+      "cz": -192.8,
+      "hx": 1.3,
+      "hz": 0.3,
+      "hy": 0.81,
+      "cy": 0.81,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Cove_CH_LotB02_LampW",
+      "cx": -293.3,
+      "cz": -192.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotB02_LampE",
+      "cx": -288.7,
+      "cz": -192.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_House_cove_home_b02",
+      "cx": -291.0,
+      "cz": -184.395,
+      "hx": 7.2,
+      "hz": 5.605,
+      "hy": 3.0,
+      "cy": 3.0,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Cove_CH_LotB03_PostLamp",
+      "cx": -309.2,
+      "cz": -201.2,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_House_cove_home_b03",
+      "cx": -318.305,
+      "cz": -205.0,
+      "hx": 8.0,
+      "hz": 5.305,
+      "hy": 3.0,
+      "cy": 3.0,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Cove_CH_LotB04_PostLamp",
+      "cx": -309.2,
+      "cz": -220.9,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotB04_StoopCheekW",
+      "cx": -311.325,
+      "cz": -221.15,
+      "hx": 0.175,
+      "hz": 0.675,
+      "hy": 0.57,
+      "cy": 0.57,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Cove_LotB04_StoopPierW",
+      "cx": -310.65,
+      "cz": -221.15,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 1.33,
+      "cy": 1.33,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Cove_LotB04_StoopCheekE",
+      "cx": -311.325,
+      "cz": -224.25,
+      "hx": 0.175,
+      "hz": 0.675,
+      "hy": 0.57,
+      "cy": 0.57,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Cove_LotB04_StoopPierE",
+      "cx": -310.65,
+      "cz": -224.25,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 1.33,
+      "cy": 1.33,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_House_cove_home_b04",
+      "cx": -317.305,
+      "cz": -224.7,
+      "hx": 7.3,
+      "hz": 5.305,
+      "hy": 3.0,
+      "cy": 3.0,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Cove_CH_LotB05_PostLamp",
+      "cx": -309.2,
+      "cz": -240.4,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotB05_ChimneyFront",
+      "cx": -312.65,
+      "cz": -240.45,
+      "hx": 0.65,
+      "hz": 0.35,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_House_cove_home_b05",
+      "cx": -318.505,
+      "cz": -244.8,
+      "hx": 7.2,
+      "hz": 5.505,
+      "hy": 3.0,
+      "cy": 3.0,
+      "yaw": 1.5708
     },
     {
       "name": "COL_Cove_CH_Clubhouse",

@@ -12,6 +12,7 @@ import importlib
 import json
 import math
 import os
+import random
 import sys
 
 if "__file__" not in globals():
@@ -116,6 +117,10 @@ HM = {  # lot landscaping around the houses (the houses themselves come from bui
     "boxwood": L.make_mat("TW_CoveBoxwoodLeaf", "#3f6f37", 0.9, "noise", 0.07),
     "hydrangea": L.make_mat("TW_CoveHydrangeaFlower", "#f3f1e4", 0.9, "noise", 0.08, accent="#dfe6c8"),
     "hedge_low": M["hedge_low"],
+    "gravel": L.make_mat("TW_CoveGravel", "#cfc6b2", 0.95, "noise", 0.10, accent="#b8ae98"),
+    "hornbeam": L.make_mat("TW_CoveHornbeam", "#547f3a", 0.9, "noise", 0.07),
+    "lavender": L.make_mat("TW_CoveHedgeLavender", "#9a86c4", 0.9, "noise", 0.08, accent="#7d6aa6"),
+    "prairie": L.make_mat("TW_CovePrairieHedge", "#b9a566", 0.9, "noise", 0.10, accent="#9c8a4e"),
 }
 
 LOOP_SEC = S.road_section(6.0, 0.15, 0.0, 1.5, Y)
@@ -435,7 +440,52 @@ S.hydrangeas(est, "CH_LotB01_Hydrangea", 160.2, 162.9, -211.75, HM, n=3)
 house_cols(HOME_B01, "LotB01")
 est.col("HousePlaceholderB01", *house_point(HOME_B01, -2.0, -1.605), 15.0, 11.21, 6.0, yaw=HOME_B01["rotationY"])
 est.cols[-1]["name"] = f"COL_House_{HOME_B01['key']}"
-HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03, VILLA_A04, HOME_B01]
+HOME_B02 = {"key": "cove_home_b02", "name": "Maison Lavande", "lot": "B-02", "origin": (140.0, -204.0), "zf": 4.0,
+            "rotationY": PI, "interiorOffset": [0.0, 0.2, -1.405], "price": 15500}
+S.rect(est, "CH_LotB02_CourW", 134.5, -212.0, 138.8, -209.4, Y["lot"], Y["drive"], HM["gravel"])
+S.rect(est, "CH_LotB02_CourE", 141.2, -212.0, 145.5, -209.4, Y["lot"], Y["drive"], HM["gravel"])
+S.hedge_run(est, "CH_LotB02_HornbeamW", (134.1, -209.5), (134.1, -212.1), HM, w=0.6, h=1.6, mat="hornbeam")
+S.hedge_run(est, "CH_LotB02_HornbeamE", (145.9, -209.5), (145.9, -212.1), HM, w=0.6, h=1.6, mat="hornbeam")
+S.hedge_run(est, "CH_LotB02_LavenderW", (133.6, -208.7), (138.3, -208.7), HM, w=0.6, mat="lavender")
+S.hedge_run(est, "CH_LotB02_LavenderE", (141.7, -208.7), (146.4, -208.7), HM, w=0.6, mat="lavender")
+S.street_lamp(est, "CH_LotB02_LampW", 137.7, -210.5, M, h=2.6)
+S.street_lamp(est, "CH_LotB02_LampE", 142.3, -210.5, M, h=2.6)
+est.col("HousePlaceholderB02", *house_point(HOME_B02, 0.0, -1.605), 14.4, 11.21, 6.0, yaw=HOME_B02["rotationY"])
+est.cols[-1]["name"] = f"COL_House_{HOME_B02['key']}"
+HOME_B03 = {"key": "cove_home_b03", "name": "Nantucket Cape", "lot": "B-03", "origin": (114.0, -221.0), "zf": 4.0,
+            "rotationY": math.pi / 2, "interiorOffset": [0.0, 0.2, -1.405], "price": 11500}
+S.rect(est, "CH_LotB03_GarageApron", 118.0, -227.7, 120.0, -228.3, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotB03_FrontPath", 119.425, -221.8, 123.0, -220.2, Y["lot"], Y["drive"], M["drive"])
+S.street_lamp(est, "CH_LotB03_PostLamp", 121.8, -219.2, M, h=2.6)
+_shared_rnd, est.rnd = est.rnd, random.Random("CH_LotB03")
+S.hydrangeas(est, "CH_LotB03_HydrangeaN", -219.0, -215.6, 118.8, HM_BLUE, n=3, along_z=True)
+S.hydrangeas(est, "CH_LotB03_HydrangeaS", -226.4, -223.0, 118.8, HM_BLUE, n=3, along_z=True)
+est.rnd = _shared_rnd
+est.col("HousePlaceholderB03", *house_point(HOME_B03, 2.0, -1.305), 16.0, 10.61, 6.0, yaw=HOME_B03["rotationY"])
+est.cols[-1]["name"] = f"COL_House_{HOME_B03['key']}"
+HOME_B04 = {"key": "cove_home_b04", "name": "Oak Park Prairie", "lot": "B-04", "origin": (115.0, -240.7), "zf": 4.0,
+            "rotationY": math.pi / 2, "interiorOffset": [0.0, 0.2, -1.405], "price": 13500}
+S.rect(est, "CH_LotB04_GarageApronN", 118.0, -246.5, 120.0, -246.8, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotB04_GarageApronS", 118.0, -249.2, 120.0, -249.5, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotB04_FrontPath", 120.6, -241.5, 123.0, -239.9, Y["lot"], Y["drive"], M["drive"])
+S.street_lamp(est, "CH_LotB04_PostLamp", 121.8, -238.9, M, h=2.6)
+S.hedge_run(est, "CH_LotB04_GrassN", (119.65, -236.2), (119.65, -238.6), HM, w=0.7, mat="prairie")
+S.hedge_run(est, "CH_LotB04_GrassS", (119.65, -243.0), (119.65, -245.3), HM, w=0.7, mat="prairie")
+house_cols(HOME_B04, "LotB04")
+est.col("HousePlaceholderB04", *house_point(HOME_B04, 2.0, -1.305), 14.6, 10.61, 6.0, yaw=HOME_B04["rotationY"])
+est.cols[-1]["name"] = f"COL_House_{HOME_B04['key']}"
+HOME_B05 = {"key": "cove_home_b05", "name": "Ashbury Tudor", "lot": "B-05", "origin": (114.0, -260.8), "zf": 4.0,
+            "rotationY": math.pi / 2, "interiorOffset": [0.0, 0.2, -1.405], "price": 13000}
+S.rect(est, "CH_LotB05_GarageApronN", 118.0, -266.5, 120.0, -266.8, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotB05_GarageApronS", 118.0, -269.2, 120.0, -269.5, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotB05_FrontPath", 119.3, -261.6, 123.0, -260.0, Y["lot"], Y["drive"], M["drive"])
+S.street_lamp(est, "CH_LotB05_PostLamp", 121.8, -258.4, M, h=2.6)
+S.hedge_run(est, "CH_LotB05_BoxN", (119.9, -259.5), (122.4, -259.5), HM, w=0.5, mat="boxwood")
+S.hedge_run(est, "CH_LotB05_BoxS", (119.9, -262.1), (122.4, -262.1), HM, w=0.5, mat="boxwood")
+house_cols(HOME_B05, "LotB05")
+est.col("HousePlaceholderB05", *house_point(HOME_B05, 2.0, -1.505), 14.4, 11.01, 6.0, yaw=HOME_B05["rotationY"])
+est.cols[-1]["name"] = f"COL_House_{HOME_B05['key']}"
+HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03, VILLA_A04, HOME_B01, HOME_B02, HOME_B03, HOME_B04, HOME_B05]
 for h in HOUSES:
     _, _, x0, x1, z0, z1, _, _, entry, *_ = next(lot for lot in LOTS if lot[0] == h["lot"])
     door = house_point(h, 0.0, h["zf"] + 0.8)

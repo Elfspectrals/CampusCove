@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "key": "cove_home_b05",
+  "levels": [
+    {
+      "id": "L0",
+      "y": 0.0,
+      "height": 2.8,
+      "rects": [
+        {
+          "minX": -4.795,
+          "maxX": 4.795,
+          "minZ": -5.2,
+          "maxZ": 5.2
+        },
+        {
+          "minX": 4.795,
+          "maxX": 8.795,
+          "minZ": -1.19,
+          "maxZ": 5.0
+        }
+      ]
+    },
+    {
+      "id": "L1",
+      "y": 3.0,
+      "height": 2.6,
+      "rects": [
+        {
+          "minX": -4.795,
+          "maxX": 4.795,
+          "minZ": -5.2,
+          "maxZ": -2.0
+        },
+        {
+          "minX": -4.795,
+          "maxX": -1.19,
+          "minZ": -2.0,
+          "maxZ": 5.0
+        },
+        {
+          "minX": 0.01,
+          "maxX": 4.795,
+          "minZ": -2.0,
+          "maxZ": 5.0
+        },
+        {
+          "minX": -1.19,
+          "maxX": 0.01,
+          "minZ": 2.6,
+          "maxZ": 5.0
+        }
+      ]
+    }
+  ],
+  "stairs": [
+    {
+      "name": "Stair_Main",
+      "minX": -1.19,
+      "maxX": 0.01,
+      "minZ": -2.0,
+      "maxZ": 2.6,
+      "y0": 0.0,
+      "y1": 3.0,
+      "rise": "+z"
+    }
+  ]
+}
