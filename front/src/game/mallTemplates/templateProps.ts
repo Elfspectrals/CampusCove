@@ -29,6 +29,10 @@ let cropTable: Promise<CropTable> | null = null
 let animalTable: Promise<AnimalTable> | null = null
 let buildingTable: Promise<BuildingTable> | null = null
 const BUILDING_PREVIEWS_URL = '/__editor/buildings'
+const VARIANTS_URL = '/assets/variants.json'
+
+type VariantTable = Record<string, Record<string, NonNullable<DecorProp['materials']>>>
+let variantTable: Promise<VariantTable> | null = null
 const animalModels = new Map<string, Promise<{ scene: THREE.Object3D; clips: THREE.AnimationClip[] }>>()
 const loader = createGltfLoader()
 const modelTemplates = new Map<string, Promise<THREE.Object3D>>()
@@ -187,6 +191,23 @@ export function disposeLookMaps(object: THREE.Object3D): void {
       if (material.userData.lookMap) (material as THREE.MeshStandardMaterial).map?.dispose()
     }
   })
+}
+
+function variants(): Promise<VariantTable> {
+  if (!variantTable) {
+    variantTable = fetch(VARIANTS_URL).then(async (response) => {
+      if (!response.ok) throw new Error(`${VARIANTS_URL}: HTTP ${response.status}`)
+      return ((await response.json()) as { items: VariantTable }).items
+    })
+    variantTable.catch(() => (variantTable = null))
+  }
+  return variantTable
+}
+
+async function variantLooks(key: string, variant: string): Promise<NonNullable<DecorProp['materials']>> {
+  const looks = (await variants())[key]?.[variant]
+  if (!looks) throw new Error(`${VARIANTS_URL}: ${key} has no variant ${variant}`)
+  return looks
 }
 
 async function applyMaterialLooks(model: THREE.Object3D, key: string, looks: NonNullable<DecorProp['materials']>): Promise<void> {
@@ -461,6 +482,7 @@ export async function createPropObject(prop: TemplateProp): Promise<THREE.Object
   if (prop.kind === 'mannequin') return createMannequin(prop)
   const model = markShared((await modelTemplate(propModelUrl(prop)!)).clone(true))
   if (prop.kind === 'decor' && prop.materials) await applyMaterialLooks(model, prop.key, prop.materials)
+  if (prop.kind === 'item' && prop.variant) await applyMaterialLooks(model, prop.key, await variantLooks(prop.key, prop.variant))
   return prop.kind === 'item' && prop.stack ? stackModels(model, prop.stack) : model
 }
 

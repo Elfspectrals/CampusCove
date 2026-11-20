@@ -18,9 +18,9 @@ COLOURED_SATURATION = 1.9
 COLOURED = ("high_chair", "kiosk_cart")
 METAL_SATURATION = 0.6
 BRIGHTNESS = 1.4
-LOOKS = {
-    "gift_box_display": {"coral": dict(hue=0.01, min_saturation=0.55), "teal": dict(hue=0.5, min_saturation=0.5), "gold": dict(hue=0.12, min_saturation=0.65)},
-    "info_desk": {"sand": dict(hue=0.1, min_saturation=0.3), "teal": dict(hue=0.5, min_saturation=0.4), "berry": dict(hue=0.88, min_saturation=0.4)},
+BASE_LOOK = {
+    "gift_box_display": dict(hue=0.01, min_saturation=0.55),
+    "info_desk": dict(hue=0.1, min_saturation=0.3),
 }
 PALETTE_BY_KEY = {"kiosk_cart_a": 4, "kiosk_cart_b": 4, "kiosk_cart_c": 4, "box_stack_a": 5, "box_stack_b": 5, "box_stack_c": 5, "dumpster_a": 4, "dumpster_b": 4, "dumpster_c": 4, "extinguisher": 4}
 
@@ -47,8 +47,8 @@ SECOND_WAVE = tuple(k for k in KEYS if _family(k) in ("drink_dispenser", "janito
 
 def _jobs(key):
     family = _family(key)
-    if family in LOOKS:
-        return [(f"{key}_{look}", dict(brightness=BRIGHTNESS, **params)) for look, params in LOOKS[family].items()]
+    if family in BASE_LOOK:
+        return [(key, dict(brightness=BRIGHTNESS, **BASE_LOOK[family]))]
     if family in COLOURED:
         return [(key, dict(saturation=COLOURED_SATURATION, brightness=BRIGHTNESS))]
     if key in SECOND_WAVE:

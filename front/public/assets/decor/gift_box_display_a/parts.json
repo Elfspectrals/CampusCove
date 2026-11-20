@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_Mall_gift_box_display_a": {
+      "mask": "parts_DC_Mall_gift_box_display_a.png",
+      "parts": [
+        {
+          "id": "box",
+          "label": "Box",
+          "color": "#d4675f"
+        },
+        {
+          "id": "ribbon",
+          "label": "Ribbon",
+          "color": "#572925"
+        }
+      ]
+    }
+  }
+}

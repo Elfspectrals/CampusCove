@@ -84,6 +84,7 @@ export interface ItemProp extends PropBase {
   stack?: [number, number]
   price?: number
   description?: string
+  variant?: string
 }
 
 export interface OutfitPiece {
@@ -473,7 +474,7 @@ function outfitAt(value: unknown, path: string, extraFields: readonly string[] =
 const BASE_FIELDS = ['id', 'kind', 'position', 'yaw', 'scale', 'group']
 const KIND_FIELDS: Record<string, readonly string[]> = {
   decor: [...BASE_FIELDS, 'key', 'materials'],
-  item: [...BASE_FIELDS, 'key', 'code', 'forSale', 'stack', 'description'],
+  item: [...BASE_FIELDS, 'key', 'code', 'forSale', 'stack', 'description', 'variant'],
   npc: [...BASE_FIELDS, 'pose', 'vendor', 'body', 'outfit'],
   mannequin: [...BASE_FIELDS, 'body', 'outfit', 'bodyHidden'],
   light: [...BASE_FIELDS, 'light', 'color', 'intensity', 'range', 'angle', 'pitch'],
@@ -575,6 +576,7 @@ export function propAt(raw: unknown, path: string): TemplateProp {
       const item: ItemProp = { ...base, kind: 'item', ...itemAt(prop, path), forSale: prop.forSale }
       if (prop.stack !== undefined && !item.forSale) throw new TemplateError(`${path}.stack`, 'only items for sale are stacked')
       if (prop.stack !== undefined) item.stack = stackAt(prop.stack, `${path}.stack`)
+      if (prop.variant !== undefined) item.variant = stringAt(prop.variant, `${path}.variant`, TEMPLATE_KEY)
       if (prop.description !== undefined && !item.forSale) throw new TemplateError(`${path}.description`, 'only items for sale have a description')
       if (prop.description !== undefined) item.description = stringAt(prop.description, `${path}.description`)
       return item

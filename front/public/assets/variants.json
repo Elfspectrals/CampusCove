@@ -2,12 +2,42 @@
   "version": 1,
   "items": {
     "market_stall_taken": {
-      "red": { "DC_MarketCanopyStripe": { "color": "#c8463c" } },
-      "blue": { "DC_MarketCanopyStripe": { "color": "#3f6fb5" } },
-      "green": { "DC_MarketCanopyStripe": { "color": "#4f9a58" } },
-      "yellow": { "DC_MarketCanopyStripe": { "color": "#e3b83a" } },
-      "orange": { "DC_MarketCanopyStripe": { "color": "#e07a35" } },
-      "purple": { "DC_MarketCanopyStripe": { "color": "#8657a8" } }
+      "red": {"DC_MarketCanopyStripe": {"color": "#c8463c"}},
+      "blue": {"DC_MarketCanopyStripe": {"color": "#3f6fb5"}},
+      "green": {"DC_MarketCanopyStripe": {"color": "#4f9a58"}},
+      "yellow": {"DC_MarketCanopyStripe": {"color": "#e3b83a"}},
+      "orange": {"DC_MarketCanopyStripe": {"color": "#e07a35"}},
+      "purple": {"DC_MarketCanopyStripe": {"color": "#8657a8"}}
+    },
+    "gift_box_display_a": {
+      "coral": {"DC_Mall_gift_box_display_a": {"parts": {"box": "#e8654f", "ribbon": "#f6d6a8"}}},
+      "teal": {"DC_Mall_gift_box_display_a": {"parts": {"box": "#35a7a3", "ribbon": "#f4efe6"}}},
+      "gold": {"DC_Mall_gift_box_display_a": {"parts": {"box": "#e3b83a", "ribbon": "#c8463c"}}}
+    },
+    "info_desk_a": {
+      "sand": {"DC_Mall_info_desk_a": {"color": "#d8c3a0"}},
+      "teal": {"DC_Mall_info_desk_a": {"color": "#3a9d9a"}},
+      "berry": {"DC_Mall_info_desk_a": {"color": "#9b4a8f"}}
+    },
+    "gift_box_display_b": {
+      "coral": {"DC_Mall_gift_box_display_b": {"parts": {"box": "#e8654f", "ribbon": "#f6d6a8"}}},
+      "teal": {"DC_Mall_gift_box_display_b": {"parts": {"box": "#35a7a3", "ribbon": "#f4efe6"}}},
+      "gold": {"DC_Mall_gift_box_display_b": {"parts": {"box": "#e3b83a", "ribbon": "#c8463c"}}}
+    },
+    "info_desk_b": {
+      "sand": {"DC_Mall_info_desk_b": {"parts": {"body": "#d8c3a0", "top": "#a97a4a"}}},
+      "teal": {"DC_Mall_info_desk_b": {"parts": {"body": "#3a9d9a", "top": "#f1e8d6"}}},
+      "berry": {"DC_Mall_info_desk_b": {"parts": {"body": "#9b4a8f", "top": "#e8d9c4"}}}
+    },
+    "gift_box_display_c": {
+      "coral": {"DC_Mall_gift_box_display_c": {"parts": {"box": "#e8654f", "ribbon": "#f6d6a8"}}},
+      "teal": {"DC_Mall_gift_box_display_c": {"parts": {"box": "#35a7a3", "ribbon": "#f4efe6"}}},
+      "gold": {"DC_Mall_gift_box_display_c": {"parts": {"box": "#e3b83a", "ribbon": "#c8463c"}}}
+    },
+    "info_desk_c": {
+      "sand": {"DC_Mall_info_desk_c": {"parts": {"body": "#d8c3a0", "top": "#a97a4a"}}},
+      "teal": {"DC_Mall_info_desk_c": {"parts": {"body": "#3a9d9a", "top": "#f1e8d6"}}},
+      "berry": {"DC_Mall_info_desk_c": {"parts": {"body": "#9b4a8f", "top": "#e8d9c4"}}}
     }
   }
 }

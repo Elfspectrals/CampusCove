@@ -120,6 +120,8 @@ test('a broken template says what is wrong and where', () => {
   assert.throws(broken((t) => ((t as Record<string, unknown>).extra = true)), /template\.extra: unknown field/)
   assert.throws(broken((t) => ((t.props[1] as Record<string, unknown>).stack = [1.5, 1])), /props\[1\]\.stack/)
   assert.throws(broken((t) => ((t.props[1] as Record<string, unknown>).code = '../../x')), /props\[1\]\.code/)
+  assert.throws(broken((t) => ((t.props[1] as Record<string, unknown>).variant = 'Coral Red')), /props\[1\]\.variant/)
+  assert.throws(broken((t) => ((t.props[0] as Record<string, unknown>).variant = 'coral')), /props\[0\]\.variant: unknown field/)
   assert.throws(broken((t) => Object.assign(t.props[1]!, { key: 'apple', code: 'food_burger' })), /model in folder burger/)
   assert.throws(broken((t) => ((t.props[2] as Record<string, unknown>).pose = 'dance')), /props\[2\]\.pose/)
   assert.throws(broken((t) => ((t.props[2] as Record<string, unknown>).vendor = 'yes')), /props\[2\]\.vendor/)

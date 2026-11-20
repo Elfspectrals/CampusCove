@@ -294,8 +294,8 @@
     {
       "id": "mall_gift_box_display_a_coral_1",
       "kind": "item",
-      "key": "gift_box_display_a_coral",
-      "code": "decor_gift_box_display_a_coral",
+      "key": "gift_box_display_a",
+      "code": "decor_gift_box_display_a",
       "forSale": false,
       "position": [
         -351.0,
@@ -307,13 +307,14 @@
         1,
         1,
         1
-      ]
+      ],
+      "variant": "coral"
     },
     {
       "id": "mall_gift_box_display_b_teal_1",
       "kind": "item",
-      "key": "gift_box_display_b_teal",
-      "code": "decor_gift_box_display_b_teal",
+      "key": "gift_box_display_b",
+      "code": "decor_gift_box_display_b",
       "forSale": false,
       "position": [
         -376.0,
@@ -325,25 +326,27 @@
         1,
         1,
         1
-      ]
+      ],
+      "variant": "teal"
     },
     {
       "id": "mall_gift_box_display_c_gold_1",
       "kind": "item",
-      "key": "gift_box_display_c_gold",
-      "code": "decor_gift_box_display_c_gold",
+      "key": "gift_box_display_c",
+      "code": "decor_gift_box_display_c",
       "forSale": false,
       "position": [
-        -362.0,
+        -351.0,
         0.0,
-        -17.0
+        26.5
       ],
-      "yaw": 0.2915,
+      "yaw": -1.7701,
       "scale": [
         1,
         1,
         1
-      ]
+      ],
+      "variant": "gold"
     },
     {
       "id": "mall_directory_totem_1",
@@ -690,8 +693,8 @@
     {
       "id": "mall_info_desk_a_sand_1",
       "kind": "item",
-      "key": "info_desk_a_sand",
-      "code": "decor_info_desk_a_sand",
+      "key": "info_desk_a",
+      "code": "decor_info_desk_a",
       "forSale": false,
       "position": [
         -184.5,
@@ -703,13 +706,14 @@
         1,
         1,
         1
-      ]
+      ],
+      "variant": "sand"
     },
     {
       "id": "mall_info_desk_b_teal_1",
       "kind": "item",
-      "key": "info_desk_b_teal",
-      "code": "decor_info_desk_b_teal",
+      "key": "info_desk_b",
+      "code": "decor_info_desk_b",
       "forSale": false,
       "position": [
         -250.0,
@@ -721,7 +725,8 @@
         1,
         1,
         1
-      ]
+      ],
+      "variant": "teal"
     },
     {
       "id": "mall_pallet_jack_a_1",
@@ -1126,6 +1131,114 @@
       "code": "decor_shopping_cart",
       "forSale": false,
       "position": [
+        -348.0,
+        0.0,
+        -71.0
+      ],
+      "yaw": 1.35,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_shopping_cart_2",
+      "kind": "item",
+      "key": "shopping_cart",
+      "code": "decor_shopping_cart",
+      "forSale": false,
+      "position": [
+        -345.6,
+        0.0,
+        -72.1
+      ],
+      "yaw": 1.4,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_shopping_cart_3",
+      "kind": "item",
+      "key": "shopping_cart",
+      "code": "decor_shopping_cart",
+      "forSale": false,
+      "position": [
+        -342.95,
+        0.0,
+        -71.1
+      ],
+      "yaw": 1.3,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_shopping_cart_4",
+      "kind": "item",
+      "key": "shopping_cart",
+      "code": "decor_shopping_cart",
+      "forSale": false,
+      "position": [
+        -170.0,
+        0.0,
+        20.5
+      ],
+      "yaw": 1.57,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_shopping_cart_5",
+      "kind": "item",
+      "key": "shopping_cart",
+      "code": "decor_shopping_cart",
+      "forSale": false,
+      "position": [
+        -368.75,
+        0.0,
+        56.0
+      ],
+      "yaw": 0.3,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_shopping_cart_6",
+      "kind": "item",
+      "key": "shopping_cart",
+      "code": "decor_shopping_cart",
+      "forSale": false,
+      "position": [
+        -235.0,
+        0.0,
+        -66.0
+      ],
+      "yaw": 3.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_shopping_cart_7",
+      "kind": "item",
+      "key": "shopping_cart",
+      "code": "decor_shopping_cart",
+      "forSale": false,
+      "position": [
         -106.0,
         0.0,
         -26.6
@@ -1138,7 +1251,7 @@
       ]
     },
     {
-      "id": "mall_shopping_cart_2",
+      "id": "mall_shopping_cart_8",
       "kind": "item",
       "key": "shopping_cart",
       "code": "decor_shopping_cart",

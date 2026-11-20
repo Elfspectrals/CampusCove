@@ -181,6 +181,24 @@ test('the backend copy of each zone price list matches its zone file', () => {
   }
 })
 
+test('every variant a zone item names exists in variants.json, with a mask for each recoloured part', () => {
+  const assets = new URL('../../../public/assets/', import.meta.url)
+  const read = (url: URL): any => JSON.parse(readFileSync(url, 'utf8'))
+  const table = read(new URL('variants.json', assets)).items as Record<string, Record<string, Record<string, { parts?: Record<string, string> }>>>
+  for (const key of parseZoneDecorIndex(read(new URL('zones/index.json', assets))).zones) {
+    for (const prop of read(new URL(`zones/${key}.json`, assets)).props as Array<{ id: string; kind: string; key: string; variant?: string }>) {
+      if (prop.kind !== 'item' || !prop.variant) continue
+      const looks = table[prop.key]?.[prop.variant]
+      assert.ok(looks, `${key}/${prop.id}: variants.json has no ${prop.key} variant ${prop.variant}`)
+      const own = read(new URL(`decor/${prop.key}/parts.json`, assets)).materials as Record<string, { parts: Array<{ id: string }> }>
+      for (const [material, look] of Object.entries(looks)) {
+        const ids = (own[material]?.parts ?? []).map((part) => part.id)
+        for (const part of Object.keys(look.parts ?? {})) assert.ok(ids.includes(part), `${prop.key}.${prop.variant}: ${material} has no part ${part}`)
+      }
+    }
+  }
+})
+
 const barnProp = { id: 'b1', kind: 'building', building: 'barn', position: [-20, 0, -100], yaw: 0, scale: [1, 1, 1], ...structuredClone(buildings.barn!.defaults) }
 const withBarn = (patch: Record<string, unknown>) => decor([{ ...barnProp, ...patch }])
 const openings = barnProp.openings as Array<Record<string, unknown>>
