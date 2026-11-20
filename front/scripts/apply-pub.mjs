@@ -93,6 +93,7 @@ manifest.pub = {
   shots: { plank: toWorld(inner.shots.plank), yaw: worldYaw(inner.shots.yaw), player: toWorld(inner.shots.player) },
   secretRoom: worldBox(inner.secretRoom),
   basement: { ...worldBox(inner.basement), floorY: round3(py + inner.basement.floorY + oy) },
+  stage: toWorld(inner.stage),
   seats: [...interiorSeats, ...gardenSeats],
 }
 manifest.bounds = col.bounds

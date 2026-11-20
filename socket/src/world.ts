@@ -57,6 +57,8 @@ export interface WorldPub {
   secretRoom: Bounds
   /** The hidden lounge below the bar, in world coords; null on manifests without a basement. */
   basement: PubBasement | null
+  /** Feet position on the velvet lounge's stage, in world coords; null on manifests without one. */
+  stage: Vec3 | null
   seats: Map<string, PubSeat>
   darts: { board: Vec3, boardYaw: number, oche: Vec3 }
   shots: { plank: Vec3, yaw: number, player: Vec3 }
@@ -287,6 +289,7 @@ function parsePub(raw: Json): WorldPub | null {
     },
     secretRoom: parseBounds(raw.secretRoom, 'pub secretRoom'),
     basement: parseBasement(raw.basement),
+    stage: raw.stage === undefined || raw.stage === null ? null : parseVec3(raw.stage, 'pub stage'),
     seats,
     darts: {
       board: parseVec3(raw.darts?.board, 'pub darts board'),

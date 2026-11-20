@@ -29,6 +29,9 @@ test('dance_start is parsed into indexed notes and refuses a bad lane', () => {
   assert.deepEqual(start.notes[1], { index: 1, t: 3214, lane: 3 })
   assert.throws(() => parseDanceStart({ ...START, notes: [[100, 4]] }), /lane/)
   assert.throws(() => parseDanceStart({ ...START, mode: 'battle' }), /mode/)
+  assert.equal(start.focus, undefined)
+  assert.deepEqual(parseDanceStart({ ...START, focus: [97, -140] }).focus, [97, -140])
+  assert.throws(() => parseDanceStart({ ...START, focus: [97] }), /focus/)
 })
 
 test('song time follows the server clock through the offset', () => {

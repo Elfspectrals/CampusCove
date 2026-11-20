@@ -27,6 +27,8 @@ const PUB_NAME = 'The Salty Shamrock'
 const COUNTER_PROMPT_HEIGHT = 1.15
 const NPC_PROMPT_HEIGHT = 2
 const GLASS_PROMPT_HEIGHT = 0.35
+const STAGE_REACH = 2.5
+const STAGE_PROMPT_HEIGHT = 1.4
 const BOUNCER_GREETING = 'You look lost, darling. Or are you just looking for the Velvet Room?'
 const BOUNCER_YES = "Welcome to the Velvet Room. Dress code: confidence. What happens downstairs stays downstairs."
 const BOUNCER_NO = "Sorry, sweetheart. You're not on the list."
@@ -130,6 +132,12 @@ export function usePub(deps: PubDeps) {
     if (!basement || deps.seated() || !standsOnFloor(deps.myPosition.y, basement.floorY)) return false
     const { x, z } = deps.myPosition
     return x >= basement.minX && x <= basement.maxX && z >= basement.minZ && z <= basement.maxZ
+  }
+
+  function atStage(): boolean {
+    const stage = layout?.stage
+    if (!stage || !inLounge()) return false
+    return Math.hypot(stage[0] - deps.myPosition.x, stage[2] - deps.myPosition.z) <= STAGE_REACH
   }
 
   function atCounter(): boolean {
@@ -316,6 +324,11 @@ export function usePub(deps: PubDeps) {
       const screen = projectToScreen(x, y, z)
       return screen && { ...screen, action: 'Ring', detail: 'Last orders bell' }
     }
+    if (atStage()) {
+      const [x, y, z] = layout.stage!
+      const screen = projectToScreen(x, y + STAGE_PROMPT_HEIGHT, z)
+      return screen && { ...screen, action: 'Dance', detail: 'Take the stage' }
+    }
     if (inLounge()) {
       const { x, y, z } = deps.myPosition
       const camera = deps.getCamera()
@@ -344,6 +357,10 @@ export function usePub(deps: PubDeps) {
     }
     if (near(layout.bell, COUNTER_REACH)) {
       ring()
+      return true
+    }
+    if (atStage()) {
+      deps.gameRoomRef.value?.send('pole_show_start')
       return true
     }
     if (inLounge()) {

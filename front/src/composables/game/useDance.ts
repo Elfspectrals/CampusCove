@@ -159,10 +159,12 @@ export function useDance(deps: DanceDeps) {
   }
 
   function cameraView(): SportsView | null {
-    if (!dancing.value || coachX === null) return null
+    const focus = start.value?.focus
+    const focusX = focus ? focus[0] : coachX
+    if (!dancing.value || focusX === null) return null
     const me = mySessionId()
     const others = (start.value?.dancers ?? []).flatMap((d) => (d.sessionId === me ? [] : (deps.dancerPosition(d.sessionId) ?? [])))
-    return { kind: 'stage', sport: 'dance', optional: false, facingYaw: yawTowards(deps.myPosition, { x: coachX, z: deps.myPosition.z }), others }
+    return { kind: 'stage', sport: 'dance', optional: false, facingYaw: yawTowards(deps.myPosition, { x: focusX, z: focus ? focus[1] : deps.myPosition.z }), others }
   }
 
   return {
