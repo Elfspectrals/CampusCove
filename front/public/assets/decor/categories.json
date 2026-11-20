@@ -27,6 +27,11 @@
     { "id": "sports_tennis", "label": "Tennis", "keys": ["tennis_racket", "tennis_racket_flat", "tennis_ball_basket"] },
     { "id": "dance", "label": "Dance", "keys": ["dance_speaker", "disco_ball", "dance_barre"] },
     { "id": "climbing", "label": "Climbing", "keys": ["chalk_bag", "hold_bucket", "rope_coil", "route_board"] },
-    { "id": "boxing", "label": "Boxing", "keys": ["punch_bag", "boxing_gloves"] }
+    { "id": "boxing", "label": "Boxing", "keys": ["punch_bag", "boxing_gloves"] },
+    { "id": "mall_food_court", "label": "Mall food court", "keys": ["condiment_stand", "drink_dispenser_a", "drink_dispenser_b", "drink_dispenser_c", "high_chair_a", "high_chair_b", "high_chair_c", "ice_cream_freezer", "janitor_cart_a", "janitor_cart_b", "janitor_cart_c", "popcorn_cart", "tray_bin_station", "tray_trolley"] },
+    { "id": "mall_plaza", "label": "Mall plazas", "keys": ["charging_station", "ficus_pot", "fountain_statue", "hanging_planter_b", "indoor_palm", "info_totem_a", "info_totem_b", "info_totem_c", "kiosk_cart_a", "kiosk_cart_b", "kiosk_cart_c", "massage_chair"] },
+    { "id": "mall_service", "label": "Mall service", "keys": ["box_stack_a", "box_stack_b", "box_stack_c", "cable_reel", "dumpster_a", "dumpster_b", "dumpster_c", "extinguisher", "gas_cylinders_a", "gas_cylinders_b", "gas_cylinders_c", "hand_truck_a", "hand_truck_b", "hand_truck_c", "mop_bucket", "pallet_jack_a", "pallet_jack_b", "pallet_jack_c"] },
+    { "id": "mall_parking", "label": "Mall parking", "keys": ["delivery_van_a", "delivery_van_c", "ev_charger", "motorcycle_a", "motorcycle_b", "pay_station_a", "pay_station_b", "pay_station_c", "sedan", "suv"] },
+    { "id": "mall_identity", "label": "Mall identity", "keys": ["brochure_rack", "directory_totem", "gift_box_display_a_coral", "gift_box_display_a_gold", "gift_box_display_a_teal", "gift_box_display_b_coral", "gift_box_display_b_gold", "gift_box_display_b_teal", "gift_box_display_c_coral", "gift_box_display_c_gold", "gift_box_display_c_teal", "info_desk_a_berry", "info_desk_a_sand", "info_desk_a_teal", "info_desk_b_berry", "info_desk_b_sand", "info_desk_b_teal", "info_desk_c_berry", "info_desk_c_sand", "info_desk_c_teal"] }
   ]
 }

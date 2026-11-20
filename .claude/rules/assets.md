@@ -27,6 +27,13 @@ Use the `blender-asset` skill. Every new or rebuilt 3D asset is assembled from r
   - The validated plan is saved in `design-plans/<asset>.md` (like `shelf-slots.md`) in the same change as the asset, so a later rebuild starts from it instead of asking again.
   - The questions happen in the main session before any work is handed to an agent, since agents cannot ask the user.
 
+## Smooth textures on `make model` assets
+
+- Every model that comes from `make model` is built with the palette projection (`L.import_ai_model(..., palette=N)` in its build script, N = 4 to 8 colours; the silhouette `mask.png` comes from `ai_mask.py`), never with the raw concept image. The raw projection keeps the painted shading, noise, gradients and baked highlights of the picture, which reads as dirty patches in game and breaks the flat, soft look of the rest of the town.
+- After a build, render the pieces and look at them before installing: flat colour areas, no blotches, no fake depth painted on the surface. If a piece still shows depth or noise, lower N, or rework the colours, instead of shipping it.
+- Colour follows the material: metal pieces stay neutral grey (saturation 0.6, no tint), non-metal pieces (wood, plastic, paper, fabric) get a real colour. Different colours of the same shape ship as separate looks of one build (`LOOKS` in `build_mall_decor.py`: target `hue`, `min_saturation`, `brightness` on the palette), and the palette is lightened (`brightness`) when the concept image is dark or grey.
+- Anything with thin parts (chains, wire, rails) is built in pieces: the thin part from a builder, the body from `make model`, since the mesh reduction can loop forever on them. A `make model` clean-up that runs more than a few minutes is stuck: kill it and rebuild the piece in parts.
+
 ## `make model` anti-patterns
 
 The texture is the concept image (`ref.png`) projected flat along one axis, and Hunyuan only rebuilds the shape. So a model is only as good as its concept image. Look at every `ref.png` before the 3D step and regenerate with another `SEED=` when one of these shows:

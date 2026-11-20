@@ -1,0 +1,1106 @@
+{
+  "version": 1,
+  "zone": "mall",
+  "name": "Cove Parkview Mall",
+  "props": [
+    {
+      "id": "mall_tray_trolley_1",
+      "kind": "item",
+      "key": "tray_trolley",
+      "code": "decor_tray_trolley",
+      "forSale": false,
+      "position": [
+        -314.5,
+        0.0,
+        77.0
+      ],
+      "yaw": 2.7784,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_tray_trolley_2",
+      "kind": "item",
+      "key": "tray_trolley",
+      "code": "decor_tray_trolley",
+      "forSale": false,
+      "position": [
+        -362.0,
+        0.0,
+        69.5
+      ],
+      "yaw": 0.8663,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_tray_bin_station_1",
+      "kind": "item",
+      "key": "tray_bin_station",
+      "code": "decor_tray_bin_station",
+      "forSale": false,
+      "position": [
+        -305.5,
+        0.0,
+        74.0
+      ],
+      "yaw": -0.9601,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_tray_bin_station_2",
+      "kind": "item",
+      "key": "tray_bin_station",
+      "code": "decor_tray_bin_station",
+      "forSale": false,
+      "position": [
+        -327.5,
+        0.0,
+        52
+      ],
+      "yaw": -2.9387,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_tray_bin_station_3",
+      "kind": "item",
+      "key": "tray_bin_station",
+      "code": "decor_tray_bin_station",
+      "forSale": false,
+      "position": [
+        -327.5,
+        0.0,
+        59.5
+      ],
+      "yaw": -0.237,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_condiment_stand_1",
+      "kind": "item",
+      "key": "condiment_stand",
+      "code": "decor_condiment_stand",
+      "forSale": false,
+      "position": [
+        -365.0,
+        0.0,
+        65.0
+      ],
+      "yaw": 0.4993,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_condiment_stand_2",
+      "kind": "item",
+      "key": "condiment_stand",
+      "code": "decor_condiment_stand",
+      "forSale": false,
+      "position": [
+        -303.5,
+        0.0,
+        74.0
+      ],
+      "yaw": 0.9601,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_condiment_stand_3",
+      "kind": "item",
+      "key": "condiment_stand",
+      "code": "decor_condiment_stand",
+      "forSale": false,
+      "position": [
+        -327.5,
+        0.0,
+        54.0
+      ],
+      "yaw": -2.7555,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_drink_dispenser_a_1",
+      "kind": "item",
+      "key": "drink_dispenser_a",
+      "code": "decor_drink_dispenser_a",
+      "forSale": false,
+      "position": [
+        -351.5,
+        0.0,
+        69.5
+      ],
+      "yaw": -1.8925,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_drink_dispenser_c_1",
+      "kind": "item",
+      "key": "drink_dispenser_c",
+      "code": "decor_drink_dispenser_c",
+      "forSale": false,
+      "position": [
+        -305.5,
+        0.0,
+        69.0
+      ],
+      "yaw": -2.3562,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_janitor_cart_c_1",
+      "kind": "item",
+      "key": "janitor_cart_c",
+      "code": "decor_janitor_cart_c",
+      "forSale": false,
+      "position": [
+        -327.5,
+        0.0,
+        77.0
+      ],
+      "yaw": 2.5582,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_high_chair_a_1",
+      "kind": "item",
+      "key": "high_chair_a",
+      "code": "decor_high_chair_a",
+      "forSale": false,
+      "position": [
+        -358.5,
+        0.0,
+        69.0
+      ],
+      "yaw": -2.6779,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_high_chair_b_1",
+      "kind": "item",
+      "key": "high_chair_b",
+      "code": "decor_high_chair_b",
+      "forSale": false,
+      "position": [
+        -378,
+        0.0,
+        78.0
+      ],
+      "yaw": -0.0166,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_high_chair_c_1",
+      "kind": "item",
+      "key": "high_chair_c",
+      "code": "decor_high_chair_c",
+      "forSale": false,
+      "position": [
+        -367.0,
+        0.0,
+        79.0
+      ],
+      "yaw": 0.3379,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_ice_cream_freezer_1",
+      "kind": "item",
+      "key": "ice_cream_freezer",
+      "code": "decor_ice_cream_freezer",
+      "forSale": false,
+      "position": [
+        -361.5,
+        0.0,
+        -36.0
+      ],
+      "yaw": 0.9601,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_popcorn_cart_1",
+      "kind": "item",
+      "key": "popcorn_cart",
+      "code": "decor_popcorn_cart",
+      "forSale": false,
+      "position": [
+        -363.5,
+        0.0,
+        -22.0
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_gift_box_display_a_coral_1",
+      "kind": "item",
+      "key": "gift_box_display_a_coral",
+      "code": "decor_gift_box_display_a_coral",
+      "forSale": false,
+      "position": [
+        -351.0,
+        0.0,
+        -28.5
+      ],
+      "yaw": -1.7701,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_gift_box_display_b_teal_1",
+      "kind": "item",
+      "key": "gift_box_display_b_teal",
+      "code": "decor_gift_box_display_b_teal",
+      "forSale": false,
+      "position": [
+        -376.0,
+        0.0,
+        26.5
+      ],
+      "yaw": -1.2673,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_gift_box_display_c_gold_1",
+      "kind": "item",
+      "key": "gift_box_display_c_gold",
+      "code": "decor_gift_box_display_c_gold",
+      "forSale": false,
+      "position": [
+        -362.0,
+        0.0,
+        -17.0
+      ],
+      "yaw": 0.2915,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_directory_totem_1",
+      "kind": "item",
+      "key": "directory_totem",
+      "code": "decor_directory_totem",
+      "forSale": false,
+      "position": [
+        -181.0,
+        0.0,
+        36.0
+      ],
+      "yaw": 2.8105,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_directory_totem_2",
+      "kind": "item",
+      "key": "directory_totem",
+      "code": "decor_directory_totem",
+      "forSale": false,
+      "position": [
+        -214.0,
+        0.0,
+        -69.0
+      ],
+      "yaw": -1.9019,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_directory_totem_3",
+      "kind": "item",
+      "key": "directory_totem",
+      "code": "decor_directory_totem",
+      "forSale": false,
+      "position": [
+        -365.5,
+        0.0,
+        70.0
+      ],
+      "yaw": 2.3562,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_directory_totem_4",
+      "kind": "item",
+      "key": "directory_totem",
+      "code": "decor_directory_totem",
+      "forSale": false,
+      "position": [
+        -359.0,
+        0.0,
+        -73.5
+      ],
+      "yaw": -2.3562,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_brochure_rack_1",
+      "kind": "item",
+      "key": "brochure_rack",
+      "code": "decor_brochure_rack",
+      "forSale": false,
+      "position": [
+        -182.5,
+        0.0,
+        -29.5
+      ],
+      "yaw": -2.0424,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_brochure_rack_2",
+      "kind": "item",
+      "key": "brochure_rack",
+      "code": "decor_brochure_rack",
+      "forSale": false,
+      "position": [
+        -274.5,
+        0.0,
+        -72.0
+      ],
+      "yaw": -2.0424,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_charging_station_1",
+      "kind": "item",
+      "key": "charging_station",
+      "code": "decor_charging_station",
+      "forSale": false,
+      "position": [
+        -182.5,
+        0.0,
+        12.0
+      ],
+      "yaw": -2.2455,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_charging_station_2",
+      "kind": "item",
+      "key": "charging_station",
+      "code": "decor_charging_station",
+      "forSale": false,
+      "position": [
+        -274.5,
+        0.0,
+        -69.5
+      ],
+      "yaw": -1.1152,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_massage_chair_1",
+      "kind": "item",
+      "key": "massage_chair",
+      "code": "decor_massage_chair",
+      "forSale": false,
+      "position": [
+        -240.0,
+        0.0,
+        -68.0
+      ],
+      "yaw": -0.5236,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_massage_chair_2",
+      "kind": "item",
+      "key": "massage_chair",
+      "code": "decor_massage_chair",
+      "forSale": false,
+      "position": [
+        -174.0,
+        0.0,
+        -40.0
+      ],
+      "yaw": -2.2265,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_ficus_pot_1",
+      "kind": "item",
+      "key": "ficus_pot",
+      "code": "decor_ficus_pot",
+      "forSale": false,
+      "position": [
+        -189.0,
+        0.0,
+        -48
+      ],
+      "yaw": -2.8826,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_ficus_pot_2",
+      "kind": "item",
+      "key": "ficus_pot",
+      "code": "decor_ficus_pot",
+      "forSale": false,
+      "position": [
+        -189.0,
+        0.0,
+        -40.5
+      ],
+      "yaw": -0.2623,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_indoor_palm_1",
+      "kind": "item",
+      "key": "indoor_palm",
+      "code": "decor_indoor_palm",
+      "forSale": false,
+      "position": [
+        -264.5,
+        0.0,
+        -81.0
+      ],
+      "yaw": 1.4882,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_indoor_palm_2",
+      "kind": "item",
+      "key": "indoor_palm",
+      "code": "decor_indoor_palm",
+      "forSale": false,
+      "position": [
+        -321.0,
+        0.0,
+        -64.0
+      ],
+      "yaw": -2.4859,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_indoor_palm_3",
+      "kind": "item",
+      "key": "indoor_palm",
+      "code": "decor_indoor_palm",
+      "forSale": false,
+      "position": [
+        -365.5,
+        0.0,
+        -44.5
+      ],
+      "yaw": 2.3562,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_info_totem_a_1",
+      "kind": "item",
+      "key": "info_totem_a",
+      "code": "decor_info_totem_a",
+      "forSale": false,
+      "position": [
+        -189.0,
+        0.0,
+        -29.0
+      ],
+      "yaw": -2.3562,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_kiosk_cart_c_1",
+      "kind": "item",
+      "key": "kiosk_cart_c",
+      "code": "decor_kiosk_cart_c",
+      "forSale": false,
+      "position": [
+        -268.5,
+        0.0,
+        -71.0
+      ],
+      "yaw": 2.2655,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_ficus_pot_3",
+      "kind": "item",
+      "key": "ficus_pot",
+      "code": "decor_ficus_pot",
+      "forSale": false,
+      "position": [
+        -317.5,
+        0.0,
+        -66.0
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_charging_station_3",
+      "kind": "item",
+      "key": "charging_station",
+      "code": "decor_charging_station",
+      "forSale": false,
+      "position": [
+        -362.0,
+        0.0,
+        -71.5
+      ],
+      "yaw": -3.075,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_info_desk_a_sand_1",
+      "kind": "item",
+      "key": "info_desk_a_sand",
+      "code": "decor_info_desk_a_sand",
+      "forSale": false,
+      "position": [
+        -184.5,
+        0.0,
+        -2.0
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_info_desk_b_teal_1",
+      "kind": "item",
+      "key": "info_desk_b_teal",
+      "code": "decor_info_desk_b_teal",
+      "forSale": false,
+      "position": [
+        -250.0,
+        0.0,
+        -63.5
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_pallet_jack_a_1",
+      "kind": "item",
+      "key": "pallet_jack_a",
+      "code": "decor_pallet_jack_a",
+      "forSale": false,
+      "position": [
+        -295,
+        1.1,
+        -92.3
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_hand_truck_a_1",
+      "kind": "item",
+      "key": "hand_truck_a",
+      "code": "decor_hand_truck_a",
+      "forSale": false,
+      "position": [
+        -290.5,
+        1.1,
+        -92.4
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_box_stack_c_1",
+      "kind": "item",
+      "key": "box_stack_c",
+      "code": "decor_box_stack_c",
+      "forSale": false,
+      "position": [
+        -300.2,
+        1.1,
+        -92.4
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_box_stack_b_1",
+      "kind": "item",
+      "key": "box_stack_b",
+      "code": "decor_box_stack_b",
+      "forSale": false,
+      "position": [
+        -287.6,
+        1.1,
+        -92.4
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_dumpster_a_1",
+      "kind": "item",
+      "key": "dumpster_a",
+      "code": "decor_dumpster_a",
+      "forSale": false,
+      "position": [
+        -309,
+        0.0,
+        -93.5
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_dumpster_b_1",
+      "kind": "item",
+      "key": "dumpster_b",
+      "code": "decor_dumpster_b",
+      "forSale": false,
+      "position": [
+        -311.4,
+        0.0,
+        -93.5
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_gas_cylinders_a_1",
+      "kind": "item",
+      "key": "gas_cylinders_a",
+      "code": "decor_gas_cylinders_a",
+      "forSale": false,
+      "position": [
+        -314.5,
+        0.0,
+        -92.2
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_delivery_van_a_1",
+      "kind": "item",
+      "key": "delivery_van_a",
+      "code": "decor_delivery_van_a",
+      "forSale": false,
+      "position": [
+        -292,
+        0.0,
+        -101
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_janitor_cart_a_1",
+      "kind": "item",
+      "key": "janitor_cart_a",
+      "code": "decor_janitor_cart_a",
+      "forSale": false,
+      "position": [
+        -283,
+        0.0,
+        -88.7
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_mop_bucket_1",
+      "kind": "item",
+      "key": "mop_bucket",
+      "code": "decor_mop_bucket",
+      "forSale": false,
+      "position": [
+        -278,
+        0.0,
+        -88.6
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_cable_reel_1",
+      "kind": "item",
+      "key": "cable_reel",
+      "code": "decor_cable_reel",
+      "forSale": false,
+      "position": [
+        -272,
+        0.0,
+        -88.6
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_hand_truck_b_1",
+      "kind": "item",
+      "key": "hand_truck_b",
+      "code": "decor_hand_truck_b",
+      "forSale": false,
+      "position": [
+        -322,
+        0.0,
+        88.7
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_pallet_jack_b_1",
+      "kind": "item",
+      "key": "pallet_jack_b",
+      "code": "decor_pallet_jack_b",
+      "forSale": false,
+      "position": [
+        -335,
+        0.0,
+        88.7
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_janitor_cart_b_1",
+      "kind": "item",
+      "key": "janitor_cart_b",
+      "code": "decor_janitor_cart_b",
+      "forSale": false,
+      "position": [
+        -345,
+        0.0,
+        88.7
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_ev_charger_1",
+      "kind": "item",
+      "key": "ev_charger",
+      "code": "decor_ev_charger",
+      "forSale": false,
+      "position": [
+        -126.85,
+        0.0,
+        -33.2
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_ev_charger_2",
+      "kind": "item",
+      "key": "ev_charger",
+      "code": "decor_ev_charger",
+      "forSale": false,
+      "position": [
+        -113.35,
+        0.0,
+        -33.2
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_sedan_1",
+      "kind": "item",
+      "key": "sedan",
+      "code": "decor_sedan",
+      "forSale": false,
+      "position": [
+        -116.05,
+        0.0,
+        -31.2
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_suv_1",
+      "kind": "item",
+      "key": "suv",
+      "code": "decor_suv",
+      "forSale": false,
+      "position": [
+        -124.15,
+        0.0,
+        -21.8
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_motorcycle_a_1",
+      "kind": "item",
+      "key": "motorcycle_a",
+      "code": "decor_motorcycle_a",
+      "forSale": false,
+      "position": [
+        -118.75,
+        0.0,
+        -21.8
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_delivery_van_c_1",
+      "kind": "item",
+      "key": "delivery_van_c",
+      "code": "decor_delivery_van_c",
+      "forSale": false,
+      "position": [
+        -105.25,
+        0.0,
+        -21.8
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_pay_station_a_1",
+      "kind": "item",
+      "key": "pay_station_a",
+      "code": "decor_pay_station_a",
+      "forSale": false,
+      "position": [
+        -113.5,
+        0.0,
+        -17.6
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "areas": []
+}
