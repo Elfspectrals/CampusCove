@@ -28,13 +28,12 @@ PACKS = {
     "mall_food_court": ("condiment_stand", "ice_cream_freezer", "popcorn_cart", "tray_bin_station", "tray_trolley",
                         "high_chair_a", "high_chair_b", "high_chair_c", "drink_dispenser_a", "drink_dispenser_b", "drink_dispenser_c",
                         "janitor_cart_a", "janitor_cart_b", "janitor_cart_c"),
-    "mall_plaza": ("charging_station", "ficus_pot", "fountain_statue", "hanging_planter_a", "hanging_planter_b", "hanging_planter_c",
-                   "indoor_palm", "massage_chair", "info_totem_a", "info_totem_b", "info_totem_c", "kiosk_cart_a", "kiosk_cart_b", "kiosk_cart_c"),
+    "mall_plaza": ("charging_station", "ficus_pot", "fountain_statue", "indoor_palm", "massage_chair", "info_totem_a", "info_totem_b", "info_totem_c", "kiosk_cart_a", "kiosk_cart_b", "kiosk_cart_c"),
     "mall_service": ("box_stack_a", "box_stack_b", "box_stack_c", "cable_reel", "dumpster_a", "dumpster_b", "dumpster_c", "extinguisher",
                      "hand_truck_a", "hand_truck_b", "hand_truck_c", "mop_bucket", "gas_cylinders_a", "gas_cylinders_b", "gas_cylinders_c",
                      "pallet_jack_a", "pallet_jack_b", "pallet_jack_c"),
-    "mall_parking": ("delivery_van_a", "delivery_van_c", "ev_charger", "motorcycle_a", "motorcycle_b", "sedan", "shopping_cart", "suv",
-                     "cart_corral_a", "cart_corral_b", "cart_corral_c", "pay_station_a", "pay_station_b", "pay_station_c"),
+    "mall_parking": ("delivery_van_a", "delivery_van_c", "ev_charger", "motorcycle_a", "motorcycle_b", "sedan", "suv",
+                     "pay_station_a", "pay_station_b", "pay_station_c"),
     "mall_identity": ("brochure_rack", "directory_totem", "gift_box_display_a", "gift_box_display_b", "gift_box_display_c",
                       "info_desk_a", "info_desk_b", "info_desk_c"),
 }
@@ -44,7 +43,7 @@ def _family(key):
 
 
 KEYS = [key for keys in PACKS.values() for key in keys]
-SECOND_WAVE = tuple(k for k in KEYS if _family(k) in ("drink_dispenser", "janitor_cart", "info_totem", "gas_cylinders", "pay_station", "pallet_jack", "cart_corral"))
+SECOND_WAVE = tuple(k for k in KEYS if _family(k) in ("drink_dispenser", "janitor_cart", "info_totem", "gas_cylinders", "pay_station", "pallet_jack"))
 
 def _jobs(key):
     family = _family(key)

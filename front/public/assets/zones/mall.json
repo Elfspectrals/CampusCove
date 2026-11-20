@@ -1100,6 +1100,186 @@
         1,
         1
       ]
+    },
+    {
+      "id": "mall_cart_corral_1",
+      "kind": "item",
+      "key": "cart_corral",
+      "code": "decor_cart_corral",
+      "forSale": false,
+      "position": [
+        -100.7,
+        0.0,
+        -26.8
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_shopping_cart_1",
+      "kind": "item",
+      "key": "shopping_cart",
+      "code": "decor_shopping_cart",
+      "forSale": false,
+      "position": [
+        -106.0,
+        0.0,
+        -26.6
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_shopping_cart_2",
+      "kind": "item",
+      "key": "shopping_cart",
+      "code": "decor_shopping_cart",
+      "forSale": false,
+      "position": [
+        -112.5,
+        0.0,
+        -27.4
+      ],
+      "yaw": 0.4,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_hanging_planter_1",
+      "kind": "item",
+      "key": "hanging_planter",
+      "code": "decor_hanging_planter",
+      "forSale": false,
+      "position": [
+        -355,
+        4.75,
+        -70
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_hanging_planter_2",
+      "kind": "item",
+      "key": "hanging_planter",
+      "code": "decor_hanging_planter",
+      "forSale": false,
+      "position": [
+        -335,
+        4.75,
+        -70
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_hanging_planter_3",
+      "kind": "item",
+      "key": "hanging_planter",
+      "code": "decor_hanging_planter",
+      "forSale": false,
+      "position": [
+        -315,
+        4.75,
+        -70
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_hanging_planter_4",
+      "kind": "item",
+      "key": "hanging_planter",
+      "code": "decor_hanging_planter",
+      "forSale": false,
+      "position": [
+        -355,
+        4.75,
+        70
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_hanging_planter_5",
+      "kind": "item",
+      "key": "hanging_planter",
+      "code": "decor_hanging_planter",
+      "forSale": false,
+      "position": [
+        -335,
+        4.75,
+        70
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_hanging_planter_6",
+      "kind": "item",
+      "key": "hanging_planter",
+      "code": "decor_hanging_planter",
+      "forSale": false,
+      "position": [
+        -315,
+        4.75,
+        70
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "mall_balloon_arch_1",
+      "kind": "item",
+      "key": "balloon_arch",
+      "code": "decor_balloon_arch",
+      "forSale": false,
+      "position": [
+        -359.5,
+        0.0,
+        -32.5
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   ],
   "areas": []
