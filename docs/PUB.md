@@ -432,3 +432,16 @@ servie gratuitement par `PubService::order` (prix 0, aucune ligne de ledger) et 
 `usePubQuiz` : prompt « Join the quiz » sur l'animateur, bandeau d'annonce, overlay `GameQuiz.vue` pour les inscrits
 (clic ou touches 1 à 4, chrono, révélation, classement, résultats), `GamePubQuizBoard.vue` au-dessus de l'animateur pour
 les joueurs du pub non inscrits. Logique pure dans `src/game/pub/quiz.ts`.
+
+## 9. Velvet Room stage show (2026-11-20)
+
+A clothed rhythm show on the stage of the cellar lounge, for players with access to the lounge. It reuses the dance game (`docs/sports/dance.md`): song `cove_groove`, difficulty normal, solo, same charts, windows and score. Zero coins, no board, no record.
+
+| Message | Direction | Payload |
+|---|---|---|
+| `pole_show_start` | client → server | none; accepted only inside the secret volume, within 2.5 m of `pub.stage` (XZ), not knocked out, not dancing, no show running |
+| `dance_press`, `dance_judge`, `dance_stray`, `dance_end` | as in the dance contract | the dance messages, with `venue: 'velvet_stage'` |
+| `dance_start` | server → the dancer only | the dance payload plus `focus: [x, z]`, the point the camera faces (centre of the lounge) |
+
+- `pub.stage` is the stage's feet position in world coords (`stage` in `interior.layout.json`, then `world.manifest.json`); null on a manifest without it, which refuses the show.
+- Cases decided: the dancer is put on the stage and locked by the client while dancing; leaving the lounge ends the show with the score so far; a disconnect drops it; a second start while one runs is ignored; the studio's own matches are untouched (`dance_press` goes to the show first, then to the studio).

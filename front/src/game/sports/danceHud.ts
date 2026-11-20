@@ -25,6 +25,7 @@ export interface DanceStart {
   serverNow: number
   notes: DanceNote[]
   dancers: { sessionId: string; name: string }[]
+  focus?: [number, number]
 }
 
 export interface DanceJudge {
@@ -69,6 +70,7 @@ export function parseDanceStart(raw: unknown): DanceStart {
     if (typeof dancer.sessionId !== 'string' || typeof dancer.name !== 'string') throw new Error(`dance_start: invalid dancer ${i}`)
     return { sessionId: dancer.sessionId, name: dancer.name }
   })
+  const focus = p.focus === undefined ? undefined : parseFocus(p.focus)
   return {
     venue: p.venue,
     mode: p.mode,
@@ -80,7 +82,13 @@ export function parseDanceStart(raw: unknown): DanceStart {
     serverNow: finite(p.serverNow, 'serverNow'),
     notes,
     dancers,
+    ...(focus ? { focus } : {}),
   }
+}
+
+function parseFocus(raw: unknown): [number, number] {
+  if (!Array.isArray(raw) || raw.length !== 2) throw new Error('dance_start: focus must be [x, z]')
+  return [finite(raw[0], 'focus x'), finite(raw[1], 'focus z')]
 }
 
 export function songTimeMs(start: DanceStart, clientNow: number, clockOffset: number): number {

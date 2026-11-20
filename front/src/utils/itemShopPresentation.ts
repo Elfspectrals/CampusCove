@@ -61,3 +61,7 @@ export function isGroceryItem(item: { kind: string; code: string }): boolean {
 export function isAlcoholItem(item: { code: string }): boolean {
   return item.code.startsWith('drink_')
 }
+
+export function isClubDrink(code: string): boolean {
+  return code.startsWith('drink_club_')
+}

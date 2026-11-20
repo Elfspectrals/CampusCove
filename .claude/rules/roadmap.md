@@ -26,6 +26,12 @@ Decision (2026-11-13): a pub quiz every evening at 21:00 Europe/Paris in each ci
 - [todo] Admin "Start the quiz now" button as a watch app, once `feat/watch-apps` is merged (the socket `admin_quiz_start` message exists).
 - [todo] Quiz sounds (answer locked, right, wrong): no fitting sound in `sfx.ts` yet.
 
+Decision (2026-11-20): the pub's secret cellar gets a Kit Kat Club cabaret tone for the 18+ players: suggestive humour only, clothed characters, no nudity, no explicit scene, no adult-toy or fetish models. Done one lot after the other.
+
+- [done] Lot 1, texts: the bouncer's greeting and answers in a cabaret voice (`usePub.ts`). The cellar already holds the velvet lounge, stage, pole and neon heart (`build_pub.py`), so no new decor yet.
+- [done] Lot 2, club cocktails: Velvet Kiss 55, Cherry Bomb 65, Midnight Sin 70 (`drink_club_*`, same effects as wine, vodka and whisky, so a pure price sink, reusing their glass models). Ordered with E anywhere in the Velvet Room (waitress, no new NPC); the socket refuses them outside the lounge and at the bar. Covered by socket and feature tests, not played. The `economist` review is still to run.
+- [done] Lot 3, stage show: E on the Velvet Room stage starts a solo rhythm song (`cove_groove`, normal) through the dance game's messages, judged by the socket (`poleShow.ts`, contract in `docs/PUB.md` §9). Clothed avatar, the existing dance clips, zero coins, no board. Covered by socket and front tests, not played in the browser. The dance end screen still shows the studio's board for that song.
+
 ## 3. Orchard: more fun, same income (todo)
 
 Decision (2026-11-06): the orchard stays the main job at about 900 coins/day; new features must not raise daily income (offset with the after-quota price, set to 0 if needed). Run the `economist` before shipping each one.

@@ -42,6 +42,17 @@ class PubApiTest extends TestCase
         $this->assertSame(1, DB::table('wallet_ledger')->where('reason', 'pub_order')->where('delta', -25)->count());
     }
 
+    public function test_a_club_cocktail_is_charged_and_stays_a_normal_drink(): void
+    {
+        $player = $this->registerAndCreditWallet(100, 'cash');
+
+        $this->postJson('/api/pub/order', ['code' => 'drink_club_cherry_bomb'], $this->auth($player['token'], self::SECRET))
+            ->assertOk()
+            ->assertExactJson(['code' => 'drink_club_cherry_bomb', 'price' => 65, 'balance_after' => 35]);
+
+        $this->assertSame(1, $this->hotbarItem($player['token'], 'drink_club_cherry_bomb')['quantity']);
+    }
+
     public function test_the_bar_only_serves_its_drinks(): void
     {
         $player = $this->registerAndCreditWallet(100, 'cash');
