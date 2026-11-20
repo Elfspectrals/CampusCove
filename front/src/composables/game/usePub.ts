@@ -27,9 +27,9 @@ const PUB_NAME = 'The Salty Shamrock'
 const COUNTER_PROMPT_HEIGHT = 1.15
 const NPC_PROMPT_HEIGHT = 2
 const GLASS_PROMPT_HEIGHT = 0.35
-const BOUNCER_GREETING = 'You look lost, friend.'
-const BOUNCER_YES = "Mind the stairs. Don't tell."
-const BOUNCER_NO = 'Never heard of it.'
+const BOUNCER_GREETING = 'You look lost, darling. Or are you just looking for the Velvet Room?'
+const BOUNCER_YES = "Welcome to the Velvet Room. Dress code: confidence. What happens downstairs stays downstairs."
+const BOUNCER_NO = "Sorry, sweetheart. You're not on the list."
 /** Players this close (m) to the bouncer hear him turn someone away. */
 const BOUNCER_HEARING = 6
 /** Camera jolt of the player he pushes back (scaled by the comfort settings like a punch's). */

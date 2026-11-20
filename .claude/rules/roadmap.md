@@ -26,6 +26,12 @@ Decision (2026-11-13): a pub quiz every evening at 21:00 Europe/Paris in each ci
 - [todo] Admin "Start the quiz now" button as a watch app, once `feat/watch-apps` is merged (the socket `admin_quiz_start` message exists).
 - [todo] Quiz sounds (answer locked, right, wrong): no fitting sound in `sfx.ts` yet.
 
+Decision (2026-11-20): the pub's secret cellar gets a Kit Kat Club cabaret tone for the 18+ players: suggestive humour only, clothed characters, no nudity, no explicit scene, no adult-toy or fetish models. Done one lot after the other.
+
+- [done] Lot 1, texts: the bouncer's greeting and answers in a cabaret voice (`usePub.ts`). The cellar already holds the velvet lounge, stage, pole and neon heart (`build_pub.py`), so no new decor yet.
+- [todo] Lot 2, club cocktails: club-only drinks need a barman in the cellar and a club-only menu group, then the `economist` review (alcohol sink).
+- [todo] Lot 3, clothed pole-dance rhythm game on the stage, built like the dance studio game, zero coins.
+
 ## 3. Orchard: more fun, same income (todo)
 
 Decision (2026-11-06): the orchard stays the main job at about 900 coins/day; new features must not raise daily income (offset with the after-quota price, set to 0 if needed). Run the `economist` before shipping each one.
