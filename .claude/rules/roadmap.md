@@ -29,7 +29,7 @@ Decision (2026-11-13): a pub quiz every evening at 21:00 Europe/Paris in each ci
 Decision (2026-11-20): the pub's secret cellar gets a Kit Kat Club cabaret tone for the 18+ players: suggestive humour only, clothed characters, no nudity, no explicit scene, no adult-toy or fetish models. Done one lot after the other.
 
 - [done] Lot 1, texts: the bouncer's greeting and answers in a cabaret voice (`usePub.ts`). The cellar already holds the velvet lounge, stage, pole and neon heart (`build_pub.py`), so no new decor yet.
-- [todo] Lot 2, club cocktails: club-only drinks need a barman in the cellar and a club-only menu group, then the `economist` review (alcohol sink).
+- [done] Lot 2, club cocktails: Velvet Kiss 55, Cherry Bomb 65, Midnight Sin 70 (`drink_club_*`, same effects as wine, vodka and whisky, so a pure price sink, reusing their glass models). Ordered with E anywhere in the Velvet Room (waitress, no new NPC); the socket refuses them outside the lounge and at the bar. Covered by socket and feature tests, not played. The `economist` review is still to run.
 - [todo] Lot 3, clothed pole-dance rhythm game on the stage, built like the dance studio game, zero coins.
 
 ## 3. Orchard: more fun, same income (todo)

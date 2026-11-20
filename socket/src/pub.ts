@@ -22,6 +22,11 @@ const EYE_HEIGHT = 1.6
 const BELL_REACH = COUNTER_REACH
 const BELL_COOLDOWN_MS = 10_000
 const DRINK_CODE = /^drink_[a-z0-9_]{1,56}$/
+const CLUB_DRINK_PREFIX = 'drink_club_'
+
+export function isClubDrink(code: string): boolean {
+  return code.startsWith(CLUB_DRINK_PREFIX)
+}
 const MAX_PHRASE_LENGTH = 100
 const SECRET_RECHECK_MS = 5_000
 /** Feet vs seat floor: well under the 3.2 m between the bar and the basement, so no sitting through the floor. */
@@ -123,16 +128,27 @@ export async function onPubOrder(room: GameRoom, client: GameClient, payload: Cl
   const pub = pubFor(client)
   if (!pub) return
   const code = typeof payload?.code === 'string' ? payload.code.trim() : ''
-  const via = payload?.via === 'bartender' || payload?.via === 'counter' ? payload.via : null
+  const via = payload?.via === 'bartender' || payload?.via === 'counter' || payload?.via === 'club' ? payload.via : null
   if (!DRINK_CODE.test(code) || !via) {
     sendPubError(client, 'Pick a drink from the menu.', 'unknown_drink')
     return
   }
-  const point = via === 'bartender' ? pub.bartender : pub.counter
-  const reach = via === 'bartender' ? BARTENDER_REACH : COUNTER_REACH
-  if (!isWithinPubReach(player, point, reach)) {
-    sendPubError(client, via === 'bartender' ? 'Walk up to the bartender.' : 'Walk up to the bar.', 'pub_too_far')
+  if (isClubDrink(code) !== (via === 'club')) {
+    sendPubError(client, 'Pick a drink from the menu.', 'unknown_drink')
     return
+  }
+  if (via === 'club') {
+    if (!inSecretVolume(pub, player.x, player.y, player.z)) {
+      sendPubError(client, 'The waitress only serves the Velvet Room.', 'club_only')
+      return
+    }
+  } else {
+    const point = via === 'bartender' ? pub.bartender : pub.counter
+    const reach = via === 'bartender' ? BARTENDER_REACH : COUNTER_REACH
+    if (!isWithinPubReach(player, point, reach)) {
+      sendPubError(client, via === 'bartender' ? 'Walk up to the bartender.' : 'Walk up to the bar.', 'pub_too_far')
+      return
+    }
   }
   try {
     await callRealtimeBackend(player.token, '/pub/order', 'POST', { code })
@@ -141,7 +157,7 @@ export async function onPubOrder(room: GameRoom, client: GameClient, payload: Cl
     client.send('pub_error', errorPayload(error, 'The bar could not serve you.', 'pub_order_failed'))
     return
   }
-  if (via === 'counter') {
+  if (via !== 'bartender') {
     client.send('pub_served', { code })
     return
   }

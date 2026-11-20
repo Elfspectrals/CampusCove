@@ -48,7 +48,7 @@ globalThis.fetch = async (url: string | URL | Request) => {
 const { loadWorld, worldPub } = await import('./world.ts')
 const { moveRejection } = await import('./movement.ts')
 const {
-  normalizeSecretPhrase, onPubSecret, onSit, closeSecretDoorWhenExpired, currentSecretPhrase, inSecretVolume, blockAtSecretDoor
+  normalizeSecretPhrase, onPubOrder, onPubSecret, onSit, closeSecretDoorWhenExpired, currentSecretPhrase, inSecretVolume, blockAtSecretDoor
 } = await import('./pub.ts')
 const { onStand } = await import('./pubGames.ts')
 const { tickSurvival } = await import('./survival.ts')
@@ -409,4 +409,25 @@ test('a health knockout keeps the hospital route and says so', async () => {
   assert.deepEqual(received(clients[0], 'survival_knocked_out').map((m) => m.cause), ['health'])
   await new Promise((resolve) => setImmediate(resolve))
   assert.deepEqual(apiCalls, ['/survival/hospital', '/respawn-bed'])
+})
+
+test('club cocktails are served only in the hidden lounge and never at the bar', async () => {
+  const lounge = fakePlayer('lounge', 90, -140)
+  lounge.y = BASEMENT_EYE_Y
+  const upstairs = fakePlayer('upstairs', 90, -140)
+  const { room, clients } = fakeRoom(lounge, upstairs)
+  const [cLounge, cUpstairs] = clients
+  apiCalls.length = 0
+
+  await onPubOrder(room, cUpstairs, { code: 'drink_club_cherry_bomb', via: 'club' })
+  assert.deepEqual(received(cUpstairs, 'pub_error'), [{ message: 'The waitress only serves the Velvet Room.', code: 'club_only' }])
+
+  await onPubOrder(room, cLounge, { code: 'drink_club_cherry_bomb', via: 'counter' })
+  await onPubOrder(room, cLounge, { code: 'drink_stout', via: 'club' })
+  assert.deepEqual(received(cLounge, 'pub_error').map((e) => (e as { code: string }).code), ['unknown_drink', 'unknown_drink'])
+  assert.equal(apiCalls.includes('/pub/order'), false)
+
+  await onPubOrder(room, cLounge, { code: 'drink_club_cherry_bomb', via: 'club' })
+  assert.equal(apiCalls.includes('/pub/order'), true)
+  assert.deepEqual(received(cLounge, 'pub_served'), [{ code: 'drink_club_cherry_bomb' }])
 })

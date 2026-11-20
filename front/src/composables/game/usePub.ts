@@ -19,7 +19,7 @@ import type {
   PubSecretResultPayload,
   PubServedPayload,
 } from '../../types/gameRealtime'
-import { isAlcoholItem } from '../../utils/itemShopPresentation'
+import { isAlcoholItem, isClubDrink } from '../../utils/itemShopPresentation'
 import type { InteractionSource, ScreenPrompt } from './useInteractionTargets'
 
 const PUB_KEY = 'pub'
@@ -35,7 +35,7 @@ const BOUNCER_HEARING = 6
 /** Camera jolt of the player he pushes back (scaled by the comfort settings like a punch's). */
 const BOUNCER_PUSH_JOLT = 0.5
 
-export type OrderVia = 'counter' | 'bartender'
+export type OrderVia = 'counter' | 'bartender' | 'club'
 
 export interface PubDeps {
   myPosition: { x: number; y: number; z: number }
@@ -73,6 +73,7 @@ export function usePub(deps: PubDeps) {
   const secretReply = ref<string | null>(null)
   const secretPending = ref(false)
   let layout: PubLayout | null = null
+  let allDrinks: ShopItem[] = []
   let pour: ReturnType<typeof createBartenderPour> | null = null
   let secretDoor: ReturnType<typeof createSecretDoor> | null = null
   let bouncerStep: ReturnType<typeof createBouncerStep> | null = null
@@ -124,6 +125,13 @@ export function usePub(deps: PubDeps) {
     return Math.hypot(point[0] - deps.myPosition.x, point[2] - deps.myPosition.z) <= reach
   }
 
+  function inLounge(): boolean {
+    const basement = layout?.basement
+    if (!basement || deps.seated() || !standsOnFloor(deps.myPosition.y, basement.floorY)) return false
+    const { x, z } = deps.myPosition
+    return x >= basement.minX && x <= basement.maxX && z >= basement.minZ && z <= basement.maxZ
+  }
+
   function atCounter(): boolean {
     return layout !== null && !deps.seated() && near(layout.counter, COUNTER_REACH)
   }
@@ -141,7 +149,8 @@ export function usePub(deps: PubDeps) {
     loading.value = true
     try {
       const { items } = await fetchItemShopCatalog()
-      menu.value = items.filter((item) => isAlcoholItem(item) && item.options.some((o) => o.currency === 'coins'))
+      allDrinks = items.filter((item) => isAlcoholItem(item) && item.options.some((o) => o.currency === 'coins'))
+      menu.value = drinksFor(via.value)
     } catch {
       feedback.value = { kind: 'error', text: 'The drinks list could not be loaded.' }
     } finally {
@@ -149,12 +158,17 @@ export function usePub(deps: PubDeps) {
     }
   }
 
+  function drinksFor(where: OrderVia): ShopItem[] {
+    return allDrinks.filter((item) => isClubDrink(item.code) === (where === 'club'))
+  }
+
   function openMenu(where: OrderVia): void {
     if (document.pointerLockElement) document.exitPointerLock()
     via.value = where
     feedback.value = null
     menuOpen.value = true
-    if (menu.value.length === 0) void loadMenu()
+    if (allDrinks.length === 0) void loadMenu()
+    else menu.value = drinksFor(where)
   }
 
   function order(item: ShopItem): void {
@@ -169,7 +183,7 @@ export function usePub(deps: PubDeps) {
   }
 
   function drinkName(code: string): string {
-    return menu.value.find((item) => item.code === code)?.name ?? 'Your drink'
+    return allDrinks.find((item) => item.code === code)?.name ?? 'Your drink'
   }
 
   function onPouring(data: PubPouringPayload, me: string): void {
@@ -302,6 +316,14 @@ export function usePub(deps: PubDeps) {
       const screen = projectToScreen(x, y, z)
       return screen && { ...screen, action: 'Ring', detail: 'Last orders bell' }
     }
+    if (inLounge()) {
+      const { x, y, z } = deps.myPosition
+      const camera = deps.getCamera()
+      if (!camera) return null
+      camera.getWorldDirection(forward)
+      const screen = projectToScreen(x + forward.x * 1.5, y - 0.4, z + forward.z * 1.5)
+      return screen && { ...screen, action: 'Order', detail: 'The waitress brings it' }
+    }
     return null
   }
 
@@ -322,6 +344,10 @@ export function usePub(deps: PubDeps) {
     }
     if (near(layout.bell, COUNTER_REACH)) {
       ring()
+      return true
+    }
+    if (inLounge()) {
+      openMenu('club')
       return true
     }
     return false
