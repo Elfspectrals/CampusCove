@@ -13,6 +13,11 @@ import lib_common as L
 
 TWO_PI = 2 * math.pi
 SKIPPED = []
+PLACED = []
+ATM_Z, ATM_OUT = 11.5, 0.62
+VENDING_Z = 38.5
+NUDGE_STEP, NUDGE_STEPS = 0.5, 16
+NUDGE_DIRS = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1))
 TRIS = {}
 
 
@@ -29,6 +34,7 @@ def _palette(ctx):
         "teal": mk("Teal", "#2fa17a"), "cactus": mk("Cactus", "#4f9d54", 0.9), "gazebo": mk("GazeboRoof", "#8f4f3a", 0.9),
         "bronze": mk("Bronze", "#6b5a3a", 0.45), "sky": mk("SkyBlue", "#5ac8e8"), "paper": mk("Paper", "#f4efe6", 0.85),
         "slate": mk("Slate", "#2a2e35", 0.8), "navy": mk("Navy", "#1f3f8f"),
+        "screen": mk("AtmScreen", "#1c56b8", 0.15, "noise", 0.0, emit="#2f78e6", emit_strength=0.6),
     }
 
 
@@ -36,17 +42,35 @@ def _tris(objs):
     return sum(len(p.vertices) - 2 for o in objs if o.type == "MESH" for p in o.data.polygons)
 
 
-def _place(ctx, name, spots, hx, hz, reserve=False):
-    for x, z in spots:
-        if ctx.clear(x, z, hx, hz):
-            if reserve:
-                ctx.exclude(x - hx, z - hz, x + hx, z + hz, name)
-            return x, z
-    x, z = spots[0]
-    why = ctx.blocked_by(x, z, hx, hz)
-    print(f"skipped {name}: {why}")
-    SKIPPED.append((name, why))
+def _free(ctx, x, z, hx, hz):
+    return ctx.clear(x, z, hx, hz) and not any(abs(x - px) < hx + phx and abs(z - pz) < hz + phz for px, pz, phx, phz in PLACED)
+
+
+def _nudged(ctx, x, z, hx, hz):
+    for step in range(1, NUDGE_STEPS + 1):
+        for dx, dz in NUDGE_DIRS:
+            cx, cz = x + dx * step * NUDGE_STEP, z + dz * step * NUDGE_STEP
+            if _free(ctx, cx, cz, hx, hz):
+                return cx, cz
     return None
+
+
+def _place(ctx, name, spots, hx, hz, reserve=False):
+    found = next(((x, z) for x, z in spots if _free(ctx, x, z, hx, hz)), None)
+    if found is None:
+        found = _nudged(ctx, *spots[0], hx, hz)
+        if found is None:
+            x, z = spots[0]
+            why = ctx.blocked_by(x, z, hx, hz)
+            print(f"skipped {name}: {why}")
+            SKIPPED.append((name, why))
+            return None
+        print(f"moved {name}: {spots[0]} -> {found}")
+    x, z = found
+    PLACED.append((x, z, hx, hz))
+    if reserve:
+        ctx.exclude(x - hx, z - hz, x + hx, z + hz, name)
+    return x, z
 
 
 def _tilted(ctx, name, gx, gz, y0, sx, sz, h, mat, tilt=0.0, yaw=0.0, bevel=0.0, roll=0.0):
@@ -166,11 +190,40 @@ def _vending_pair(ctx, C, name, gx, gz, yaw):
     _vending(ctx, C, f"{name}_Snacks", gx + rx * 0.5, gz + rz * 0.5, yaw, C["blue"])
 
 
-def _atm(ctx, name, gx, gz, yaw):
+def _atm(ctx, C, name, gx, gz, yaw):
     P = ctx.P
     fx, fz = _fwd(yaw)
-    ctx.box(f"{name}_Body", gx, gz, 0.0, 0.7, 0.6, 1.8, P["band"], rot=yaw)
-    ctx.box(f"{name}_Screen", gx + fx * 0.32, gz + fz * 0.32, 1.25, 0.35, 0.04, 0.25, P["panel"], rot=yaw)
+    rx, rz = _right(yaw)
+
+    def part(tag, f, r, y0, w, d, h, mat, bevel=0.0):
+        ctx.box(f"{name}_{tag}", gx + fx * f + rx * r, gz + fz * f + rz * r, y0, w, d, h, mat, rot=yaw, bevel=bevel)
+
+    part("Base", 0.0, 0.0, 0.0, 0.78, 0.66, 0.12, P["dark"], 0.02)
+    part("Body", -0.04, 0.0, 0.12, 0.66, 0.52, 1.58, C["silver"], 0.03)
+    for side in (-1, 1):
+        part(f"Trim{side}", 0.225, side * 0.29, 0.14, 0.04, 0.04, 1.54, C["silver"])
+    part("Fascia", 0.235, 0.0, 0.34, 0.52, 0.03, 1.2, P["steel"])
+    part("Bezel", 0.2675, 0.0, 1.04, 0.44, 0.035, 0.38, P["dark"], 0.01)
+    part("Screen", 0.3, 0.0, 1.09, 0.36, 0.01, 0.28, C["screen"])
+    for side in (-1, 1):
+        for k in range(2):
+            part(f"Soft{side}{k}", 0.27, side * 0.24, 1.1 + k * 0.15, 0.035, 0.02, 0.04, C["silver"])
+    part("Cam", 0.285, 0.0, 1.5, 0.07, 0.07, 0.07, P["dark"], 0.02)
+    part("KeyShelf", 0.325, 0.0, 0.84, 0.22, 0.15, 0.05, P["steel"], 0.01)
+    for row in range(4):
+        for col in range(3):
+            part(f"Key{row}{col}", 0.28 + row * 0.035, (col - 1) * 0.07, 0.89, 0.055, 0.028, 0.02, C["silver"])
+    for tag, side in (("Card", 1), ("Receipt", -1)):
+        part(f"{tag}Box", 0.275, side * 0.19, 0.76, 0.15, 0.05, 0.1, P["dark"])
+    part("CardLight", 0.315, 0.19, 0.795, 0.1, 0.01, 0.012, C["teal"])
+    part("ReceiptSlot", 0.315, -0.19, 0.795, 0.1, 0.01, 0.012, P["void"])
+    part("CashPlate", 0.265, 0.0, 0.36, 0.3, 0.03, 0.17, P["dark"])
+    part("CashSlot", 0.3, 0.0, 0.43, 0.24, 0.01, 0.05, P["void"])
+    part("CashHood", 0.29, 0.0, 0.535, 0.34, 0.06, 0.025, P["steel"], 0.008)
+    part("Hood", 0.02, 0.0, 1.7, 0.74, 0.72, 0.12, P["band"], 0.03)
+    part("HoodSign", 0.395, 0.0, 1.72, 0.62, 0.02, 0.08, P["sign"])
+    part("HoodLight", 0.3, 0.0, 1.68, 0.5, 0.12, 0.02, P["lamp"])
+    ctx.text(f"{name}_Text", "ATM", gx + fx * 0.42, gz + fz * 0.42, 1.735, 0.07, P["dark"], yaw + math.pi)
     ctx.cols.add(name, gx, gz, 0.0, 0.8, 0.7, 1.9, rot=yaw)
 
 
@@ -349,13 +402,13 @@ def _entrance(ctx, C, M):
     for k, (gx, gz, yaw) in enumerate(((-183.6, 10.5, -math.pi / 2), (-176.4, -16.5, math.pi / 2))):
         if _place(ctx, f"Deco_Terminal_E{k}", [(gx, gz)], 0.3, 0.3):
             _terminal(ctx, C, f"Deco_Terminal_E{k}", gx, gz, yaw)
-    for k, (gx, gz) in enumerate(((-172.7, -43.0), (-172.7, 43.0), (-187.3, -27.5), (-187.3, 27.5))):
+    for k, (gx, gz) in enumerate(((-172.7, -VENDING_Z), (-172.7, VENDING_Z), (-187.3, -27.5), (-187.3, 27.5))):
         yaw = math.pi / 2 if gx > -180 else -math.pi / 2
         if _place(ctx, f"Deco_Vending_E{k}", [(gx, gz)], 0.45, 1.0):
             _vending_pair(ctx, C, f"Deco_Vending_E{k}", gx, gz, yaw)
-    for k, gz in enumerate((-7.4, 7.4)):
-        if _place(ctx, f"Deco_ATM{k}", [(-166.0, gz)], 0.35, 0.3):
-            _atm(ctx, f"Deco_ATM{k}", -166.0, gz, 0.0 if gz < 0 else math.pi)
+    for k, gz in enumerate((-ATM_Z, ATM_Z)):
+        if _place(ctx, f"Deco_ATM{k}", [(M.X1 + ATM_OUT, gz)], 0.45, 0.45):
+            _atm(ctx, C, f"Deco_ATM{k}", M.X1 + ATM_OUT, gz, -math.pi / 2)
     _kiosk(ctx, C, "Deco_Kiosk_IceCream", [(-180.0, -33.0), (-175.0, -30.0)], 0.0, "ICE CREAM", P["pink"], "ice_cream")
     _kiosk(ctx, C, "Deco_Kiosk_News", [(-180.0, 33.0), (-185.0, 30.0)], math.pi, "COVE NEWS", P["blue"], "news")
     ctx.way_sign("Deco_Way_North", "PARADISE PLAZA · NORTH PLAZA", -183.0, -56.0, 0.0)
@@ -956,6 +1009,7 @@ def _park(ctx, C, M):
 def build(ctx, M):
     """Pose tout le décor hors cellules : plazas, allées, parc. Imprime les triangles par section et les refus."""
     SKIPPED.clear()
+    PLACED.clear()
     TRIS.clear()
     C = _palette(ctx)
     for label, fn in (("entrance", _entrance), ("paradise", _paradise), ("north_plaza", _north), ("wonderland", _wonderland),

@@ -758,8 +758,22 @@ def _posterize(rgb, centres):
     return centres[labels].astype(np.float32)
 
 
+def _recolour(centres, saturation, hue_shift, brightness=1.0, hue=None, min_saturation=0.0):
+    import colorsys
+    import numpy as np
+    out = []
+    for r, g, b in centres:
+        h, s, v = colorsys.rgb_to_hsv(float(r), float(g), float(b))
+        if hue is None:
+            h, s = (h + hue_shift) % 1.0, min(1.0, s * saturation)
+        else:
+            h, s = hue, min(1.0, max(s * saturation, min_saturation))
+        out.append(colorsys.hsv_to_rgb(h, s, min(1.0, v * brightness)))
+    return np.array(out, dtype=np.float32)
+
+
 def project_ref_image(objs, image_path, material_name, background_threshold=0.3, highlight_margin=0.12, near_white=0.9, grey_spread=0.08, max_washed=0.3,
-                      palette=0):
+                      palette=0, saturation=1.0, hue_shift=0.0, brightness=1.0, hue=None, min_saturation=0.0):
     import numpy as np
     source = bpy.data.images.load(image_path, check_existing=True)
     if min(source.size) < REF_TEXTURE_SIZE:
@@ -793,7 +807,7 @@ def project_ref_image(objs, image_path, material_name, background_threshold=0.3,
         raise ValueError(f"{image_path}: the whole subject reads as highlight")
     bled = _bleed_subject(rgb, seed)
     if palette:
-        bled = _posterize(bled, _merge_shades(rgb[seed], _kmeans(rgb[seed], palette)))
+        bled = _posterize(bled, _recolour(_merge_shades(rgb[seed], _kmeans(rgb[seed], palette)), saturation, hue_shift, brightness, hue, min_saturation))
     image = bpy.data.images.new(material_name, width, height)
     image.pixels.foreach_set(np.concatenate([bled, np.ones((height, width, 1), dtype=np.float32)], axis=-1).ravel())
     image.pack()
@@ -957,7 +971,7 @@ def zone_decor(coll, zone_key, col_prefix):
     return objs, cols, plants
 
 
-def import_ai_model(coll, slug, material_name, palette=0):
+def import_ai_model(coll, slug, material_name, palette=0, saturation=1.0, hue_shift=0.0, brightness=1.0, hue=None, min_saturation=0.0):
     folder = os.path.join(OUT_ROOT, "ai", slug)
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=os.path.join(folder, "model.glb"))
@@ -976,7 +990,7 @@ def import_ai_model(coll, slug, material_name, palette=0):
     for o in imported:
         if o.type != "MESH":
             bpy.data.objects.remove(o, do_unlink=True)
-    project_ref_image(meshes, os.path.join(folder, "ref.png"), material_name, palette=palette)
+    project_ref_image(meshes, os.path.join(folder, "ref.png"), material_name, palette=palette, saturation=saturation, hue_shift=hue_shift, brightness=brightness, hue=hue, min_saturation=min_saturation)
     return meshes
 
 

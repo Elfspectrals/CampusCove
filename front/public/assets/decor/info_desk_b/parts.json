@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_Mall_info_desk_b": {
+      "mask": "parts_DC_Mall_info_desk_b.png",
+      "parts": [
+        {
+          "id": "body",
+          "label": "Body",
+          "color": "#bba584"
+        },
+        {
+          "id": "top",
+          "label": "Top",
+          "color": "#504436"
+        },
+        {
+          "id": "detail",
+          "label": "Detail",
+          "color": "#f4d7ab"
+        }
+      ]
+    }
+  }
+}

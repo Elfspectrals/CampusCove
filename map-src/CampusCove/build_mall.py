@@ -34,7 +34,8 @@ import lib_kit as K
 import mall_lib as ML
 import mall_decor
 import mall_dressing
-for module in (L, K, ML, mall_decor, mall_dressing):
+import mall_facade
+for module in (L, K, ML, mall_decor, mall_dressing, mall_facade):
     importlib.reload(module)
 import bpy
 
@@ -51,6 +52,8 @@ ROOF1 = 7.6
 ROOF2 = 11.6
 BAL = 5.0
 WALL_T = 0.3
+CEILING_T = 0.1
+SELF_LIT_INTERIOR, SELF_LIT_EXTERIOR = 0.5, 0.25
 PART_T = 0.3
 GAP = 0.02
 RAMP_RUN = 10.4
@@ -158,10 +161,10 @@ P = {
     "paving": L.make_mat("TW_MallPaving", "#c9c2b4", 0.9, "tiles", 0.03, accent="#b0a99b"),
     "street": L.make_mat("TW_MallStreet", "#d8c7a8", 0.85, "tiles", 0.04, accent="#c2ad8a"),
     "service": L.make_mat("TW_MallService", "#9a9a98", 0.95, "noise", 0.03),
-    "wall": L.make_mat("TW_MallWall", "#f4f2ee", 0.9, "noise", 0.02),
-    "wall_out": L.make_mat("TW_MallOuter", "#cfc6b6", 0.95, "noise", 0.03),
+    "wall": L.make_mat("TW_MallWall", "#f4f2ee", 0.9, "noise", 0.02, emit="#f4f2ee", emit_strength=SELF_LIT_INTERIOR),
+    "wall_out": L.make_mat("TW_MallOuter", "#cfc6b6", 0.95, "noise", 0.03, emit="#cfc6b6", emit_strength=SELF_LIT_EXTERIOR),
     "band": L.make_mat("TW_MallBand", "#2f6f63", 0.7, "noise", 0.02),
-    "slab": L.make_mat("TW_MallSlab", "#e6e3dc", 0.9, "noise", 0.02),
+    "slab": L.make_mat("TW_MallSlab", "#e6e3dc", 0.9, "noise", 0.02, emit="#e6e3dc", emit_strength=SELF_LIT_INTERIOR),
     "steel": L.make_mat("TW_MallSteel", "#5d6670", 0.55, "noise", 0.03),
     "dark": L.make_mat("TW_MallDark", "#2a2e35", 0.5, "noise", 0.02),
     "glass": L.make_mat("TW_MallGlass", "#9fd6ea", 0.1, "noise", 0.02, alpha=0.4),
@@ -759,7 +762,8 @@ for name, a0, a1, p0, p1 in (("Gable_N", N_OUT, N_IN, P_UP[0], P_UP[0] + WALL_T)
 
 # ---------------------------------------------------------------- roofs: plates to the balcony edges, trusses only over the voids, low roofs over the one-level plazas
 def roof_plate(name, x0, z0, x1, z1, y=ROOF2):
-    rect(name, x0, z0, x1, z1, y, 0.3, P["roof"], tile=4.0)
+    rect(f"{name}_Ceiling", x0, z0, x1, z1, y, CEILING_T, P["slab"], tile=4.0)
+    rect(name, x0, z0, x1, z1, y + CEILING_T, 0.3 - CEILING_T, P["roof"], tile=4.0)
 
 
 def trusses(name, axis, a0, a1, p0, p1, y=ROOF2):
@@ -946,6 +950,7 @@ M = types.SimpleNamespace(X0=X0, X1=X1, Z0=Z0, Z1=Z1, SVC=SVC, OUTER=OUTER, WALK
                           ENTRANCE_HW=ENTRANCE_HW, EXIT_W=EXIT_W, NOTCH=NOTCH, WARE=WARE, DOCK_X=DOCK_X, P_UP=P_UP, CATS=CATS, CAT_MATS=CAT_MATS, ANCHORS=ANCHORS,
                           cells=cells, cell_stores=cell_stores, stairs=stairs, l1_rects=l1_rects, rnd=rnd)
 mall_decor.build(ctx, M)
+mall_facade.build(ctx, M)
 
 # ---------------------------------------------------------------- checks, merge, export
 bad = L.check_grounded(objs, allow=("Floor", "Roof", "Slab", "Svc", "Outer_", "Return_", "Lintel_", "Spandrel_", "Cell_", "Partition_", "Pilaster_", "Back_", "Bulkhead_", "Corner_",
