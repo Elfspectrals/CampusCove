@@ -1,6 +1,6 @@
 # Vendored skills
 
-Copied unchanged except for a `> **CampusCove note.**` block inserted under each SKILL.md front matter.
+Copied unchanged except for a `> **CampusCove note.**` block inserted under each SKILL.md front matter, a contents list added to reference files over 100 lines, and the large sections of `threejs-animation`, `threejs-interaction`, `threejs-loaders` and `threejs-textures` moved unchanged to `references/` (2026-11-23).
 Every file was read before it was added (2026-10-26). To update, re-fetch the same paths at a newer commit,
 re-read the diff, and keep the notes.
 

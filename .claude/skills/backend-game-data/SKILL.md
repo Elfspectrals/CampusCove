@@ -23,6 +23,18 @@ Laravel in `backend/`, run in Docker (no local PHP needed): every artisan call g
 Product rules (do not "fix"): premium skins never purchasable with coins; furniture is deleted when a house is
 lost on purpose; no IP addresses stored; rewards come from actions, not passive income.
 
+Copy this checklist and tick it as you go:
+
+```
+- [ ] 1. Pick the recipe below (item, column or table, endpoint)
+- [ ] 2. Write the migration with the Laravel generator, idempotent
+- [ ] 3. Put the logic in a Services/ class, money and ownership in DB::transaction with lockForUpdate
+- [ ] 4. Throw ApiRejectedException with a code for each refusal
+- [ ] 5. Feature test: happy path and the rejection code
+- [ ] 6. make test, make migrate
+- [ ] 7. Update docs/*.md and roadmap.md
+```
+
 ## Recipes
 
 **New item / tool** (model `f9aefec` + `2026_10_26_151433_add_house_key_tool_item.php`):
@@ -56,8 +68,8 @@ docker compose exec -T backend php artisan test --filter=HousingApiTest
 make migrate                                 # apply to the dev DB the running game uses
 ```
 
-Known baseline (2026-10-26): 76 pass, 1 fails — `AdminShopApiTest` "admin can create…" needs the PHP GD
-extension, missing from the backend Docker image. Any other failure is yours.
+Known failure: `AdminShopApiTest` "admin can create…" fails while the PHP GD extension is missing from the
+backend Docker image. Any other failure is yours.
 
 Useful dev commands for playtesting the change: `make set-money ACCOUNT=<id|email> CURRENCY=coins SUM=5000`,
 `make set-admin EMAIL=...` (relog after), `make fill-outfit ACCOUNT=...`, `make collect-taxes`.

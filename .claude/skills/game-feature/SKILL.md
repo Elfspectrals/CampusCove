@@ -23,6 +23,17 @@ Front (front/src/)
 Verify                                          -> skill: playtest-game
 ```
 
+Copy this checklist and tick it as you go:
+
+```
+- [ ] 1. Frame: read the matching docs/*.md, write the player loop in one sentence
+- [ ] 2. Decide which layers are involved (assets, backend, socket, front)
+- [ ] 3. Assets -> backend -> socket -> front, one layer at a time
+- [ ] 4. Run the gates (section 4) and scripts/touched-layers.sh
+- [ ] 5. Playtest (skill playtest-game)
+- [ ] 6. Update roadmap.md and docs/*.md, then commit
+```
+
 ## 1. Frame the feature (before code)
 
 - Read `docs/OPEN_WORLD.md` if the feature touches buildings, doors, zones, collision or movement: it is the
@@ -76,6 +87,9 @@ The host has Node 22.13, which cannot run `.ts` tests without `--experimental-st
 (`33166c3`) was only needed for `-b`. Add a `*.test.ts` next to pure logic in `game/` or `avatar/`
 (`node:test` + `node:assert/strict`, see `src/avatar/avatarAnimationLogic.test.ts`). Report any gate you could
 not run.
+
+Run `.claude/skills/game-feature/scripts/touched-layers.sh`: it lists the layers the working tree touches and warns
+when the docs, the roadmap or a test is missing (exit 1 on a warning).
 
 ## 5. Reference skills (vendored, advisory)
 

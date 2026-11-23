@@ -5,6 +5,22 @@ description: Vite plugin authoring with Vite-specific hooks
 
 # Vite Plugin API
 
+## Contents
+
+- [Basic Structure](#basic-structure)
+- [Vite-Specific Hooks](#vite-specific-hooks)
+- [Virtual Modules](#virtual-modules)
+- [Plugin Ordering](#plugin-ordering)
+- [Conditional Application](#conditional-application)
+- [Rolldown Hooks (dev + build)](#rolldown-hooks-dev--build)
+- [Per-Environment vs Global Hooks (Vite 8)](#per-environment-vs-global-hooks-vite-8)
+- [Cleanup Hooks (Vite 8)](#cleanup-hooks-vite-8)
+- [Plugin Context Meta (Vite 8)](#plugin-context-meta-vite-8)
+- [Output Bundle Metadata](#output-bundle-metadata)
+- [Referencing Emitted Assets](#referencing-emitted-assets)
+- [Client-Server Communication](#client-server-communication)
+
+
 Vite plugins extend Rolldown's plugin interface with Vite-specific hooks.
 
 ## Basic Structure

@@ -1,5 +1,14 @@
 # Effects
 
+## Contents
+
+- [Glyphs](#glyphs)
+- [Halftone dots](#halftone-dots)
+- [Dithering](#dithering)
+- [Duotone](#duotone)
+- [Performance](#performance)
+
+
 Code treatments that turn an image into something made for this page. They are optional. Use one only when it fits the character in the direction, on the main visual only, and never as decoration on other elements.
 
 ## Glyphs

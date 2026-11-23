@@ -5,6 +5,21 @@ description: Vite 6+ Environment API for multiple runtime environments
 
 # Environment API (Vite 6+)
 
+## Contents
+
+- [Concept](#concept)
+- [Basic Configuration](#basic-configuration)
+- [Multiple Environments](#multiple-environments)
+- [Environment Options](#environment-options)
+- [Custom Environment Instances](#custom-environment-instances)
+- [Dev Environment Types](#dev-environment-types)
+- [Building Environments](#building-environments)
+- [Per-Environment Plugins](#per-environment-plugins)
+- [Backward Compatibility](#backward-compatibility)
+- [When to Use](#when-to-use)
+- [Plugin Environment Access](#plugin-environment-access)
+
+
 The Environment API formalizes multiple runtime environments beyond the traditional client/SSR split.
 
 ## Concept

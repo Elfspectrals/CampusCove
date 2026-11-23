@@ -738,6 +738,7 @@ L.write_json(os.path.join(OUT, "interior.layout.json"), {
     "secretDoor": {"position": [door_cx, 0.0, SECRET_WALL_Z], "yaw": round(math.pi, 4)},
     "secretRoom": SECRET_ROOM,
     "basement": {**BASEMENT, "floorY": BY},
+    "stage": [STAGE_X, BY + 0.3, STAGE_Z],
     "levels": [
         {"id": "L0", "y": 0.0, "height": H, "rects": [{"minX": X0, "maxX": X1, "minZ": PART_Z, "maxZ": Z1}, {"minX": X0, "maxX": STAIR_X0, "minZ": Z0, "maxZ": PART_Z}]},
         {"id": "B1", "y": BY, "height": BH, "rects": [{"minX": BASEMENT["minX"], "maxX": BASEMENT["maxX"], "minZ": PART_Z, "maxZ": BASEMENT["maxZ"]},

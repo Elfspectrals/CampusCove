@@ -7,7 +7,19 @@ description: Add or change real-time multiplayer behaviour in CampusCove's Colys
 
 One Colyseus room, `CityRoom` (`socket/src/CityRoom.ts`), holds the town **and** every interior: a player's
 `zone` (`city`, `apartment`, `work:<key>`) only decides who sees whom (`players.ts` `visibilityKey`,
-`forEachVisibleClient`). The socket is plain ESM JavaScript (no TypeScript), 2-space, no semicolons.
+`forEachVisibleClient`). The socket is TypeScript ESM, 2-space, no semicolons.
+
+Copy this checklist and tick it as you go:
+
+```
+- [ ] 1. Write the contract in docs/*.md (fields, types, ranges)
+- [ ] 2. Server: register the message, validate every field, derive identity from server state
+- [ ] 3. Server: check reach, zone, lock and cooldown
+- [ ] 4. Server: persistent effects through the API, broadcast to the smallest audience
+- [ ] 5. Client: type the payload, route it in useGameRealtime, send from the feature composable
+- [ ] 6. Socket test next to the handler (*.test.ts)
+- [ ] 7. Run scripts/check-message-contract.sh, then play with two accounts
+```
 
 | File | Owns |
 |---|---|
@@ -57,6 +69,9 @@ For room lifecycle, reconnection (`onDrop` / `allowReconnection`, not implemente
 principles, see the vendored `colyseus-multiplayer` skill; its CampusCove note says which of its APIs match 0.17.
 
 ## Verify
+
+Run `.claude/skills/socket-message/scripts/check-message-contract.sh [base-ref]`. It finds each message registered
+since the base ref (default `HEAD`) and fails when it has no docs contract or no socket test.
 
 Two browser tabs with two different accounts (one session per account: a second tab of the same account
 kicks the first with code 4001). Check: both see the change, a player in another zone does not, an

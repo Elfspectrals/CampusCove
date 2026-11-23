@@ -82,6 +82,9 @@ final class FoodCatalog
             self::item('drink_red_wine', 'Red Wine', 'red_wine', 2, 0, 4, 0, null, 30, 'drinks', 10),
             self::item('drink_whisky', 'Whisky', 'whisky', 1, 0, 0, 0, null, 40, 'drinks', 25),
             self::item('drink_vodka', 'Vodka Shot', 'vodka', 1, 0, 0, 0, null, 35, 'drinks', 25),
+            self::item('drink_club_velvet_kiss', 'Velvet Kiss', 'red_wine', 2, 0, 4, 0, null, 55, 'drinks', 10),
+            self::item('drink_club_cherry_bomb', 'Cherry Bomb', 'vodka', 1, 0, 0, 0, null, 65, 'drinks', 25),
+            self::item('drink_club_midnight_sin', 'Midnight Sin', 'whisky', 1, 0, 0, 0, null, 70, 'drinks', 25),
         ];
     }
 

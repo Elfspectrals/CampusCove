@@ -5,6 +5,14 @@ description: Vite library mode, multi-page apps, JavaScript API, and SSR guidanc
 
 # Build and SSR
 
+## Contents
+
+- [Library Mode](#library-mode)
+- [Multi-Page App](#multi-page-app)
+- [SSR Development](#ssr-development)
+- [JavaScript API](#javascript-api)
+
+
 ## Library Mode
 
 Build a library for distribution:

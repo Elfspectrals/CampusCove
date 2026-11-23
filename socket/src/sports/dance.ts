@@ -30,7 +30,7 @@ const games = new Map<string, DanceGame>()
 const spectators = new WeakMap<DanceGame, Set<string>>()
 let rules: DanceRules | null = null
 
-function danceRules(): DanceRules {
+export function danceRules(): DanceRules {
   if (!rules) throw new Error('dance rules are not loaded')
   return rules
 }

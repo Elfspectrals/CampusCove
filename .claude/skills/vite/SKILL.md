@@ -7,7 +7,7 @@ metadata:
   source: Generated from https://github.com/vitejs/vite, scripts at https://github.com/antfu/skills
 ---
 
-> **CampusCove note.** Vendored from [antfu/skills](https://github.com/antfu/skills) @ 8886fe2, MIT (`_third-party/LICENSE-antfu.txt`); only this note was added.
+> **CampusCove note.** Vendored from [antfu/skills](https://github.com/antfu/skills) @ 8886fe2, MIT (`_third-party/LICENSE-antfu.txt`); this note was added and a contents list was added to the long files in `references/`.
 >
 > **Version gap:** written for Vite 8 (Rolldown/Oxc); CampusCove runs **Vite 7.3.1** (esbuild + Rollup) with npm, not pnpm. Use the Vite 7 names: `build.rollupOptions`, `esbuild`, `optimizeDeps.esbuildOptions`; the top-level `input`, `devtools`, `tsconfig`, `build.chunkImportMap`, glob `caseSensitive`, hook `filter` objects and `closeServer` do not exist in 7. Ignore `rolldown-migration.md` unless the user asks to upgrade, and the SSR / library / Environment API sections (this is a SPA). Here: `front/vite.config.ts` has the `/api` proxy to `:8000` and `allowedHosts: ['front']` so the socket container can fetch `world.manifest.json` (keep it). Client env is `VITE_API_URL` / `VITE_SOCKET_URL` (`docker-compose.yml`). Build gate: `npx vue-tsc -b` then `vite build`.
 >

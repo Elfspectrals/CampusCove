@@ -145,6 +145,7 @@ import {
   useRobotFactory,
   tickSports
 } from './sports/index.ts'
+import { POLE_SHOW_TICK_MS, onPoleShowPress, onPoleShowStart, tickPoleShows } from './sports/poleShow.ts'
 import { onGearQuote, onGearRent } from './sports/gearRental.ts'
 import { isRacing, onRunLook, onRunStep } from './sports/runningVenue.ts'
 import { onGymAction, onGymBall, onGymBallReturn, tickGym } from './sports/gym.ts'
@@ -300,7 +301,11 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('gym_ball_return', (client) => onGymBallReturn(this, client))
     this.onMessage('tennis_hit', (client, payload: ClientPayload) => onTennisHit(this, client, payload))
     this.onMessage('tennis_ball_take', (client, payload: ClientPayload) => void onTennisBallTake(this, client, payload).catch((error) => warn('tennis ball failed', error)))
-    this.onMessage('dance_press', (client, payload: ClientPayload) => onDancePress(this, client, payload))
+    this.onMessage('dance_press', (client, payload: ClientPayload) => {
+      if (!onPoleShowPress(client, payload)) onDancePress(this, client, payload)
+    })
+    this.onMessage('pole_show_start', (client) => onPoleShowStart(this, client))
+    this.clock.setInterval(() => tickPoleShows(this, Date.now()), POLE_SHOW_TICK_MS)
     this.onMessage('emote_play', (client, payload: ClientPayload) => void onDanceEmotePlay(this, client, payload).catch((error) => warn('emote failed', error)))
     this.onMessage('emote_list', (client) => void onEmoteList(this, client).catch((error) => warn('emote list failed', error)))
     this.onMessage('climb_start', (client, payload: ClientPayload) => onClimbStart(this, client, payload))

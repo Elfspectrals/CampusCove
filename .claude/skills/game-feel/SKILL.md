@@ -9,7 +9,7 @@ description: >
   frames, or feedback/polish on hits, jumps, pickups, and deaths.
 ---
 
-> **CampusCove note.** Vendored from [gamedev-skills/awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills) @ 184b72b, Apache-2.0 (`_third-party/LICENSE-gamedev-skills.txt`, `NOTICE-gamedev-skills.txt`); modified: only this note was added.
+> **CampusCove note.** Vendored from [gamedev-skills/awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills) @ 184b72b, Apache-2.0 (`_third-party/LICENSE-gamedev-skills.txt`, `NOTICE-gamedev-skills.txt`); modified: this note was added and a contents list was added to the long files in `references/`.
 >
 > Here: examples are Godot/Unity; port the idea to TypeScript in `front/src/game/` (pure, testable) driven from the composable. CampusCove has no combat: the events worth juice are doors opening, lock/unlock with the key, buying a house (F2), a fish caught, a hotbar change (arms `Equip` clip). Keep it client-side and never move the simulated position or camera base: the socket rejects off-speed moves (`socket/src/movement.ts`). Keep shake tiny or off in first person. Sibling skills it names (`audio-design`, `godot-*`, ...) are not installed.
 >

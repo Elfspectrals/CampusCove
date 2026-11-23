@@ -9,7 +9,7 @@ description: >
   heightmap/terrain, or loot tables.
 ---
 
-> **CampusCove note.** Vendored from [gamedev-skills/awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills) @ 184b72b, Apache-2.0 (`_third-party/LICENSE-gamedev-skills.txt`, `NOTICE-gamedev-skills.txt`); modified: only this note was added.
+> **CampusCove note.** Vendored from [gamedev-skills/awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills) @ 184b72b, Apache-2.0 (`_third-party/LICENSE-gamedev-skills.txt`, `NOTICE-gamedev-skills.txt`); modified: this note was added and a contents list was added to the long files in `references/`.
 >
 > Here: examples are Python/Godot/Unity. The useful parts are seeded RNG and weighted / pity tables. **Rolls that give items or coins run on the server** (Laravel service, PHP `random_int` / `Random\Randomizer` with a seeded engine in tests), never in the browser or the socket; persist the result, not just the seed. Nothing rolls catches yet: fish and rods only carry `item_defs.rarity` (display tiers in `front/src/game/rarity.ts`). Blender build scripts already use fixed seeds for scatter (keep them deterministic, skill `blender-asset`). The terrain / dungeon / WFC parts are background only: the town is hand-authored, and the pond relief is a heightmap from its build script. Sibling skills it names (`godot-tilemap`, `roguelike`, ...) are not installed.
 >

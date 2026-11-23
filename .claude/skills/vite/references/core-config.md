@@ -5,6 +5,16 @@ description: Vite configuration patterns using vite.config.ts
 
 # Vite Configuration
 
+## Contents
+
+- [Basic Setup](#basic-setup)
+- [Conditional Config](#conditional-config)
+- [Async Config](#async-config)
+- [Using Environment Variables in Config](#using-environment-variables-in-config)
+- [Key Config Options](#key-config-options)
+- [TypeScript Intellisense](#typescript-intellisense)
+
+
 ## Basic Setup
 
 ```ts

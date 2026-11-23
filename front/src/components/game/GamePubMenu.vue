@@ -49,7 +49,7 @@ function serving(food: ShopItemFood | null | undefined): string {
         </button>
       </header>
       <p class="m-0 px-4 pt-2 text-[11px] font-bold text-mist">
-        {{ via === 'bartender' ? `The barman pours it (${pourSeconds} s) and slides it down the bar.` : 'Served straight at the counter.' }}
+        {{ via === 'bartender' ? `The barman pours it (${pourSeconds} s) and slides it down the bar.` : via === 'club' ? 'The waitress brings it to your table.' : 'Served straight at the counter.' }}
       </p>
       <p v-if="loading" class="m-0 px-4 py-6 text-center text-sm text-mist">Chalking up the board…</p>
       <ul v-else class="m-0 max-h-[60vh] list-none overflow-y-auto p-2">
