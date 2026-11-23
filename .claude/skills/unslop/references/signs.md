@@ -1,5 +1,19 @@
 # Signs of slop
 
+## Contents
+
+- [Surfaces and color](#surfaces-and-color)
+- [Type](#type)
+- [Icons](#icons)
+- [Spacing](#spacing)
+- [Copy](#copy)
+- [Components](#components)
+- [Landing pages and heroes](#landing-pages-and-heroes)
+- [Visuals](#visuals)
+- [Motion](#motion)
+- [Template look](#template-look)
+
+
 Go through every group and note each sign you find with where it lives. Each line pairs the sign with its fix.
 
 ## Surfaces and color

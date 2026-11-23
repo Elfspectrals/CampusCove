@@ -5,6 +5,15 @@ description: Vue 3 reactivity system, lifecycle hooks, and composable patterns
 
 # Reactivity, Lifecycle & Composables
 
+## Contents
+
+- [Reactivity](#reactivity)
+- [Watchers](#watchers)
+- [Lifecycle Hooks](#lifecycle-hooks)
+- [Effect Scope](#effect-scope)
+- [Composables](#composables)
+
+
 ## Reactivity
 
 ### ref vs shallowRef

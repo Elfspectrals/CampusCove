@@ -7,7 +7,7 @@ metadata:
   source: Generated from https://github.com/vuejs/docs, scripts at https://github.com/antfu/skills
 ---
 
-> **CampusCove note.** Vendored from [antfu/skills](https://github.com/antfu/skills) @ 8886fe2, MIT (`_third-party/LICENSE-antfu.txt`); only this note was added.
+> **CampusCove note.** Vendored from [antfu/skills](https://github.com/antfu/skills) @ 8886fe2, MIT (`_third-party/LICENSE-antfu.txt`); this note was added and a contents list was added to the long files in `references/`.
 >
 > Here: Vue 3.5.27, `<script setup lang="ts">`, Tailwind, no Pinia (state lives in composables and `api/session.ts`). Keep Three.js objects, the renderer and the Colyseus `Room` out of deep reactivity: plain variables inside the composable, or `shallowRef` (as `gameRoomRef` in `GameView.vue`); a `ref()` around a scene graph proxies every node and costs frames. Game logic stays in `front/src/game/` (no Vue), Vue glue in `composables/game/`, and `GameView.vue` only wires them. API calls go through `api/http.ts` `apiRequest`, not `fetch`. The Suspense / top-level `await` examples are not used here.
 >

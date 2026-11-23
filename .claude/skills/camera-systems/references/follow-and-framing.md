@@ -1,5 +1,16 @@
 # Follow & framing — depth for `camera-systems`
 
+## Contents
+
+- [1. Why `1 - exp(-rate*dt)` (frame-rate-independent smoothing)](#1-why-1---exp-ratedt-frame-rate-independent-smoothing)
+- [2. Full 2D rig: deadzone + look-ahead + bounds](#2-full-2d-rig-deadzone--look-ahead--bounds)
+- [3. 3D third-person orbit](#3-3d-third-person-orbit)
+- [4. First-person look](#4-first-person-look)
+- [5. Multi-target / group framing](#5-multi-target--group-framing)
+- [6. Cinematic blends & transitions](#6-cinematic-blends--transitions)
+- [7. Per-engine rig summary](#7-per-engine-rig-summary)
+
+
 Detail the `camera-systems` body defers here: the smoothing math, a full 2D rig, 3D orbit/first-
 person specifics, multi-target framing, cinematic blends, and the per-engine rig mapping.
 Snippets target **Godot 4.7** and **Unity 6.3 LTS / Cinemachine 3**.

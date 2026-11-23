@@ -1,5 +1,20 @@
 # Tokens
 
+## Contents
+
+- [Spacing scale](#spacing-scale)
+- [App layout](#app-layout)
+- [Neutral ramps](#neutral-ramps)
+- [Accent](#accent)
+- [Buttons](#buttons)
+- [Type families](#type-families)
+- [Type scale](#type-scale)
+- [Radius](#radius)
+- [Icons](#icons)
+- [Depth](#depth)
+- [Motion](#motion)
+
+
 Starting values for each pass. When the project already has a good system, keep its values and only fix how they are used. These are starting points, not a house style, so let the direction move them.
 
 ## Spacing scale

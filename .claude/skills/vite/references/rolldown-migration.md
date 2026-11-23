@@ -5,6 +5,20 @@ description: Vite 8 Rolldown bundler and Oxc transformer migration
 
 # Rolldown Migration (Vite 8)
 
+## Contents
+
+- [What Changed](#what-changed)
+- [Backward Compatibility (Auto-Conversion)](#backward-compatibility-auto-conversion)
+- [Default Browser Target Change](#default-browser-target-change)
+- [Config Migration](#config-migration)
+- [Notable Breaking Changes](#notable-breaking-changes)
+- [Detecting Rolldown-powered Vite](#detecting-rolldown-powered-vite)
+- [Plugin Compatibility](#plugin-compatibility)
+- [New Capabilities](#new-capabilities)
+- [Gradual Migration](#gradual-migration)
+- [Overriding Vite in Frameworks](#overriding-vite-in-frameworks)
+
+
 Vite 8 replaces esbuild + Rollup with [Rolldown](https://rolldown.rs/) (Rust bundler) and [Oxc](https://oxc.rs/) (Rust transformer/minifier).
 
 ## What Changed

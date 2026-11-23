@@ -9,7 +9,7 @@ description: >
   limits, third-person camera, orbit camera, first-person look, Cinemachine, or camera jitter.
 ---
 
-> **CampusCove note.** Vendored from [gamedev-skills/awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills) @ 184b72b, Apache-2.0 (`_third-party/LICENSE-gamedev-skills.txt`, `NOTICE-gamedev-skills.txt`); modified: only this note was added.
+> **CampusCove note.** Vendored from [gamedev-skills/awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills) @ 184b72b, Apache-2.0 (`_third-party/LICENSE-gamedev-skills.txt`, `NOTICE-gamedev-skills.txt`); modified: this note was added and a contents list was added to the long files in `references/`.
 >
 > Here: the camera is first-person with pointer lock (yaw/pitch in `composables/game/useGameMovement.ts`, eye at 1.6 m plus `terrainHeightAt`), first-person arms are parented to it. The 2D/third-person/Cinemachine sections do not apply. Sibling skills it names are not installed.
 >

@@ -5,6 +5,20 @@ description: Vue 3 script setup syntax and compiler macros for defining props, e
 
 # Script Setup & Macros
 
+## Contents
+
+- [Basic Syntax](#basic-syntax)
+- [defineProps](#defineprops)
+- [defineEmits](#defineemits)
+- [defineModel](#definemodel)
+- [defineExpose](#defineexpose)
+- [defineOptions](#defineoptions)
+- [defineSlots](#defineslots)
+- [Generic Components](#generic-components)
+- [Local Custom Directives](#local-custom-directives)
+- [Top-level await](#top-level-await)
+
+
 `<script setup>` is the recommended syntax for Vue SFCs with Composition API. It provides better runtime performance and IDE type inference.
 
 ## Basic Syntax

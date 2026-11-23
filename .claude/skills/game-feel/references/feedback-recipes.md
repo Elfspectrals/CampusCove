@@ -1,5 +1,15 @@
 # Feedback recipes — depth for `game-feel`
 
+## Contents
+
+- [1. The trauma model (why shake feels good)](#1-the-trauma-model-why-shake-feels-good)
+- [2. Easing cheat sheet — which curve for which job](#2-easing-cheat-sheet--which-curve-for-which-job)
+- [3. The rest of the feedback menu](#3-the-rest-of-the-feedback-menu)
+- [4. Importance tiers (keep the whole game proportional)](#4-importance-tiers-keep-the-whole-game-proportional)
+- [5. Accessibility (ship these toggles)](#5-accessibility-ship-these-toggles)
+- [6. Per-engine binding summary](#6-per-engine-binding-summary)
+
+
 Detail the `game-feel` body defers here: the shake math, easing cheat sheet, the rest of the
 feedback menu (knockback, flash, number pop, freeze), importance-tier presets, and the
 per-engine bindings for tweens and particles. All snippets target **Godot 4.7** and **Unity 6.3 LTS**.

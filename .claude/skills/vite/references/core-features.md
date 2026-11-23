@@ -5,6 +5,18 @@ description: Vite-specific import patterns and runtime features
 
 # Vite Features
 
+## Contents
+
+- [Glob Import](#glob-import)
+- [Asset Import Queries](#asset-import-queries)
+- [Environment Variables](#environment-variables)
+- [CSS Modules](#css-modules)
+- [JSON Import](#json-import)
+- [HMR API](#hmr-api)
+- [WebAssembly](#webassembly)
+- [Chunk Import Map Optimization (Vite 8, experimental)](#chunk-import-map-optimization-vite-8-experimental)
+
+
 > Vite 8: TS/JSX transforms run on **Oxc** (`oxc` option, not `esbuild`), dep pre-bundling on **Rolldown**, and CSS minification on **Lightning CSS** by default. `esbuild`/`rollupOptions` still work as deprecated aliases.
 
 ## Glob Import

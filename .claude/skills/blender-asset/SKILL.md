@@ -12,6 +12,18 @@ a change that is not in a script is lost at the next rebuild.
 Read `docs/ASSETS_STYLE_GUIDE.md` before modelling (style, budgets, interior contract, work buildings §8,
 pond §9, fishing items §10). Premium rigged skins are separate: `front/scripts/skins/` (see its README).
 
+Copy this checklist and tick it as you go:
+
+```
+- [ ] 1. Read docs/ASSETS_STYLE_GUIDE.md, start from the closest build_*.py
+- [ ] 2. Write the script (deterministic, triangle count printed, check_grounded passes)
+- [ ] 3. Run it in Blender, look at the result from eye height
+- [ ] 4. npm run assets:optimize -- <category>
+- [ ] 5. scripts/check-triangle-budget.mjs on the optimized GLB
+- [ ] 6. Wire catalog.ts / world.manifest.json / item_defs
+- [ ] 7. Commit the script with its outputs
+```
+
 ## 1. Write the script
 
 Start from the closest existing script (tool: `build_house_key.py`; building: `build_work_cafe.py` +
@@ -91,6 +103,7 @@ Then, depending on the asset:
 
 ## 4. Check
 
+- Budget: `node .claude/skills/blender-asset/scripts/check-triangle-budget.mjs <file.glb> <furniture|house-exterior|house-interior|work-interior|work-exterior|skin>` exits 1 over budget.
 - `git status` shows the script **and** the optimized outputs; sizes are sane (`git diff --stat`).
 - Skins: `cd front && npm run skins:check`.
 - In game: press **C** in `/game` to toggle the collision debug overlay (skill `playtest-game`).

@@ -5,6 +5,17 @@ description: Play CampusCove's /game in the built-in browser pane to prove a cha
 
 # Playtest CampusCove
 
+Copy this checklist and tick it as you go:
+
+```
+- [ ] 1. scripts/playtest-setup.sh (stack up, accounts reset)
+- [ ] 2. Open the pane, sign in, go to /game
+- [ ] 3. Fake pointer lock (scripts/fake-pointer-lock.js)
+- [ ] 4. Play the feature, second player if anything is shared
+- [ ] 5. Console, socket and backend logs
+- [ ] 6. Gates, then report what was played and what was not
+```
+
 ## 0. Stack up
 
 ```bash
@@ -16,6 +27,8 @@ Front http://localhost:5173 (Vite HMR), API http://localhost:8000/api, socket :3
 save), Postgres :5432. New migration → `make migrate`. Seeds → `make seed`.
 
 ## 1. Playtest accounts (local only)
+
+`.claude/skills/playtest-game/scripts/playtest-setup.sh` checks the four containers and runs the reset below.
 
 Use the two fixed accounts instead of creating one per session. `make playtest-accounts` creates them on the
 first run and resets them on every later run: admin, full outfit, 5,000 coins, full health / hunger / thirst,
@@ -42,7 +55,7 @@ only when the test is about new accounts (welcome bonus, the 72 h trade rule).
 
 ## 2. Drive the game
 
-Real pointer lock never engages in the pane (the Play overlay stays). Fake it — movement, mouse look and
+Real pointer lock never engages in the pane (the Play overlay stays). Fake it with `scripts/fake-pointer-lock.js` (paste it into `javascript_tool`) — movement, mouse look and
 left-click interactions are gated on `document.pointerLockElement === canvas` (`useGameMovement.ts`):
 
 ```js
