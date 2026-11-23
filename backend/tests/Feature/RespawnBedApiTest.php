@@ -106,7 +106,7 @@ class RespawnBedApiTest extends TestCase
             'owner_account_id' => $owner['account_id'],
             'template_key' => $this->templateKey($owner),
             'objectId' => $objectId,
-        ], $this->auth($owner['token']));
+        ], $this->auth($owner['token'], self::SECRET));
     }
 
     /** @param  array{token: string, account_id: int}  $owner */
@@ -125,7 +125,7 @@ class RespawnBedApiTest extends TestCase
             'objectId' => $objectId,
             'objectKey' => $code,
             'x' => 0, 'y' => 0, 'z' => 0, 'rotX' => 0, 'rotY' => 0, 'rotZ' => 0,
-        ], $this->auth($owner['token']))->assertOk();
+        ], $this->auth($owner['token'], self::SECRET))->assertOk();
 
         return $objectId;
     }

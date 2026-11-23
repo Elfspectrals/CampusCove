@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\AccountAuthLocal;
 use App\Models\AccountHandle;
+use App\Services\RealtimeNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,10 @@ use Illuminate\Validation\ValidationException;
 
 class AdminUserController extends Controller
 {
+    public function __construct(
+        private readonly RealtimeNotifier $realtime,
+    ) {}
+
     public function index(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -144,6 +149,9 @@ class AdminUserController extends Controller
                 $account->update(['is_admin' => (bool) $validated['is_admin']]);
             }
         });
+        if (array_key_exists('is_admin', $validated)) {
+            $this->realtime->accountAccessChanged($accountId);
+        }
 
         return response()->json(['user' => $this->toPayload($account->fresh(['handle', 'localAuth']))]);
     }
@@ -153,6 +161,7 @@ class AdminUserController extends Controller
         $account = Account::query()->findOrFail($accountId);
         $account->tokens()->delete();
         $account->delete();
+        $this->realtime->accountAccessChanged($accountId);
 
         return response()->json(null, 204);
     }
@@ -178,6 +187,7 @@ class AdminUserController extends Controller
             'suspension_reason' => $validated['reason'] ?? null,
         ]);
         $account->tokens()->delete();
+        $this->realtime->accountAccessChanged($accountId);
 
         return response()->json([
             'message' => 'User suspended.',
@@ -213,6 +223,7 @@ class AdminUserController extends Controller
             'ban_reason' => $validated['reason'] ?? null,
         ]);
         $account->tokens()->delete();
+        $this->realtime->accountAccessChanged($accountId);
 
         return response()->json([
             'message' => 'User banned.',

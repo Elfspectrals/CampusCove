@@ -328,6 +328,10 @@ function statusLabel(status: string): string {
                 <li class="flex items-center gap-1.5" :class="r.progress.has_coin_purchase && 'text-mint'">
                   <UiIcon :name="r.progress.has_coin_purchase ? 'check' : 'x'" :size="12" :stroke-width="1.75" /> {{ t('friendsPage.firstPurchase') }}
                 </li>
+                <li class="flex items-center gap-1.5" :class="r.progress.active_days >= referral.requirements.min_active_days && 'text-mint'">
+                  <UiIcon :name="r.progress.active_days >= referral.requirements.min_active_days ? 'check' : 'x'" :size="12" :stroke-width="1.75" />
+                  {{ t('friendsPage.activeDaysProgress', { count: Math.min(r.progress.active_days, referral.requirements.min_active_days), total: referral.requirements.min_active_days }) }}
+                </li>
               </ul>
             </li>
           </ul>

@@ -90,6 +90,9 @@ class AdminInventoryController extends Controller
         ]);
 
         $itemDef = ItemDef::query()->findOrFail((int) $validated['item_def_id']);
+        if ($this->boughtWithGems($itemDef)) {
+            return $this->premiumRefused();
+        }
         $this->inventoryService->grantItem($accountId, $itemDef, (int) $validated['quantity']);
 
         return response()->json([
@@ -107,6 +110,9 @@ class AdminInventoryController extends Controller
         ]);
 
         $itemDef = ItemDef::query()->findOrFail((int) $validated['item_def_id']);
+        if ($this->boughtWithGems($itemDef)) {
+            return $this->premiumRefused();
+        }
         $this->inventoryService->revokeItem($accountId, $itemDef, (int) $validated['quantity']);
 
         return response()->json([
@@ -124,6 +130,9 @@ class AdminInventoryController extends Controller
         ]);
 
         $itemDef = ItemDef::query()->findOrFail((int) $validated['item_def_id']);
+        if ($this->boughtWithGems($itemDef)) {
+            return $this->premiumRefused();
+        }
         $this->inventoryService->setItemQuantity($accountId, $itemDef, (int) $validated['quantity']);
 
         return response()->json([
@@ -175,5 +184,18 @@ class AdminInventoryController extends Controller
             'message' => 'Inventory reset to starter body skins.',
             'code' => 'inventory_reset',
         ]);
+    }
+
+    private function boughtWithGems(ItemDef $itemDef): bool
+    {
+        return ItemDef::query()->whereKey($itemDef->item_def_id)->boughtWithGems()->exists();
+    }
+
+    private function premiumRefused(): JsonResponse
+    {
+        return response()->json([
+            'message' => 'Items bought with gems cannot be given or taken.',
+            'code' => 'admin_item_premium',
+        ], 422);
     }
 }

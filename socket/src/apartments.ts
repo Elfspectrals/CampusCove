@@ -1,5 +1,6 @@
 // Decorating one's own house from the town, backed by the Laravel API (ownership, placed objects, inventory).
 import { callBackendJson, errorPayload } from './backend.ts'
+import { unitAt } from './movement.ts'
 import type { ClientPayload, GameClient, GameRoom, HousingUnit, Player } from './types.ts'
 
 async function sendInventory(room: GameRoom, client: GameClient): Promise<void> {
@@ -44,8 +45,9 @@ interface DecoratedHouse {
 function decoratedHouse(room: GameRoom, client: GameClient): DecoratedHouse | null {
   const player = room.players.get(client.sessionId)
   if (!player || !player.token || !player.decoratedTemplateKey) return null
-  const unit = room.housingUnits.find((u) => u.template_key === player.decoratedTemplateKey)
-  if (!unit || unit.occupant_account_id === null || !canDecorate(unit, player.accountId)) return null
+  const unit = unitAt(room.housingUnits, player.x, player.z)
+  if (!unit || unit.template_key !== player.decoratedTemplateKey) return null
+  if (unit.occupant_account_id === null || !canDecorate(unit, player.accountId)) return null
   return { player: player as DecoratedHouse['player'], ownerAccountId: unit.occupant_account_id, templateKey: unit.template_key }
 }
 

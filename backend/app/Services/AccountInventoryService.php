@@ -213,10 +213,11 @@ final class AccountInventoryService
                 return;
             }
             $containerId = (int) $gift->container_id;
+            $gemItemDefIds = ItemDef::query()->boughtWithGems()->pluck('item_def_id');
 
-            InventoryStack::query()->where('container_id', $containerId)->delete();
-            ItemInstance::query()->where('container_id', $containerId)->delete();
-            DB::table('account_locker_cosmetics')->where('account_id', $accountId)->delete();
+            InventoryStack::query()->where('container_id', $containerId)->whereNotIn('item_def_id', $gemItemDefIds)->delete();
+            ItemInstance::query()->where('container_id', $containerId)->whereNotIn('item_def_id', $gemItemDefIds)->delete();
+            DB::table('account_locker_cosmetics')->where('account_id', $accountId)->whereNotIn('item_def_id', $gemItemDefIds)->delete();
             DB::table('account_cosmetic_equipment')->where('account_id', $accountId)->delete();
         });
     }

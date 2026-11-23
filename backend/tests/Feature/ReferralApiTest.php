@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ActionCounter;
+use App\Services\ActionCounterService;
 use App\Services\ReferralService;
 use App\Services\WelcomeBonusService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -58,6 +60,17 @@ class ReferralApiTest extends TestCase
         $this->befriend($referee, $this->register());
         $this->assertNotPaid($referee);
 
+        // old enough, but not enough active days
+        Carbon::setTestNow(now()->addHours(ReferralService::MIN_ACCOUNT_AGE_HOURS + 1));
+        $this->postJson('/api/login', ['email' => $referee['email'], 'password' => 'password1x'])->assertOk();
+        $this->assertNotPaid($referee);
+        $this->getJson('/api/referrals', $this->auth($referrer))->assertJsonPath('referees.0.progress.active_days', 0);
+
+        $this->playActiveDays($referee, ReferralService::MIN_ACTIVE_DAYS - 1);
+        $this->postJson('/api/login', ['email' => $referee['email'], 'password' => 'password1x'])->assertOk();
+        $this->assertNotPaid($referee);
+        $this->playActiveDays($referee, 1);
+
         Carbon::setTestNow(now()->addHours(ReferralService::MIN_ACCOUNT_AGE_HOURS + 1));
         $this->postJson('/api/login', ['email' => $referee['email'], 'password' => 'password1x'])->assertOk();
 
@@ -83,6 +96,7 @@ class ReferralApiTest extends TestCase
             foreach ($friends as $friend) {
                 $this->befriend($referee, $friend);
             }
+            $this->playActiveDays($referee, ReferralService::MIN_ACTIVE_DAYS);
             $referees[] = $referee;
         }
         foreach ($referees as $referee) {
@@ -133,6 +147,11 @@ class ReferralApiTest extends TestCase
             ->where('item_defs.code', 'decor_potted_plant')
             ->value('shop_catalog_items.public_id');
         $this->postJson('/api/shop/purchase', ['shop_item_public_id' => $plant, 'quantity' => 1], $this->auth($account))->assertOk();
+    }
+
+    private function playActiveDays(array $account, int $days): void
+    {
+        app(ActionCounterService::class)->bump($account['account_id'], ActionCounter::ActiveDays, $days);
     }
 
     private function assertNotPaid(array $referee): void

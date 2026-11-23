@@ -270,6 +270,7 @@ class HousingApiTest extends TestCase
         $state->assertOk();
         $state->assertJsonPath('apartment.can_edit', false);
 
+        config(['services.realtime.secret' => 'test-realtime-secret']);
         $this->actingAs($visitorAccount, 'sanctum')->postJson('/api/apartments/spawn', [
             'owner_account_id' => $owner['account_id'],
             'template_key' => $templateKey,
@@ -281,7 +282,7 @@ class HousingApiTest extends TestCase
             'rotX' => 0,
             'rotY' => 0,
             'rotZ' => 0,
-        ])->assertStatus(403)->assertJsonPath('code', 'apartment_edit_forbidden');
+        ], ['X-Realtime-Secret' => 'test-realtime-secret'])->assertStatus(403)->assertJsonPath('code', 'apartment_edit_forbidden');
     }
 
     public function test_house_furniture_lists_occupied_units_only(): void

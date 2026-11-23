@@ -57,7 +57,7 @@ class StorageAuctionTest extends TestCase
             'objectId' => 'sofa_1',
             'objectKey' => 'storage_test_sofa',
             'x' => 0, 'y' => 0, 'z' => 0, 'rotX' => 0, 'rotY' => 0, 'rotZ' => 0,
-        ], $headers)->assertOk();
+        ], $headers + ['X-Realtime-Secret' => self::SECRET])->assertOk();
         $unit->refresh();
         $roomId = (int) $unit->room_id;
         $chestId = (int) DB::table('room_furniture_containers')->where('room_id', $roomId)->value('container_id');

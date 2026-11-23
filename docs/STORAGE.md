@@ -10,7 +10,7 @@ Some furniture placed in a house holds items. Laravel owns what is stored (`Furn
 
 A slot is one stack of one item, up to the item's `max_stack`. A storable item is one a trade accepts (`TradeService::isTradable`: tradable, not premium-only, not bound), not furniture, and not worn. A started meal stays in the bag: only whole items are put away.
 
-- Anyone standing next to the piece can take; only the owner and key holders put away.
+- Anyone standing next to the piece can take; only the owner and key holders put away, and only from 72 h after sign-up (`TradeService::MIN_GIVER_AGE_HOURS`, `storage_account_too_new`), or a new account would hand its items to a key holder through a dresser.
 - Taking is limited by the bag: the taker cannot hold more than `max_stack` of an item.
 - A piece that holds something cannot be picked up (`storage_not_empty`).
 - When a house is lost, what its furniture held is destroyed with it.
@@ -29,7 +29,7 @@ Under the `realtime` middleware, with the player's bearer token.
 
 The screen: `{ object_id, code, slots, food_only, can_deposit, items: [{ code, name, kind, quantity, preview_image }] }`.
 
-Refusals: `storage_not_found` (404), `storage_not_yours` (403), `storage_item_refused`, `storage_food_only`, `storage_item_worn`, `storage_item_missing`, `storage_full`, `storage_stack_full`, `storage_bag_full` (422), `storage_item_gone` (409).
+Refusals: `storage_not_found` (404), `storage_not_yours`, `storage_account_too_new` (403), `storage_item_refused`, `storage_food_only`, `storage_item_worn`, `storage_item_missing`, `storage_full`, `storage_stack_full`, `storage_bag_full` (422), `storage_item_gone` (409).
 
 ## Socket messages (`socket/src/storage.ts`)
 

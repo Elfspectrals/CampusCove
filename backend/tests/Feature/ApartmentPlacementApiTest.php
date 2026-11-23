@@ -14,6 +14,26 @@ class ApartmentPlacementApiTest extends TestCase
 {
     use RefreshDatabase, SetsWalletBalance;
 
+    private const SECRET = 'test-realtime-secret';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['services.realtime.secret' => self::SECRET]);
+        $this->withHeader('X-Realtime-Secret', self::SECRET);
+    }
+
+    public function test_the_browser_cannot_place_move_or_pick_up_without_the_socket(): void
+    {
+        $owner = $this->registerAndCreditWallet(0, 'coins');
+        $this->flushHeaders();
+        $headers = ['Authorization' => 'Bearer '.$owner['token']];
+
+        $this->postJson('/api/apartments/spawn', [], $headers)->assertForbidden()->assertJsonPath('code', 'realtime_only');
+        $this->patchJson('/api/apartments/transform', [], $headers)->assertForbidden()->assertJsonPath('code', 'realtime_only');
+        $this->postJson('/api/apartments/pickup', [], $headers)->assertForbidden()->assertJsonPath('code', 'realtime_only');
+    }
+
     public function test_spawn_consumes_one_pickup_restores_one_and_guest_can_edit(): void
     {
         $catalog = $this->createApartmentAssetCatalog();

@@ -4,6 +4,7 @@ interface RefereeProgress {
   account_age_ok: boolean
   other_friends: number
   has_coin_purchase: boolean
+  active_days: number
   qualified: boolean
 }
 
@@ -18,7 +19,7 @@ interface Referee {
 export interface ReferralSummary {
   code: string
   rewards: { referrer: number; referee: number }
-  requirements: { min_account_age_hours: number; min_other_friends: number; min_coin_purchases: number }
+  requirements: { min_account_age_hours: number; min_other_friends: number; min_coin_purchases: number; min_active_days: number }
   referees: Referee[]
 }
 
