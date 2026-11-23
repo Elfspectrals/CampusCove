@@ -190,3 +190,8 @@ Owned by the socket (`socket/src/adminPowers.ts`), never saved: toggles stay on 
 | `invisible` | toggle | the others get `user_left`, no more `user_moved`, the player is left out of the join list, chat and voice reach nobody; off sends `user_joined` |
 | `mute` | toggle | chat reaches nobody (the player gets `chat_muted`) and the voice sync subscribes nobody to them |
 | `one_punch` | toggle | each landed punch does 100 damage |
+
+## Web admin
+
+- `/api/admin/inventories/{accountId}/grant`, `revoke` and `set-quantity` refuse an item bought with gems with `admin_item_premium` (422), like the game routes; `reset` keeps the items bought with gems and takes only the others.
+- Changing `is_admin`, suspending, banning or deleting an account calls the socket (`POST /internal/account-access-changed` `{ accountId: int > 0 }`, `X-Realtime-Secret`), which closes that account's game connections (code 4003). The socket reads the admin right only at join, so a demoted admin keeps no power in game; a suspended or banned account cannot join again, since its tokens are deleted.

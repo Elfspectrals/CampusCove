@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\FurnitureStorageRejectedException;
+use App\Models\Account;
 use App\Models\HousingUnit;
 use App\Models\ItemDef;
 use App\Models\RoomFurniture;
@@ -41,6 +42,7 @@ final class FurnitureStorageService
             if (! $this->canDeposit($actorId, $unit)) {
                 throw new FurnitureStorageRejectedException('storage_not_yours', 'Only the owner and key holders can put things away here.', 403);
             }
+            $this->assertOldEnoughToGive($actorId);
             $def = $this->itemDef($itemCode);
             if (! TradeService::isTradable($def) || in_array($def->kind, ['furniture', 'apartment_asset'], true)) {
                 throw new FurnitureStorageRejectedException('storage_item_refused', "{$def->name} cannot be stored.", 422);
@@ -153,6 +155,21 @@ final class FurnitureStorageService
         DB::table('furniture_storages')->insert(['room_furniture_id' => $furniture->room_furniture_id, 'container_id' => $containerId]);
 
         return $containerId;
+    }
+
+    private function assertOldEnoughToGive(int $actorId): void
+    {
+        $tooNew = Account::query()
+            ->whereKey($actorId)
+            ->where('created_at', '>', now()->subHours(TradeService::MIN_GIVER_AGE_HOURS))
+            ->exists();
+        if ($tooNew) {
+            throw new FurnitureStorageRejectedException(
+                'storage_account_too_new',
+                'Accounts can put things away '.TradeService::MIN_GIVER_AGE_HOURS.' hours after sign-up. They can already take.',
+                403,
+            );
+        }
     }
 
     private function canDeposit(int $actorId, HousingUnit $unit): bool

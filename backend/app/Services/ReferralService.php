@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ActionCounter;
 use App\Models\Account;
 use App\Models\AccountHandle;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -27,8 +28,11 @@ final class ReferralService
 
     public const MAX_REWARDED_PER_MONTH = 10;
 
+    public const MIN_ACTIVE_DAYS = 3;
+
     public function __construct(
         private readonly CoinRewardService $coinRewards,
+        private readonly ActionCounterService $counters,
     ) {}
 
     public function codeFor(int $accountId): string
@@ -152,13 +156,14 @@ final class ReferralService
                 'min_account_age_hours' => self::MIN_ACCOUNT_AGE_HOURS,
                 'min_other_friends' => self::MIN_OTHER_FRIENDS,
                 'min_coin_purchases' => 1,
+                'min_active_days' => self::MIN_ACTIVE_DAYS,
             ],
             'referees' => $referees,
         ];
     }
 
     /**
-     * @return array{account_age_ok: bool, other_friends: int, has_coin_purchase: bool, qualified: bool}
+     * @return array{account_age_ok: bool, other_friends: int, has_coin_purchase: bool, active_days: int, qualified: bool}
      */
     private function progressFor(int $refereeId, int $referrerId): array
     {
@@ -180,13 +185,17 @@ final class ReferralService
             ->where('currency', 'coins')
             ->exists();
 
+        $activeDays = $this->counters->value($refereeId, ActionCounter::ActiveDays);
+
         return [
             'account_age_ok' => $ageOk,
             'other_friends' => $otherFriends,
             'has_coin_purchase' => $hasCoinPurchase,
+            'active_days' => $activeDays,
             'qualified' => $ageOk
                 && $otherFriends >= self::MIN_OTHER_FRIENDS
                 && $hasCoinPurchase
+                && $activeDays >= self::MIN_ACTIVE_DAYS
                 && $this->isActive($refereeId),
         ];
     }

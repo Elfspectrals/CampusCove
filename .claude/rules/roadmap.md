@@ -346,6 +346,18 @@ Decision (2026-11-17): the Escape menu becomes a full-screen pause menu like the
 - [done] Help lines removed from the sport HUDs (football, basketball, tennis, boxing, punch bag, skating, running, climbing, free pétanque).
 - Left out because nothing exists behind them: a frame-rate limit and counter, HUD size, colour-blind team colours, muting when the window is in the background.
 
+## Red team fixes (done, branch fix/red-team-feedback)
+
+Decision (2026-11-23, after a `red-team` review of `socket/` and `backend/`): fix the holes that break a stated rule, one branch from main.
+
+- [done] A key holder younger than 72 h cannot put things away in a dresser, toy chest or fridge (`storage_account_too_new`): it was a way around the 72 h giver rule.
+- [done] The web admin inventory routes refuse items bought with gems, and the inventory reset keeps them.
+- [done] Changing an account's admin right, suspending, banning or deleting it closes its game connections (`/internal/account-access-changed`): the socket kept the admin right read at join.
+- [done] `/apartments/spawn`, `/transform` and `/pickup` are socket-only routes, and the socket accepts a decoration only from a player standing inside that house.
+- [done] Referral rewards also need 3 active days of the referee (`active_days` counter, decided 2026-11-23), shown on the Friends page; the welcome bonus is unchanged.
+- Kept on purpose (decided 2026-11-23): the pickpocket sends its windows to the client, since the gauge draws them; a bot can read them as it can read any timing game.
+- To do by the user: rotate the Stripe webhook secret committed in `cf3377c1` (`backend/.env.example`), if that value is used in production.
+
 ## Later
 
 - Fishing as the second job (reuse the darts power meter or the Drink Fast balance bar; rod and fish models exist).

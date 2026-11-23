@@ -350,6 +350,7 @@ export const messages = {
       playedDays: 'Played {days} days',
       friendsProgress: 'Friends: {count}/{total}',
       firstPurchase: 'First coin purchase',
+      activeDaysProgress: 'Active days: {count}/{total}',
     },
     gems: {
       title: 'Purple gems',
@@ -1754,6 +1755,7 @@ export const messages = {
       playedDays: '{days} jours de jeu',
       friendsProgress: 'Amis : {count}/{total}',
       firstPurchase: 'Premier achat en pièces',
+      activeDaysProgress: 'Jours actifs : {count}/{total}',
     },
     gems: {
       title: 'Gems violets',

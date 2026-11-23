@@ -567,6 +567,12 @@ export class CityRoom extends Room implements GameRoom {
     }
   }
 
+  onAccountAccessChanged(accountId: number): void {
+    for (const client of this.clients) {
+      if (client.auth?.accountId === accountId) client.leave(4003, 'account access changed')
+    }
+  }
+
   onTaskTierReached(reached: TaskTierReached): void {
     sendTaskTierReached(this, reached)
   }

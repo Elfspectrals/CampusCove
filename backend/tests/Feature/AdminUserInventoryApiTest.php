@@ -2,8 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\ItemDef;
+use App\Services\AccountInventoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request as HttpRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class AdminUserInventoryApiTest extends TestCase
@@ -121,6 +125,58 @@ class AdminUserInventoryApiTest extends TestCase
         // Reset wipes the inventory, then grants the free starter body skin back.
         $codes = collect($afterReset->json('items'))->pluck('code')->all();
         $this->assertSame(['COS_WEAR_BODY_DEFAULT'], $codes);
+    }
+
+    public function test_gem_items_are_never_granted_set_revoked_or_wiped_by_the_admin(): void
+    {
+        $adminToken = $this->registerToken(true);
+        $accountId = (int) $this->registerWithCredentials()['account_id'];
+        $gemSkin = ItemDef::query()->where('code', 'COS_WEAR_BODY_NEON_RONIN')->firstOrFail();
+        $headers = ['Authorization' => 'Bearer '.$adminToken];
+
+        $this->postJson('/api/admin/inventories/'.$accountId.'/grant', ['item_def_id' => $gemSkin->item_def_id, 'quantity' => 1], $headers)
+            ->assertStatus(422)->assertJsonPath('code', 'admin_item_premium');
+        $this->assertFalse($this->ownsInLocker($accountId, $gemSkin));
+
+        app(AccountInventoryService::class)->grantItem($accountId, $gemSkin, 1);
+        $this->postJson('/api/admin/inventories/'.$accountId.'/set-quantity', ['item_def_id' => $gemSkin->item_def_id, 'quantity' => 0], $headers)
+            ->assertStatus(422)->assertJsonPath('code', 'admin_item_premium');
+        $this->postJson('/api/admin/inventories/'.$accountId.'/revoke', ['item_def_id' => $gemSkin->item_def_id, 'quantity' => 1], $headers)
+            ->assertStatus(422)->assertJsonPath('code', 'admin_item_premium');
+        $this->postJson('/api/admin/inventories/'.$accountId.'/reset', [], $headers)->assertOk();
+
+        $this->assertTrue($this->ownsInLocker($accountId, $gemSkin));
+    }
+
+    public function test_the_socket_drops_an_account_whose_admin_right_suspension_ban_or_deletion_changes(): void
+    {
+        Http::fake();
+        config(['services.realtime.url' => 'http://socket.test', 'services.realtime.secret' => 'test-realtime-secret']);
+        $headers = ['Authorization' => 'Bearer '.$this->registerToken(true)];
+        $accountIds = [];
+        foreach (['demote', 'suspend', 'ban', 'delete'] as $action) {
+            $accountId = (int) $this->registerWithCredentials()['account_id'];
+            DB::table('accounts')->where('account_id', $accountId)->update(['is_admin' => true]);
+            $url = '/api/admin/users/'.$accountId;
+            match ($action) {
+                'demote' => $this->patchJson($url, ['is_admin' => false], $headers)->assertOk(),
+                'suspend' => $this->postJson($url.'/suspend', ['until' => now()->addHour()->toIso8601String()], $headers)->assertOk(),
+                'ban' => $this->postJson($url.'/ban', [], $headers)->assertOk(),
+                'delete' => $this->deleteJson($url, [], $headers)->assertNoContent(),
+            };
+            $accountIds[] = $accountId;
+        }
+
+        foreach ($accountIds as $accountId) {
+            Http::assertSent(fn (HttpRequest $request) => $request->url() === 'http://socket.test/internal/account-access-changed'
+                && $request['accountId'] === $accountId
+                && $request->hasHeader('X-Realtime-Secret', 'test-realtime-secret'));
+        }
+    }
+
+    private function ownsInLocker(int $accountId, ItemDef $def): bool
+    {
+        return DB::table('account_locker_cosmetics')->where('account_id', $accountId)->where('item_def_id', $def->item_def_id)->where('quantity', '>', 0)->exists();
     }
 
     private function registerToken(bool $admin = false): string

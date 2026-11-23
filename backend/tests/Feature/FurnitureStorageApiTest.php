@@ -72,6 +72,26 @@ class FurnitureStorageApiTest extends TestCase
         $this->storage('take', $burglar, $owner, $dresser, ['code' => 'food_cookie', 'quantity' => 1])->assertStatus(409)->assertJsonPath('code', 'storage_item_gone');
     }
 
+    public function test_a_key_holder_younger_than_72_hours_cannot_put_things_away(): void
+    {
+        $owner = $this->player();
+        $newcomer = $this->player();
+        DB::table('accounts')->where('account_id', $newcomer['account_id'])->update(['created_at' => now()->subHours(TradeService::MIN_GIVER_AGE_HOURS - 1)]);
+        $dresser = $this->placed($owner, 'decor_dresser');
+        $this->postJson('/api/housing/keys', ['account_id' => $newcomer['account_id']], $this->auth($owner['token']))->assertOk();
+        $this->give($newcomer, 'food_cookie', 2);
+        $this->give($owner, 'food_cookie', 1);
+        $this->storage('deposit', $owner, $owner, $dresser, ['code' => 'food_cookie', 'quantity' => 1])->assertOk();
+
+        $this->storage('deposit', $newcomer, $owner, $dresser, ['code' => 'food_cookie', 'quantity' => 2])
+            ->assertForbidden()
+            ->assertJsonPath('code', 'storage_account_too_new');
+        $this->assertSame(2, $this->owned($newcomer, 'food_cookie'));
+
+        $this->storage('take', $newcomer, $owner, $dresser, ['code' => 'food_cookie', 'quantity' => 1])->assertOk();
+        $this->assertSame(3, $this->owned($newcomer, 'food_cookie'));
+    }
+
     public function test_the_fridge_takes_food_only(): void
     {
         $owner = $this->player();
@@ -211,7 +231,7 @@ class FurnitureStorageApiTest extends TestCase
             'owner_account_id' => $owner['account_id'],
             'template_key' => $this->templateKey($owner),
             'objectId' => $objectId,
-        ], $this->auth($owner['token']));
+        ], $this->auth($owner['token'], self::SECRET));
     }
 
     /** @param  array{token: string, account_id: int}  $owner */
@@ -230,7 +250,7 @@ class FurnitureStorageApiTest extends TestCase
             'objectId' => $objectId,
             'objectKey' => $code,
             'x' => 0, 'y' => 0, 'z' => 0, 'rotX' => 0, 'rotY' => 0, 'rotZ' => 0,
-        ], $this->auth($owner['token']))->assertOk();
+        ], $this->auth($owner['token'], self::SECRET))->assertOk();
 
         return $objectId;
     }

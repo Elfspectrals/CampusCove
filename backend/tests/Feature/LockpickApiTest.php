@@ -314,7 +314,7 @@ class LockpickApiTest extends TestCase
             'objectId' => 'alarm_'.uniqid(),
             'objectKey' => HouseAlarmService::ITEM_CODE,
             'x' => 0, 'y' => 0, 'z' => 0, 'rotX' => 0, 'rotY' => 0, 'rotZ' => 0,
-        ], $this->auth($owner['token']))->assertOk();
+        ], $this->auth($owner['token'], self::SECRET))->assertOk();
     }
 
     /** @param array{token: string} $owner */

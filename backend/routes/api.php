@@ -209,9 +209,11 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::get('/apartments/assets', [ApartmentPlacementController::class, 'inventory']);
     Route::get('/apartments/houses', [ApartmentPlacementController::class, 'houses']);
     Route::post('/apartments/state', [ApartmentPlacementController::class, 'state']);
-    Route::post('/apartments/spawn', [ApartmentPlacementController::class, 'spawn']);
-    Route::patch('/apartments/transform', [ApartmentPlacementController::class, 'transform']);
-    Route::post('/apartments/pickup', [ApartmentPlacementController::class, 'pickup']);
+    Route::middleware('realtime')->group(function () {
+        Route::post('/apartments/spawn', [ApartmentPlacementController::class, 'spawn']);
+        Route::patch('/apartments/transform', [ApartmentPlacementController::class, 'transform']);
+        Route::post('/apartments/pickup', [ApartmentPlacementController::class, 'pickup']);
+    });
 
     Route::middleware('admin')->prefix('admin')->group(function () {
         Route::get('/reports', [PlayerReportController::class, 'index']);

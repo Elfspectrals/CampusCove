@@ -88,4 +88,21 @@ final class RealtimeNotifier
             Log::warning('realtime ip-banned notify failed: '.$e->getMessage());
         }
     }
+
+    public function accountAccessChanged(int $accountId): void
+    {
+        $url = (string) config('services.realtime.url');
+        $secret = (string) config('services.realtime.secret');
+        if ($url === '' || $secret === '') {
+            return;
+        }
+        try {
+            Http::timeout(3)
+                ->withHeaders(['X-Realtime-Secret' => $secret])
+                ->post(rtrim($url, '/').'/internal/account-access-changed', ['accountId' => $accountId])
+                ->throw();
+        } catch (Throwable $e) {
+            Log::warning('realtime account-access-changed notify failed: '.$e->getMessage());
+        }
+    }
 }
