@@ -114,6 +114,8 @@ services:
     environment:
       VITE_API_URL: http://localhost:8000/api
       VITE_SOCKET_URL: http://localhost:3000
+      REALTIME_SHARED_SECRET: ${REALTIME_SHARED_SECRET:-campuscove-dev-realtime-secret}
+      REALTIME_INTERNAL_URL: http://socket:3000
       # Docker on Windows sends no file events through the bind mount: poll (vite.config.ts), so pulled files are served
       CHOKIDAR_USEPOLLING: "true"
     ports:

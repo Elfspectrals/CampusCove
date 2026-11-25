@@ -26,7 +26,7 @@ joueurs voient donc le même NPC au même endroit.
 {
   "version": 1,
   "trees": {
-    "<clé>": { "name": "Flâneur", "points": ["banc"], "root": { "...": "nœud" } }
+    "<clé>": { "name": "Flâneur", "points": ["banc"], "keys": [{ "key": "visites", "type": "number", "value": 0 }], "root": { "...": "nœud" } }
   },
   "npcs": [
     { "zone": "orchard", "npc": "p4", "tree": "<clé>", "points": { "banc": [-22, 0, -76] } }
@@ -39,6 +39,7 @@ joueurs voient donc le même NPC au même endroit.
 | clé d'arbre | `/^[a-z0-9_]+$/`, 40 arbres au plus |
 | `name` | 1 à 40 caractères |
 | `points` | clés de blackboard de type point, `/^[a-z0-9_]+$/`, 16 au plus, ni `home` ni `target` |
+| `keys` | facultatif, 16 au plus : `{ key, type: "number" \| "bool" \| "text", value }`. `key` suit `/^[a-z0-9_]+$/` et ne reprend ni un point ni `home` / `target` ; `value` (valeur de départ) a le type de la clé : nombre de −1 000 000 à 1 000 000, booléen, texte de 40 caractères au plus |
 | `npcs[]` | 64 au plus, un seul arbre par couple `zone` + `npc` |
 | `npcs[].points` | exactement les points déclarés par l'arbre, chacun `[x, y, z]` à 60 m au plus de la position du NPC |
 
@@ -47,7 +48,8 @@ perçu par le service `perceive_players`, vide sinon).
 
 ## Nœuds
 
-Chaque nœud : `{ "id", "type", ...paramètres, "decorators"?: [], "services"?: [], "children"?: [], "weight"? }`.
+Chaque nœud : `{ "id", "type", ...paramètres, "decorators"?: [], "services"?: [], "children"?: [], "weight"?, "pos"? }`.
+`pos` = `[x, y]` (|x|, |y| ≤ 100 000) : place de la carte dans le graphe de l'éditeur, ignorée par le serveur.
 `id` suit `/^[a-z0-9_]+$/` et est unique dans l'arbre ; 200 nœuds et 12 niveaux au plus.
 
 ### Composites (`children`: 1 à 12)
@@ -72,6 +74,8 @@ Chaque nœud : `{ "id", "type", ...paramètres, "decorators"?: [], "services"?: 
 | `browse_shelf` | `radius` 1 à 60 m, `seconds` 2 à 30, `take` 0 à 100 (%) | Dans une boutique : va devant un emplacement d'étagère garni tiré au hasard à moins de `radius` de `home` (0,5 m devant l'étagère), le regarde (`browse`) pendant `seconds`, puis avec `take` % de chance prend un article de cet emplacement (`take`) et le garde en main (`held`). Le stock ne bouge pas. Échoue sans étagère dans le rayon. |
 | `checkout` | aucun | Fait la queue chez le caissier de la zone (0,6 m après le comptoir, la file part vers le milieu de la boutique, 0,9 m entre deux clients), avance quand ceux de devant ont payé, joue `pay` face au caissier, puis lâche l'article. Faux achat : aucun argent ne bouge. Échoue les mains vides ou sans caissier. |
 | `animate` | `clip: "idle" \| "sit" \| "pick" \| "eat" \| "drink" \| "browse" \| "take" \| "pay"`, `seconds` 0,5 à 600 | Joue le clip pendant la durée (`sit`, `idle` et `browse` tenus, les autres une fois). |
+| `set_value` | `key`: une clé de `keys`, `op: "set" \| "add"`, `value` du type de la clé | Donne la valeur à la clé, ou l'ajoute (`add`, clés nombre seulement ; une valeur négative retire). Réussit aussitôt. |
+| `run_behavior` | `tree`: la clé d'un autre arbre | Exécute cet arbre ici et renvoie son résultat. Il lit les points et le blackboard de l'arbre appelant : chacun de ses points et de ses clés (même type) doit y exister. Pas de boucle (A → B → A), 4 arbres d'imbrication au plus. Le serveur le remplace au chargement par une `sequence` d'id celui du nœud, avec pour seul enfant une copie de l'arbre appelé dont les ids deviennent `<id du nœud>/<id>`. |
 | `say` | `lines`: 1 à 10 textes de 1 à 120 caractères, `seconds` 1 à 6 (durée de vie d'une bulle de chat) | Bulle au-dessus de la tête avec une ligne tirée au hasard, pendant la durée. |
 
 ### Décorateurs (6 au plus par nœud)
@@ -80,6 +84,7 @@ Chaque nœud : `{ "id", "type", ...paramètres, "decorators"?: [], "services"?: 
 |---|---|---|
 | `has_target` | `invert: boolean`, `abort` | Condition : `target` est rempli (ou vide si `invert`). |
 | `time_of_day` | `from`, `to` entiers 0 à 23, différents ; `invert`, `abort` | Condition : l'heure de Paris est dans `[from, to)` (passe minuit si `from > to`). |
+| `blackboard` | `key`: une clé de `keys`, `compare: "eq" \| "ne" \| "lt" \| "le" \| "gt" \| "ge"`, `value` du type de la clé, `abort` | Condition : la valeur de la clé comparée à `value`. `lt` à `ge` pour les clés nombre seulement. |
 | `chance` | `percent` 1 à 99 | Tiré une fois à l'entrée du nœud. |
 | `cooldown` | `seconds` 1 à 3600 | Le nœud échoue pendant ce délai après sa dernière fin. |
 | `loop` | `count` 0 à 100 (0 = sans fin) | Relance le nœud tant qu'il réussit, `count` fois. |
@@ -100,7 +105,8 @@ Chaque nœud : `{ "id", "type", ...paramètres, "decorators"?: [], "services"?: 
 
 ## Exécution (socket)
 
-- Un tick toutes les 100 ms. La racine est relancée dès qu'elle finit.
+- Un tick toutes les 100 ms. La racine est relancée au tick qui suit sa fin.
+- Le blackboard de chaque NPC part des `value` de l'arbre et repart de là après un rechargement.
 - Un nœud interrompu arrête son trajet là où le NPC se trouve.
 - Le serveur relit `npc/behavior.json` toutes les 5 s ; un fichier invalide est refusé (log) et l'ancien est
   gardé. Après un rechargement, chaque NPC repart de `home`.
@@ -123,6 +129,26 @@ n'acceptent aucun message.
 Clips du corps de base : `browse` → `Browse` (boucle), `take` → `TakeItem`, `pay` → `Pay`, en plus des clips
 existants.
 
+## Debug en direct (dev)
+
+`GET /internal/npc-debug` sur le socket, avec l'en-tête `X-Realtime-Secret`, renvoie
+`{ now, instances: [{ roomId, npcs: NpcDebug[] }] }`. `NpcDebug` = `{ id, active, results, values, target, clip, say }` :
+`active` liste les nœuds en cours (racine d'abord, ids inlinés `<run>/<id>` compris), `results` le dernier résultat
+de chaque nœud fini `{ status: "success" | "failure", at }` (un nœud interrompu par un abort compte en échec),
+`values` le blackboard, `target` l'id de session du joueur perçu ou `null`. Le serveur de dev Vite le relaie en
+`GET /__editor/npc-debug` (variables `REALTIME_SHARED_SECRET` et `REALTIME_INTERNAL_URL`, `http://localhost:3000`
+par défaut) ; l'éditeur l'interroge toutes les 500 ms. Une instance de ville n'existe que tant qu'un joueur y est.
+
+## Éditeur
+
+Les cartes se déplacent à la main (Maj : avec leurs enfants) ; au premier déplacement, toutes les cartes visibles
+reçoivent un `pos`. Les enfants d'un composite s'exécutent de gauche à droite : leur ordre suit leur `x` après
+chaque déplacement. Broche du bas d'un composite tirée sur un nœud : le nœud devient son enfant (dernier) ; tirée
+dans le vide : palette d'ajout à cet endroit. Broche du haut d'un nœud tirée sur un composite : le nœud passe
+dessous. Un composite garde au moins un enfant, 12 au plus. Ctrl+C / X / V / D : copier, couper, coller (sous le
+composite choisi ou à côté de la tâche choisie, nouveaux ids), dupliquer. Espace, Tab ou clic droit : palette
+d'ajout avec recherche. Un composite se replie (état non sauvé). Une carte rouge montre le refus du serveur.
+
 ## Fichiers
 
 | Rôle | Fichier |
@@ -130,6 +156,7 @@ existants.
 | Contrat (ce document) | `docs/NPC_BEHAVIOR.md` |
 | Données | `front/public/assets/npc/behavior.json` |
 | Validation éditeur + sauvegarde dev | `front/src/game/npcBehavior/npcBehavior.ts`, route `PUT /__editor/npc-behavior` |
-| Éditeur | `front/src/views/admin/AdminNpcView.vue`, `front/src/components/admin/npc/` |
+| Éditeur | `front/src/views/admin/AdminNpcView.vue`, `front/src/components/admin/npc/`, `front/src/game/npcBehavior/npcTreeEdit.ts` |
+| Debug en direct | `socket/src/internal.ts` (`/internal/npc-debug`), `front/src/game/npcBehavior/npcDebug.ts`, `front/src/composables/useNpcLiveDebug.ts`, route `GET /__editor/npc-debug` |
 | Validation serveur + exécution | `socket/src/npcBehavior.ts`, `socket/src/npcBrain.ts`, `socket/src/npcs.ts` |
 | Affichage en jeu | `front/src/composables/game/useNpcBrains.ts` |

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync } from 'node:fs'
-import { parseNpcBehavior, type BehaviorTree } from './npcBehavior.ts'
+import { inlineSubtrees, parseNpcBehavior, type BehaviorTree } from './npcBehavior.ts'
 import { NPC_PICK_MS, NpcBrain, PICK_STAND, WALK_SPEED, type BrainWorld } from './npcBrain.ts'
 import { buildBrains, plantSource, zoneNpcHome } from './npcs.ts'
 
@@ -172,4 +172,97 @@ test('pick crop walks to a plant of the kind within the radius, faces it, then p
   const nothing = new NpcBrain('z/n', treeOf({ id: 'p', type: 'pick_crop', crop: 'pumpkin', radius: 20, speed: 'walk' }), HOME, {}, { random: () => 0, plants })
   nothing.tick(world(0))
   assert.equal(nothing.state(0).move, null, 'no pumpkin around: the task fails, nobody walks')
+})
+
+function fileOf(trees: Record<string, unknown>) {
+  return parseNpcBehavior({ version: 1, trees, npcs: [] })
+}
+
+test('blackboard keys are typed: compare, add and values must fit the key', () => {
+  const withKeys = (root: unknown) => ({ name: 'T', points: ['spot'], keys: [{ key: 'mood', type: 'text', value: 'calm' }, { key: 'tired', type: 'bool', value: false }, { key: 'visits', type: 'number', value: 0 }], root })
+  const guard = (d: unknown) => ({ id: 'w', type: 'wait', min: 1, max: 1, decorators: [d] })
+  assert.doesNotThrow(() => fileOf({ t: withKeys(guard({ type: 'blackboard', key: 'visits', compare: 'ge', value: 2, abort: 'none' })) }))
+  assert.throws(() => fileOf({ t: withKeys(guard({ type: 'blackboard', key: 'mood', compare: 'lt', value: 'x', abort: 'none' })) }), /only compares with eq or ne/)
+  assert.throws(() => fileOf({ t: withKeys(guard({ type: 'blackboard', key: 'tired', compare: 'eq', value: 1, abort: 'none' })) }), /expected a bool value/)
+  assert.throws(() => fileOf({ t: withKeys(guard({ type: 'blackboard', key: 'nope', compare: 'eq', value: 1, abort: 'none' })) }), /blackboard key of the tree/)
+  assert.throws(() => fileOf({ t: withKeys({ id: 's', type: 'set_value', key: 'tired', op: 'add', value: true }) }), /add only works on a number key/)
+  assert.throws(() => fileOf({ t: { ...withKeys({ id: 'w', type: 'wait', min: 1, max: 1 }), keys: [{ key: 'spot', type: 'bool', value: true }] } }), /already a point/)
+})
+
+test('set value adds to a number and a blackboard condition reads it', () => {
+  const tree = fileOf({
+    t: {
+      name: 'T',
+      points: [],
+      keys: [{ key: 'visits', type: 'number', value: 0 }],
+      root: {
+        id: 'root',
+        type: 'selector',
+        children: [
+          { id: 'again', type: 'say', lines: ['Again?'], seconds: 3, decorators: [{ type: 'blackboard', key: 'visits', compare: 'ge', value: 2, abort: 'none' }] },
+          { id: 'count', type: 'sequence', children: [{ id: 'add', type: 'set_value', key: 'visits', op: 'add', value: 1 }, { id: 'w', type: 'wait', min: 1, max: 1 }] }
+        ]
+      }
+    }
+  }).trees.get('t')!
+  const brain = new NpcBrain('z/n', tree, HOME, {})
+  brain.tick(world(0))
+  assert.equal(brain.debug().values.visits, 1)
+  brain.tick(world(1000))
+  brain.tick(world(1100))
+  assert.equal(brain.debug().values.visits, 2, 'the root starts over on the tick after it finished')
+  assert.equal(brain.state(1100).say, null)
+  brain.tick(world(2100))
+  brain.tick(world(2200))
+  assert.equal(brain.state(2200).say, 'Again?')
+  assert.equal(brain.debug().values.visits, 2)
+})
+
+test('a blackboard condition with abort self stops its node as soon as the value changes', () => {
+  const tree = fileOf({
+    t: {
+      name: 'T',
+      points: [],
+      keys: [{ key: 'done', type: 'bool', value: false }],
+      root: {
+        id: 'root',
+        type: 'selector',
+        children: [
+          {
+            id: 'once',
+            type: 'sequence',
+            decorators: [{ type: 'blackboard', key: 'done', compare: 'eq', value: false, abort: 'self' }],
+            children: [{ id: 'mark', type: 'set_value', key: 'done', op: 'set', value: true }, { id: 'long', type: 'wait', min: 5, max: 5 }]
+          },
+          { id: 'idle', type: 'wait', min: 10, max: 10 }
+        ]
+      }
+    }
+  }).trees.get('t')!
+  const brain = new NpcBrain('z/n', tree, HOME, {})
+  brain.tick(world(0))
+  assert.ok(brain.debug().active.includes('long'))
+  brain.tick(world(100))
+  const debug = brain.debug()
+  assert.deepEqual(debug.active, ['root', 'idle'])
+  assert.equal(debug.results.once?.status, 'failure')
+})
+
+test('run behavior inlines the other tree under the node id, and refuses loops and missing keys', () => {
+  const greet = { name: 'Greet', points: [], keys: [{ key: 'polite', type: 'bool', value: true }], root: { id: 'hi', type: 'say', lines: ['Hi!'], seconds: 2 } }
+  const main = { name: 'Main', points: [], keys: [{ key: 'polite', type: 'bool', value: true }], root: { id: 'root', type: 'sequence', children: [{ id: 'rb', type: 'run_behavior', tree: 'greet' }] } }
+  const file = fileOf({ greet, main })
+  const brain = new NpcBrain('z/n', inlineSubtrees(file.trees.get('main')!, file.trees), HOME, {})
+  brain.tick(world(0))
+  assert.equal(brain.state(0).say, 'Hi!')
+  assert.deepEqual(brain.debug().active, ['root', 'rb', 'rb/hi'])
+  assert.throws(() => fileOf({ main: { ...main, keys: [] }, greet }), /uses the bool key polite, missing here/)
+  assert.throws(() => fileOf({ main, greet: { ...greet, root: { id: 'back', type: 'run_behavior', tree: 'main' } } }), /Run Behavior loops/)
+  assert.throws(() => fileOf({ main }), /no tree "greet"/)
+})
+
+test('editor card positions are accepted and never reach the brain', () => {
+  const tree = treeOf({ id: 'w', type: 'wait', min: 1, max: 1, pos: [120, -40] })
+  assert.equal('pos' in tree.root, false)
+  assert.throws(() => treeOf({ id: 'w', type: 'wait', min: 1, max: 1, pos: [1] }), /expected \[x, y\]/)
 })

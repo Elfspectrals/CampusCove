@@ -28,6 +28,15 @@ const ROUTE = '/__editor/'
 const SHOP_PARENT = 'mall'
 const MAX_BODY_BYTES = 1_000_000
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]', 'front']
+
+async function npcDebug(): Promise<unknown> {
+  const secret = process.env.REALTIME_SHARED_SECRET
+  if (!secret) throw new HttpError(503, 'live debug needs REALTIME_SHARED_SECRET (the socket\'s) in the dev server environment')
+  const base = process.env.REALTIME_INTERNAL_URL ?? 'http://localhost:3000'
+  const res = await fetch(`${base}/internal/npc-debug`, { headers: { 'X-Realtime-Secret': secret } })
+  if (!res.ok) throw new HttpError(502, `the socket at ${base} answered ${res.status}`)
+  return res.json()
+}
 const BLENDER_TIMEOUT_MS = 120_000
 const PREVIEW_FILE = /^buildings\/([a-z0-9_]+)\.glb$/
 type ManifestBuilding = NonNullable<WorldManifest['zones'][number]['buildings']>[number]
@@ -360,6 +369,7 @@ function mallTemplatesApi(assets: string, backendZones: string, repo: string) {
       writeJson(npcBehaviorPath, file)
       return file
     }
+    if (method === 'GET' && path === 'npc-debug') return npcDebug()
     if (method === 'POST' && path === 'buildings/preview') {
       const building = parseBuildingProp(await readBody(req), buildingTable())
       assertAssetsExist({ props: [building] })

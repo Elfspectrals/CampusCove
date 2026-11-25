@@ -3,7 +3,9 @@
 import {
   isComposite,
   isCondition,
+  type BbValue,
   type BehaviorTree,
+  type Compare,
   type BtNode,
   type CompositeNode,
   type CropKind,
@@ -49,6 +51,16 @@ export interface NpcState {
   say: string | null
   /** The item a shopper took from a shelf, in its hand until it pays. */
   held: ShelfItem | null
+}
+
+export interface NpcDebug {
+  id: string
+  active: string[]
+  results: Record<string, { status: 'success' | 'failure'; at: number }>
+  values: Record<string, BbValue>
+  target: string | null
+  clip: NpcClip
+  say: string | null
 }
 
 export interface BrainWorld {
@@ -125,6 +137,8 @@ export class NpcBrain {
   private readonly plants: PlantSource
   private readonly shop: NpcShop | null
   private held: ShelfItem | null = null
+  private readonly values = new Map<string, BbValue>()
+  private readonly results = new Map<string, { status: 'success' | 'failure'; at: number }>()
 
   constructor(id: string, tree: BehaviorTree, home: NpcHome, points: Readonly<Record<string, Vec3Tuple>>, env: Partial<BrainEnv> = {}) {
     this.id = id
@@ -136,6 +150,7 @@ export class NpcBrain {
     this.shop = env.shop ?? null
     this.position = [...home.position]
     this.ry = home.yaw
+    for (const k of tree.keys) this.values.set(k.key, k.value)
   }
 
   /** One step of the tree; true when the public state changed and should be broadcast. */
@@ -161,6 +176,19 @@ export class NpcBrain {
     return { id: this.id, x, y, z, ry: this.ry, clip: this.clip, clipSeq: this.clipSeq, move, say: this.say, held: this.held }
   }
 
+  debug(): NpcDebug {
+    const active = [...this.memory.entries()].filter(([, m]) => m.running).map(([id]) => id)
+    return {
+      id: this.id,
+      active,
+      results: Object.fromEntries(this.results),
+      values: Object.fromEntries(this.values),
+      target: this.target,
+      clip: this.clip,
+      say: this.say
+    }
+  }
+
   // ---------------------------------------------------------------- tree walk
 
   private mem(node: BtNode): Memory {
@@ -181,11 +209,13 @@ export class NpcBrain {
       m.serviceAt = isComposite(node) ? node.services.map(() => this.world.now) : []
     } else if (node.decorators.some((d) => isCondition(d) && (d.abort === 'self' || d.abort === 'both') && !this.check(d))) {
       this.deactivate(node, true)
+      this.results.set(node.id, { status: 'failure', at: this.world.now })
       return 'failure'
     }
     if (isComposite(node)) this.runServices(node, m)
     const status = isComposite(node) ? this.runComposite(node, m) : this.runTask(node, m)
     if (status === 'running') return status
+    this.results.set(node.id, { status, at: this.world.now })
     const loop = node.decorators.find((d): d is Extract<Decorator, { type: 'loop' }> => d.type === 'loop')
     if (status === 'success' && loop && (loop.count === 0 || ++m.loops < loop.count)) {
       this.restart(node)
@@ -208,6 +238,7 @@ export class NpcBrain {
   private check(c: Condition): boolean {
     let pass: boolean
     if (c.type === 'has_target') pass = this.targetPlayer() !== null
+    else if (c.type === 'blackboard') return compare(this.values.get(c.key), c.compare, c.value)
     else pass = c.from < c.to ? this.world.hour >= c.from && this.world.hour < c.to : this.world.hour >= c.from || this.world.hour < c.to
     return pass !== c.invert
   }
@@ -396,6 +427,13 @@ export class NpcBrain {
         this.setClip(node.clip)
         m.endsAt = now + node.seconds * 1000
         return 'running'
+      case 'set_value': {
+        const current = this.values.get(node.key)
+        this.values.set(node.key, node.op === 'add' && typeof current === 'number' && typeof node.value === 'number' ? current + node.value : node.value)
+        return 'success'
+      }
+      case 'run_behavior':
+        throw new Error(`${this.id}: Run Behavior ${node.id} was not inlined before the brain ran`)
       case 'say':
         this.setSay(node.lines[Math.floor(this.random() * node.lines.length)] ?? node.lines[0]!)
         this.sayUntil = now + node.seconds * 1000
@@ -555,5 +593,22 @@ export class NpcBrain {
   private setSay(text: string | null): void {
     this.say = text
     this.changed = true
+  }
+}
+
+export function compare(current: BbValue | undefined, op: Compare, value: BbValue): boolean {
+  switch (op) {
+    case 'eq':
+      return current === value
+    case 'ne':
+      return current !== value
+    case 'lt':
+      return (current as number) < (value as number)
+    case 'le':
+      return (current as number) <= (value as number)
+    case 'gt':
+      return (current as number) > (value as number)
+    case 'ge':
+      return (current as number) >= (value as number)
   }
 }

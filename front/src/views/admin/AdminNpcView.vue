@@ -1,13 +1,46 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
 import EditorSearchSelect from '../../components/admin/mallEditor/EditorSearchSelect.vue'
 import NpcTreeGraph from '../../components/admin/npc/NpcTreeGraph.vue'
 import NpcNodeDetails from '../../components/admin/npc/NpcNodeDetails.vue'
 import NpcAssignments from '../../components/admin/npc/NpcAssignments.vue'
 import { useNpcBehaviorEditor, type Selection } from '../../composables/useNpcBehaviorEditor'
-import { BUILT_IN_POINTS, KEY_PATTERN, MAX_POINTS, isComposite, type BehaviorTree, type CompositeType, type DecoratorType, type ServiceType, type TaskType } from '../../game/npcBehavior/npcBehavior'
-import { addChild, createDecorator, createService, findNode, removeNode, removePoint, renamePoint, updateNode } from '../../game/npcBehavior/npcTreeEdit'
+import { useNpcLiveDebug } from '../../composables/useNpcLiveDebug'
+import {
+  BUILT_IN_POINTS,
+  KEY_PATTERN,
+  KEY_TYPES,
+  MAX_KEYS,
+  MAX_NUMBER,
+  MAX_POINTS,
+  MAX_TEXT,
+  defaultValue,
+  isComposite,
+  npcStateId,
+  type BbValue,
+  type BehaviorTree,
+  type BtNode,
+  type CompositeType,
+  type DecoratorType,
+  type KeyType,
+  type ServiceType,
+  type TaskType,
+} from '../../game/npcBehavior/npcBehavior'
+import {
+  addChild,
+  createDecorator,
+  createService,
+  findNode,
+  nodeProblems,
+  parentOf,
+  pasteNode,
+  removeNode,
+  removePoint,
+  renameKey,
+  renamePoint,
+  updateNode,
+} from '../../game/npcBehavior/npcTreeEdit'
 
 const CAN_WRITE = import.meta.env.DEV
 const editor = useNpcBehaviorEditor()
@@ -18,6 +51,16 @@ const newKey = ref('')
 const newName = ref('')
 const newPoint = ref('')
 const pointError = ref<string | null>(null)
+const newKeyName = ref('')
+const newKeyType = ref<KeyType>('number')
+const keyError = ref<string | null>(null)
+const graph = ref<InstanceType<typeof NpcTreeGraph> | null>(null)
+const clipboard = shallowRef<BtNode | null>(null)
+const live = useNpcLiveDebug()
+
+const problems = computed(() => (tree.value ? nodeProblems(tree.value, editor.file.value.trees) : new Map<string, string>()))
+const subtreeKeys = computed(() => editor.treeKeys.value.filter((k) => k !== treeKey.value))
+const treeUsers = computed(() => editor.file.value.npcs.filter((n) => n.tree === treeKey.value).map((n) => npcStateId(n.zone, n.npc)))
 
 function setTree(next: BehaviorTree): void {
   editor.setTree(next)
@@ -27,9 +70,9 @@ function select(next: Selection): void {
   selection.value = next
 }
 
-function onAddChild(parentId: string, type: CompositeType | TaskType): void {
+function onAddChild(parentId: string, type: CompositeType | TaskType, pos?: [number, number]): void {
   if (!tree.value) return
-  const { tree: next, id } = addChild(tree.value, parentId, type)
+  const { tree: next, id } = addChild(tree.value, parentId, type, pos)
   setTree(next)
   select({ node: id, part: 'node' })
 }
@@ -38,7 +81,7 @@ function onAddDecorator(nodeId: string, type: DecoratorType): void {
   if (!tree.value) return
   const node = findNode(tree.value.root, nodeId)
   if (!node) return
-  setTree(updateNode(tree.value, nodeId, (n) => ({ ...n, decorators: [...n.decorators, createDecorator(type)] })))
+  setTree(updateNode(tree.value, nodeId, (n) => ({ ...n, decorators: [...n.decorators, createDecorator(type, tree.value!)] })))
   select({ node: nodeId, part: 'decorator', index: node.decorators.length })
 }
 
@@ -89,17 +132,98 @@ function renameTree(name: string): void {
   if (tree.value && name.trim() && name !== tree.value.name) setTree({ ...tree.value, name: name.trim().slice(0, 40) })
 }
 
-function pointProblem(key: string, except?: string): string | null {
-  if (!KEY_PATTERN.test(key)) return 'Point keys: lowercase letters, digits and _'
+function nameProblem(key: string, except?: string): string | null {
+  if (!KEY_PATTERN.test(key)) return 'Keys: lowercase letters, digits and _'
   if ((BUILT_IN_POINTS as readonly string[]).includes(key)) return `"${key}" is built in`
-  if (key !== except && tree.value?.points.includes(key)) return `"${key}" already exists`
+  if (key !== except && (tree.value?.points.includes(key) || tree.value?.keys.some((k) => k.key === key))) return `"${key}" already exists`
   return null
+}
+
+function addKey(): void {
+  const key = newKeyName.value.trim()
+  if (!tree.value) return
+  keyError.value = tree.value.keys.length >= MAX_KEYS ? `At most ${MAX_KEYS} keys` : nameProblem(key)
+  if (keyError.value) return
+  setTree({ ...tree.value, keys: [...tree.value.keys, { key, type: newKeyType.value, value: defaultValue(newKeyType.value) }] })
+  newKeyName.value = ''
+}
+
+function renameKeyName(from: string, event: Event): void {
+  const input = event.target as HTMLInputElement
+  const to = input.value.trim()
+  if (!tree.value || to === from) return
+  keyError.value = nameProblem(to, from)
+  if (keyError.value) {
+    input.value = from
+    return
+  }
+  setTree(renameKey(tree.value, from, to))
+}
+
+function setKeyValue(key: string, type: KeyType, raw: string | boolean): void {
+  if (!tree.value) return
+  let value: BbValue = raw
+  if (type === 'number') {
+    const n = Number(raw)
+    if (!Number.isFinite(n)) return
+    value = Math.min(MAX_NUMBER, Math.max(-MAX_NUMBER, n))
+  } else if (type === 'text') value = String(raw).slice(0, MAX_TEXT)
+  setTree({ ...tree.value, keys: tree.value.keys.map((k) => (k.key === key ? { ...k, value } : k)) })
+}
+
+function dropKey(key: string): void {
+  if (tree.value) setTree({ ...tree.value, keys: tree.value.keys.filter((k) => k.key !== key) })
+}
+
+function selectedNode(): BtNode | null {
+  return tree.value && selection.value ? findNode(tree.value.root, selection.value.node) : null
+}
+
+function copySelected(): boolean {
+  const node = selectedNode()
+  if (!node) return false
+  clipboard.value = structuredClone(node)
+  return true
+}
+
+function paste(source: BtNode, besideId?: string): void {
+  if (!tree.value) return
+  const anchor = besideId ? null : selectedNode()
+  const parentId = besideId ? parentOf(tree.value.root, besideId)?.id : anchor && isComposite(anchor) ? anchor.id : anchor ? parentOf(tree.value.root, anchor.id)?.id : tree.value.root.id
+  const pasted = pasteNode(tree.value, parentId ?? '', source)
+  if ('error' in pasted) {
+    status.value = { kind: 'error', text: pasted.error }
+    return
+  }
+  setTree(pasted.tree)
+  select({ node: pasted.id!, part: 'node' })
+}
+
+function treeShortcut(key: string): boolean {
+  if (key === 'c') return copySelected()
+  if (key === 'x') {
+    const node = selectedNode()
+    if (!copySelected() || !node) return false
+    onRemove({ node: node.id, part: 'node' })
+    return true
+  }
+  if (key === 'v' && clipboard.value) {
+    paste(clipboard.value)
+    return true
+  }
+  if (key === 'd') {
+    const node = selectedNode()
+    if (!node || node.id === tree.value?.root.id) return false
+    paste(structuredClone(node), node.id)
+    return true
+  }
+  return false
 }
 
 function addPoint(): void {
   const key = newPoint.value.trim()
   if (!tree.value) return
-  pointError.value = tree.value.points.length >= MAX_POINTS ? `At most ${MAX_POINTS} points` : pointProblem(key)
+  pointError.value = tree.value.points.length >= MAX_POINTS ? `At most ${MAX_POINTS} points` : nameProblem(key)
   if (pointError.value) return
   editor.syncPoints(treeKey.value, { ...tree.value, points: [...tree.value.points, key] })
   newPoint.value = ''
@@ -109,7 +233,7 @@ function renamePointKey(from: string, event: Event): void {
   const input = event.target as HTMLInputElement
   const to = input.value.trim()
   if (!tree.value || to === from) return
-  pointError.value = pointProblem(to, from)
+  pointError.value = nameProblem(to, from)
   if (pointError.value) {
     input.value = from
     return
@@ -122,6 +246,7 @@ function dropPoint(key: string): void {
 }
 
 function openTree(key: string): void {
+  if (key !== treeKey.value) live.npcId.value = ''
   treeKey.value = key
   selection.value = null
   tab.value = 'tree'
@@ -136,6 +261,16 @@ function onKeyDown(event: KeyboardEvent): void {
     return
   }
   if (typing) return
+  if (tab.value === 'tree' && mod && treeShortcut(event.key.toLowerCase())) {
+    event.preventDefault()
+    return
+  }
+  const inGraph = !!(event.target as HTMLElement | null)?.closest('.npc-graph') || event.target === document.body
+  if (tab.value === 'tree' && inGraph && !mod && (event.key === ' ' || event.key === 'Tab')) {
+    event.preventDefault()
+    graph.value?.openPalette()
+    return
+  }
   if (mod && event.key.toLowerCase() === 'z') {
     event.preventDefault()
     if (event.shiftKey) editor.redo()
@@ -223,6 +358,54 @@ onBeforeUnmount(() => {
               <p class="m-0 text-xs text-mist">Points are placed per NPC, in the NPCs tab.</p>
             </div>
             <div class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-mist">Values</span>
+              <div v-for="k in tree.keys" :key="`${treeKey}-k-${k.key}`" class="flex items-center gap-1">
+                <input :value="k.key" class="cc-input min-w-0 flex-1 py-1 font-mono text-xs" :title="`${k.type} key`" @change="renameKeyName(k.key, $event)" />
+                <span class="w-9 shrink-0 text-center font-mono text-[10px] text-mist">{{ k.type }}</span>
+                <input v-if="k.type === 'bool'" type="checkbox" :checked="k.value === true" title="Starting value" @change="setKeyValue(k.key, k.type, ($event.target as HTMLInputElement).checked)" />
+                <input
+                  v-else
+                  :type="k.type === 'number' ? 'number' : 'text'"
+                  :value="k.value"
+                  :maxlength="MAX_TEXT"
+                  class="cc-input w-16 py-1 text-xs"
+                  title="Starting value"
+                  @change="setKeyValue(k.key, k.type, ($event.target as HTMLInputElement).value)"
+                />
+                <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost px-2 text-red-400" title="Remove: nodes reading it turn red" @click="dropKey(k.key)"><UiIcon name="x" :size="12" /></button>
+              </div>
+              <form class="flex items-center gap-1" @submit.prevent="addKey">
+                <input v-model="newKeyName" placeholder="new_key" class="cc-input min-w-0 flex-1 py-1 font-mono text-xs" />
+                <select v-model="newKeyType" class="cc-input w-20 py-1 text-xs">
+                  <option v-for="t in KEY_TYPES" :key="t" :value="t">{{ t }}</option>
+                </select>
+                <button type="submit" class="cc-btn cc-btn-sm cc-btn-ghost px-2"><UiIcon name="plus" :size="12" /></button>
+              </form>
+              <p v-if="keyError" class="m-0 text-xs font-bold text-red-400">{{ keyError }}</p>
+              <p class="m-0 text-xs text-mist">Read by the Blackboard decorator, changed by Set Value.</p>
+            </div>
+            <div v-if="CAN_WRITE" class="flex flex-col gap-1">
+              <span class="text-xs font-bold text-mist">Live debug</span>
+              <select v-model="live.npcId.value" class="cc-input py-1 font-mono text-xs">
+                <option value="">Off</option>
+                <option v-for="id in treeUsers" :key="id" :value="id">{{ id }}</option>
+              </select>
+              <p v-if="live.error.value" class="m-0 text-xs font-bold text-red-400">{{ live.error.value }}</p>
+              <template v-if="live.view.value">
+                <div v-for="(v, k) in live.view.value.entry.values" :key="k" class="flex items-center gap-2 rounded-lg bg-ink-950/50 px-2 py-1 font-mono text-xs">
+                  <span class="text-sun">{{ k }}</span><span class="ml-auto">{{ JSON.stringify(v) }}</span>
+                </div>
+                <div class="flex items-center gap-2 rounded-lg bg-ink-950/50 px-2 py-1 font-mono text-xs">
+                  <span class="text-sun">target</span><span class="ml-auto">{{ live.view.value.entry.target ?? 'none' }}</span>
+                </div>
+                <div class="flex items-center gap-2 rounded-lg bg-ink-950/50 px-2 py-1 font-mono text-xs">
+                  <span class="text-sun">clip</span><span class="ml-auto">{{ live.view.value.entry.clip }}</span>
+                </div>
+                <p v-if="live.view.value.entry.say" class="m-0 text-xs text-mist">Says “{{ live.view.value.entry.say }}”</p>
+                <p class="m-0 text-xs text-mist">Running nodes glow green, ✓ / ✗ show results of the last 2.5 s. Instance {{ live.view.value.roomId }}. Shows the saved tree.</p>
+              </template>
+            </div>
+            <div class="flex flex-col gap-1">
               <span class="text-xs font-bold text-mist">Used by</span>
               <button
                 v-for="a in editor.file.value.npcs.filter((n) => n.tree === treeKey)"
@@ -238,7 +421,9 @@ onBeforeUnmount(() => {
             <div class="mt-auto flex flex-col gap-1 rounded-xl bg-ink-950/40 p-2 text-[11px] text-mist">
               <span><b class="text-fog">Grey</b> composite · <b class="text-fog">purple</b> task</span>
               <span><b class="text-fog">Blue</b> decorator · <b class="text-fog">green</b> service</span>
-              <span>Numbers give the execution order.</span>
+              <span>Numbers give the execution order: left to right.</span>
+              <span><b class="text-fog">Red</b> card: the server would refuse it (hover the !).</span>
+              <span>Ctrl+C / X / V / D copy, cut, paste, duplicate.</span>
             </div>
           </div>
           <p v-else class="m-0 p-3 text-xs text-mist">No tree yet: click New.</p>
@@ -247,9 +432,14 @@ onBeforeUnmount(() => {
         <div class="relative min-w-0 flex-1">
           <NpcTreeGraph
             v-if="tree"
+            ref="graph"
             :tree="tree"
             :selection="selection"
+            :problems="problems"
+            :debug="live.view.value"
             @select="select"
+            @update="setTree"
+            @error="(text: string) => (status = { kind: 'error', text })"
             @add-child="onAddChild"
             @add-decorator="onAddDecorator"
             @add-service="onAddService"
@@ -257,7 +447,7 @@ onBeforeUnmount(() => {
           />
         </div>
 
-        <NpcNodeDetails v-if="tree" class="w-80 shrink-0" :tree="tree" :selection="selection" @update="setTree" @select="select" />
+        <NpcNodeDetails v-if="tree" class="w-80 shrink-0" :tree="tree" :selection="selection" :subtrees="subtreeKeys" @update="setTree" @select="select" />
       </div>
 
       <div v-else class="flex min-h-0 flex-1 p-2">

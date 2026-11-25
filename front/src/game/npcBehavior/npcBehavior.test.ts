@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { parseNpcBehavior, parseTree, farPoints, type BehaviorTree } from './npcBehavior.ts'
-import { addChild, findNode, layoutTree, moveNode, removeNode, removePoint, renamePoint, setCompositeType, updateNode } from './npcTreeEdit.ts'
+import { addChild, allIds, findNode, layoutTree, moveNode, nodeProblems, pasteNode, removeNode, removePoint, renameKey, renamePoint, reparentNode, setCompositeType, setPositions, sortChildren, updateNode } from './npcTreeEdit.ts'
 
 const committed = JSON.parse(readFileSync(new URL('../../../public/assets/npc/behavior.json', import.meta.url), 'utf8'))
 
@@ -79,4 +79,102 @@ test('layout centres parents over their children and numbers nodes depth first',
   assert.equal(root!.x, (a!.x + go!.x) / 2)
   assert.deepEqual(boxes.map((b) => b.order), [0, 1, 2])
   assert.ok(a!.y > root!.y)
+})
+
+const childIds = (t: BehaviorTree, id: string) => ((findNode(t.root, id) as { children: { id: string }[] }).children ?? []).map((c) => c.id)
+
+function nested(): BehaviorTree {
+  return parseTree(
+    tree({
+      id: 'root',
+      type: 'selector',
+      children: [
+        { id: 'left', type: 'sequence', children: [wait('a'), wait('b')] },
+        { id: 'right', type: 'random', children: [{ ...wait('c'), weight: 4 }] },
+      ],
+    }),
+    't',
+  )
+}
+
+test('reparent moves a node with its subtree, and refuses loops and empty composites', () => {
+  const t = nested()
+  const moved = reparentNode(t, 'b', 'right')
+  assert.ok('tree' in moved)
+  assert.deepEqual(childIds(moved.tree, 'left'), ['a'])
+  assert.deepEqual(childIds(moved.tree, 'right'), ['c', 'b'])
+  assert.deepEqual(reparentNode(t, 'left', 'left'), { error: 'A node cannot go under itself.' })
+  assert.match((reparentNode(t, 'c', 'left') as { error: string }).error, /right would be left without a child/)
+  assert.match((reparentNode(t, 'root', 'left') as { error: string }).error, /root has no parent/)
+  const fromRandom = reparentNode(reparentNode(t, 'a', 'right').tree as BehaviorTree, 'c', 'left')
+  assert.equal(findNode((fromRandom as { tree: BehaviorTree }).tree.root, 'c')?.weight, undefined, 'a weight stays under random only')
+})
+
+test('children run in the order of their cards from left to right', () => {
+  const xs: Record<string, number> = { a: 300, b: -20 }
+  assert.deepEqual(childIds(sortChildren(nested(), 'left', (id) => xs[id]!), 'left'), ['b', 'a'])
+  assert.deepEqual(childIds(sortChildren(nested(), 'left', (id) => (id === 'a' ? 0 : 1)), 'left'), ['a', 'b'])
+})
+
+test('paste gives fresh ids to the copy and its subtree', () => {
+  const t = nested()
+  const left = findNode(t.root, 'left')!
+  const pasted = pasteNode(t, 'root', left)
+  assert.ok('tree' in pasted)
+  const ids = allIds(pasted.tree.root)
+  assert.equal(new Set(ids).size, ids.length)
+  assert.equal(pasted.id, 'left_1')
+  assert.deepEqual(childIds(pasted.tree, 'left_1'), ['a_1', 'b_1'])
+  assert.doesNotThrow(() => parseTree(pasted.tree, 't'))
+  assert.match((pasteNode(t, 'a', left) as { error: string }).error, /under a composite/)
+})
+
+test('a card with a position sits there and the cards under it keep their offset', () => {
+  const auto = layoutTree(nested().root)
+  const autoOf = (id: string) => auto.find((b) => b.node.id === id)!
+  const placed = layoutTree(setPositions(nested(), new Map([['left', [1000, 500] as [number, number]]])).root)
+  const of = (id: string) => placed.find((b) => b.node.id === id)!
+  assert.deepEqual([of('left').x, of('left').y], [1000, 500])
+  assert.equal(of('a').x - of('left').x, autoOf('a').x - autoOf('left').x)
+  assert.equal(of('a').y - of('left').y, autoOf('a').y - autoOf('left').y)
+  assert.equal(of('right').x, autoOf('right').x, 'siblings without a position do not move')
+})
+
+test('a collapsed composite hides its children but keeps the order numbers', () => {
+  const boxes = layoutTree(nested().root, new Set(['left']))
+  assert.deepEqual(boxes.map((b) => b.node.id), ['root', 'left', 'right', 'c'])
+  assert.equal(boxes[1]!.hidden, 2)
+  assert.equal(boxes[2]!.order, 4)
+})
+
+test('node problems point at the node the server would refuse', () => {
+  const keys = [{ key: 'visits', type: 'number', value: 0 }]
+  const t = { ...nested(), keys } as BehaviorTree
+  const broken = updateNode(updateNode(t, 'a', (n) => ({ ...n, min: 9, max: 1 }) as typeof n), 'b', (n) => ({ ...n, decorators: [{ type: 'blackboard', key: 'visits', compare: 'eq', value: 'x', abort: 'none' }] }))
+  const problems = nodeProblems(broken, {})
+  assert.deepEqual([...problems.keys()].sort(), ['a', 'b'])
+  assert.match(problems.get('a')!, /max must be at least min/)
+  assert.match(problems.get('b')!, /expected a number value/)
+  const lower = updateNode(t, 'c', (n) => ({ ...n, decorators: [{ type: 'has_target', invert: false, abort: 'lower' }] }))
+  assert.match(nodeProblems(lower, {}).get('c')!, /child of a selector/)
+  assert.equal(nodeProblems(nested(), {}).size, 0)
+})
+
+test('typed keys: conditions and Set Value must fit the key, and renaming a key follows its readers', () => {
+  const withKeys = (root: unknown) => ({ name: 'T', points: [], keys: [{ key: 'mood', type: 'text', value: 'calm' }, { key: 'visits', type: 'number', value: 0 }], root })
+  assert.throws(() => parseTree(withKeys({ ...wait('w'), decorators: [{ type: 'blackboard', key: 'mood', compare: 'gt', value: 'a', abort: 'none' }] }), 't'), /only compares with eq or ne/)
+  assert.throws(() => parseTree(withKeys({ id: 's', type: 'set_value', decorators: [], key: 'mood', op: 'add', value: 'x' }), 't'), /add only works on a number key/)
+  const t = parseTree(withKeys({ id: 's', type: 'set_value', decorators: [{ type: 'blackboard', key: 'visits', compare: 'lt', value: 3, abort: 'none' }], key: 'visits', op: 'add', value: 1 }), 't')
+  const renamed = renameKey(t, 'visits', 'count')
+  assert.equal((renamed.root as { key: string }).key, 'count')
+  assert.equal((renamed.root.decorators[0] as { key: string }).key, 'count')
+  assert.doesNotThrow(() => parseTree(renamed, 't'))
+})
+
+test('run behavior needs an existing tree whose points and keys are here, without loops', () => {
+  const sub = { name: 'Sub', points: ['bench'], keys: [], root: wait('s') }
+  const caller = (points: string[]) => ({ name: 'C', points, keys: [], root: { id: 'rb', type: 'run_behavior', decorators: [], tree: 'sub' } })
+  assert.doesNotThrow(() => parseNpcBehavior({ version: 1, trees: { sub, caller: caller(['bench']) }, npcs: [] }))
+  assert.throws(() => parseNpcBehavior({ version: 1, trees: { sub, caller: caller([]) }, npcs: [] }), /uses the point bench, missing here/)
+  assert.throws(() => parseNpcBehavior({ version: 1, trees: { caller: { ...caller([]), root: { id: 'rb', type: 'run_behavior', tree: 'caller' } } }, npcs: [] }), /Run Behavior loops/)
 })

@@ -146,7 +146,7 @@ export function useNpcBehaviorEditor() {
     if (file.value.trees[key]) return `A tree "${key}" already exists`
     if (treeKeys.value.length >= MAX_TREES) return `At most ${MAX_TREES} trees`
     const root = createNode('selector', 'root', createNode('wait', 'wait_1')) as BtNode
-    commit({ ...file.value, trees: { ...file.value.trees, [key]: { name: name || key, points: [], root } } })
+    commit({ ...file.value, trees: { ...file.value.trees, [key]: { name: name || key, points: [], keys: [], root } } })
     treeKey.value = key
     selection.value = { node: 'root', part: 'node' }
     return null

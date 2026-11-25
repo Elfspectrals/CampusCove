@@ -7,10 +7,20 @@ export type MoveSpeed = 'walk' | 'run'
 export type NpcClip = 'idle' | 'sit' | 'pick' | 'eat' | 'drink' | 'browse' | 'take' | 'pay'
 export type CompositeType = 'selector' | 'sequence' | 'random'
 export type CropKind = 'any' | 'corn' | 'potato' | 'cabbage' | 'pumpkin' | 'apple_tree'
+export type KeyType = 'number' | 'bool' | 'text'
+export type Compare = 'eq' | 'ne' | 'lt' | 'le' | 'gt' | 'ge'
+export type BbValue = number | boolean | string
+
+export interface BlackboardKey {
+  key: string
+  type: KeyType
+  value: BbValue
+}
 
 export type Decorator =
   | { type: 'has_target'; invert: boolean; abort: Abort }
   | { type: 'time_of_day'; from: number; to: number; invert: boolean; abort: Abort }
+  | { type: 'blackboard'; key: string; compare: Compare; value: BbValue; abort: Abort }
   | { type: 'chance'; percent: number }
   | { type: 'cooldown'; seconds: number }
   | { type: 'loop'; count: number }
@@ -46,6 +56,8 @@ export type TaskNode = NodeBase &
     | { type: 'face'; point: string }
     | { type: 'animate'; clip: NpcClip; seconds: number }
     | { type: 'say'; lines: string[]; seconds: number }
+    | { type: 'set_value'; key: string; op: 'set' | 'add'; value: BbValue }
+    | { type: 'run_behavior'; tree: string }
   )
 
 export type BtNode = CompositeNode | TaskNode
@@ -53,6 +65,7 @@ export type BtNode = CompositeNode | TaskNode
 export interface BehaviorTree {
   name: string
   points: string[]
+  keys: BlackboardKey[]
   root: BtNode
 }
 
@@ -71,7 +84,10 @@ export interface NpcBehaviorFile {
 const KEY = /^[a-z0-9_]+$/
 const BUILT_IN_POINTS = ['home', 'target']
 const COMPOSITES: readonly string[] = ['selector', 'sequence', 'random']
-const LIMITS = { trees: 40, points: 16, nodes: 200, depth: 12, children: 12, decorators: 6, services: 3, npcs: 64, name: 40 }
+const LIMITS = { trees: 40, points: 16, keys: 16, nodes: 200, depth: 12, children: 12, decorators: 6, services: 3, npcs: 64, name: 40, text: 40, number: 1_000_000, subtreeDepth: 4, pos: 100_000 }
+const KEY_TYPES: readonly string[] = ['number', 'bool', 'text']
+const EQUALITY: readonly string[] = ['eq', 'ne']
+export const SUBTREE_SEPARATOR = '/'
 
 type Field =
   | { kind: 'number'; min: number; max: number; integer?: true }
@@ -79,10 +95,14 @@ type Field =
   | { kind: 'bool' }
   | { kind: 'point' }
   | { kind: 'lines'; maxLines: number; maxLength: number }
+  | { kind: 'key' }
+  | { kind: 'value' }
+  | { kind: 'tree' }
 
 const ABORT: Field = { kind: 'choice', options: ['none', 'self', 'lower', 'both'] }
 const SPEED: Field = { kind: 'choice', options: ['walk', 'run'] }
 const HOUR: Field = { kind: 'number', min: 0, max: 23, integer: true }
+const COMPARE: Field = { kind: 'choice', options: ['eq', 'ne', 'lt', 'le', 'gt', 'ge'] }
 
 const TASK_FIELDS: Record<string, Record<string, Field>> = {
   move_to: { point: { kind: 'point' }, speed: SPEED },
@@ -94,11 +114,14 @@ const TASK_FIELDS: Record<string, Record<string, Field>> = {
   checkout: {},
   animate: { clip: { kind: 'choice', options: ['idle', 'sit', 'pick', 'eat', 'drink', 'browse', 'take', 'pay'] }, seconds: { kind: 'number', min: 0.5, max: 600 } },
   say: { lines: { kind: 'lines', maxLines: 10, maxLength: 120 }, seconds: { kind: 'number', min: 1, max: 6 } },
+  set_value: { key: { kind: 'key' }, op: { kind: 'choice', options: ['set', 'add'] }, value: { kind: 'value' } },
+  run_behavior: { tree: { kind: 'tree' } },
 }
 
 const DECORATOR_FIELDS: Record<string, Record<string, Field>> = {
   has_target: { invert: { kind: 'bool' }, abort: ABORT },
   time_of_day: { from: HOUR, to: HOUR, invert: { kind: 'bool' }, abort: ABORT },
+  blackboard: { key: { kind: 'key' }, compare: COMPARE, value: { kind: 'value' }, abort: ABORT },
   chance: { percent: { kind: 'number', min: 1, max: 99, integer: true } },
   cooldown: { seconds: { kind: 'number', min: 1, max: 3600 } },
   loop: { count: { kind: 'number', min: 0, max: 100, integer: true } },
@@ -131,7 +154,20 @@ function keyAt(value: unknown, path: string): string {
   return value
 }
 
-function fieldAt(field: Field, value: unknown, path: string, points: readonly string[]): unknown {
+interface Context {
+  points: readonly string[]
+  keys: readonly BlackboardKey[]
+}
+
+const NO_CONTEXT: Context = { points: [], keys: [] }
+
+export function valueMatches(type: KeyType, value: unknown): value is BbValue {
+  if (type === 'number') return typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= LIMITS.number
+  if (type === 'bool') return typeof value === 'boolean'
+  return typeof value === 'string' && value.length <= LIMITS.text
+}
+
+function fieldAt(field: Field, value: unknown, path: string, ctx: Context): unknown {
   switch (field.kind) {
     case 'number':
       if (typeof value !== 'number' || !Number.isFinite(value) || value < field.min || value > field.max) fail(path, `expected a number from ${field.min} to ${field.max}`)
@@ -144,8 +180,16 @@ function fieldAt(field: Field, value: unknown, path: string, points: readonly st
       if (typeof value !== 'boolean') fail(path, 'expected true or false')
       return value
     case 'point':
-      if (typeof value !== 'string' || ![...BUILT_IN_POINTS, ...points].includes(value)) fail(path, 'expected home, target or a point of the tree')
+      if (typeof value !== 'string' || ![...BUILT_IN_POINTS, ...ctx.points].includes(value)) fail(path, 'expected home, target or a point of the tree')
       return value
+    case 'key':
+      if (typeof value !== 'string' || !ctx.keys.some((k) => k.key === value)) fail(path, 'expected a blackboard key of the tree')
+      return value
+    case 'value':
+      if (!valueMatches('number', value) && !valueMatches('bool', value) && !valueMatches('text', value)) fail(path, `expected a number, a boolean or a text of at most ${LIMITS.text} characters`)
+      return value
+    case 'tree':
+      return keyAt(value, path)
     case 'lines':
       return arrayAt(value, path, field.maxLines, 1).map((line, i) => {
         if (typeof line !== 'string' || line.trim() === '' || line.length > field.maxLength) fail(`${path}[${i}]`, `expected 1 to ${field.maxLength} characters`)
@@ -154,32 +198,45 @@ function fieldAt(field: Field, value: unknown, path: string, points: readonly st
   }
 }
 
-function typedAt(table: Record<string, Record<string, Field>>, raw: unknown, path: string, extra: readonly string[], points: readonly string[]): Json {
+function typedAt(table: Record<string, Record<string, Field>>, raw: unknown, path: string, extra: readonly string[], ctx: Context): Json {
   const type = (raw as Json | null)?.type
   if (typeof type !== 'string' || !table[type]) fail(`${path}.type`, `expected one of ${Object.keys(table).join(', ')}`)
   const fields = table[type]
   const json = objectAt(raw, path, ['type', ...extra, ...Object.keys(fields)])
-  return { ...json, type, ...Object.fromEntries(Object.entries(fields).map(([k, f]) => [k, fieldAt(f, json[k], `${path}.${k}`, points)])) }
+  return { ...json, type, ...Object.fromEntries(Object.entries(fields).map(([k, f]) => [k, fieldAt(f, json[k], `${path}.${k}`, ctx)])) }
 }
 
 export function isCondition(d: Decorator): d is Condition {
-  return d.type === 'has_target' || d.type === 'time_of_day'
+  return d.type === 'has_target' || d.type === 'time_of_day' || d.type === 'blackboard'
+}
+
+function keyTypeOf(ctx: Context, key: string): KeyType {
+  return ctx.keys.find((k) => k.key === key)!.type
 }
 
 export function isComposite(node: BtNode): node is CompositeNode {
   return COMPOSITES.includes(node.type)
 }
 
-function decoratorAt(raw: unknown, path: string, parent: string | null): Decorator {
-  const d = typedAt(DECORATOR_FIELDS, raw, path, [], []) as Decorator
+function decoratorAt(raw: unknown, path: string, parent: string | null, ctx: Context): Decorator {
+  const d = typedAt(DECORATOR_FIELDS, raw, path, [], ctx) as Decorator
   if (d.type === 'time_of_day' && d.from === d.to) fail(`${path}.to`, 'from and to must differ')
+  if (d.type === 'blackboard') {
+    const type = keyTypeOf(ctx, d.key)
+    if (type !== 'number' && !EQUALITY.includes(d.compare)) fail(`${path}.compare`, `a ${type} key only compares with eq or ne`)
+    if (!valueMatches(type, d.value)) fail(`${path}.value`, `expected a ${type} value`)
+  }
   if (isCondition(d) && (d.abort === 'lower' || d.abort === 'both') && parent !== 'selector') fail(`${path}.abort`, 'lower priority aborts only work under a selector')
   return d
 }
 
-interface Walk {
-  points: readonly string[]
+interface Walk extends Context {
   ids: Set<string>
+}
+
+function checkPos(value: unknown, path: string): void {
+  if (value === undefined) return
+  if (!Array.isArray(value) || value.length !== 2 || !value.every((n) => typeof n === 'number' && Number.isFinite(n) && Math.abs(n) <= LIMITS.pos)) fail(path, 'expected [x, y]')
 }
 
 function nodeAt(raw: unknown, path: string, walk: Walk, parent: string | null, depth: number): BtNode {
@@ -187,27 +244,34 @@ function nodeAt(raw: unknown, path: string, walk: Walk, parent: string | null, d
   const type = (raw as Json | null)?.type
   const composite = typeof type === 'string' && COMPOSITES.includes(type)
   const json = composite
-    ? objectAt(raw, path, ['id', 'type', 'decorators', 'weight', 'services', 'children'])
-    : typedAt(TASK_FIELDS, raw, path, ['id', 'decorators', 'weight'], walk.points)
+    ? objectAt(raw, path, ['id', 'type', 'decorators', 'weight', 'pos', 'services', 'children'])
+    : typedAt(TASK_FIELDS, raw, path, ['id', 'decorators', 'weight', 'pos'], walk)
+  checkPos(json.pos, `${path}.pos`)
   const id = keyAt(json.id, `${path}.id`)
   if (walk.ids.has(id)) fail(`${path}.id`, `"${id}" is used by another node`)
   walk.ids.add(id)
   if (walk.ids.size > LIMITS.nodes) fail(path, `at most ${LIMITS.nodes} nodes`)
-  const decorators = arrayAt(json.decorators ?? [], `${path}.decorators`, LIMITS.decorators).map((d, i) => decoratorAt(d, `${path}.decorators[${i}]`, parent))
+  const decorators = arrayAt(json.decorators ?? [], `${path}.decorators`, LIMITS.decorators).map((d, i) => decoratorAt(d, `${path}.decorators[${i}]`, parent, walk))
   if (json.weight !== undefined && parent !== 'random') fail(`${path}.weight`, 'weight only exists under a random composite')
-  const weight = json.weight === undefined ? 1 : (fieldAt({ kind: 'number', min: 1, max: 100 }, json.weight, `${path}.weight`, []) as number)
+  const weight = json.weight === undefined ? 1 : (fieldAt({ kind: 'number', min: 1, max: 100 }, json.weight, `${path}.weight`, NO_CONTEXT) as number)
   if (composite) {
-    const services = arrayAt(json.services ?? [], `${path}.services`, LIMITS.services).map((s, i) => typedAt(SERVICE_FIELDS, s, `${path}.services[${i}]`, [], []) as unknown as Service)
+    const services = arrayAt(json.services ?? [], `${path}.services`, LIMITS.services).map((s, i) => typedAt(SERVICE_FIELDS, s, `${path}.services[${i}]`, [], NO_CONTEXT) as unknown as Service)
     const children = arrayAt(json.children, `${path}.children`, LIMITS.children, 1).map((c, i) => nodeAt(c, `${path}.children[${i}]`, walk, type as string, depth + 1))
     return { id, type: type as CompositeType, decorators, weight, services, children }
   }
-  const task = { ...json, id, decorators, weight } as TaskNode
+  const { pos: _pos, ...params } = json
+  const task = { ...params, id, decorators, weight } as TaskNode
   if (task.type === 'wait' && task.min > task.max) fail(`${path}.max`, 'max must be at least min')
+  if (task.type === 'set_value') {
+    const type = keyTypeOf(walk, task.key)
+    if (task.op === 'add' && type !== 'number') fail(`${path}.op`, 'add only works on a number key')
+    if (!valueMatches(type, task.value)) fail(`${path}.value`, `expected a ${type} value`)
+  }
   return task
 }
 
 function treeAt(raw: unknown, path: string): BehaviorTree {
-  const json = objectAt(raw, path, ['name', 'points', 'root'])
+  const json = objectAt(raw, path, ['name', 'points', 'keys', 'root'])
   if (typeof json.name !== 'string' || json.name.trim() === '' || json.name.length > LIMITS.name) fail(`${path}.name`, `expected 1 to ${LIMITS.name} characters`)
   const points = arrayAt(json.points, `${path}.points`, LIMITS.points).map((p, i) => {
     const key = keyAt(p, `${path}.points[${i}]`)
@@ -215,7 +279,54 @@ function treeAt(raw: unknown, path: string): BehaviorTree {
     return key
   })
   if (new Set(points).size !== points.length) fail(`${path}.points`, 'a point is listed twice')
-  return { name: json.name, points, root: nodeAt(json.root, `${path}.root`, { points, ids: new Set() }, null, 1) }
+  const keys = arrayAt(json.keys ?? [], `${path}.keys`, LIMITS.keys).map((raw, i): BlackboardKey => {
+    const k = objectAt(raw, `${path}.keys[${i}]`, ['key', 'type', 'value'])
+    const key = keyAt(k.key, `${path}.keys[${i}].key`)
+    if (BUILT_IN_POINTS.includes(key) || points.includes(key)) fail(`${path}.keys[${i}].key`, `"${key}" is already a point`)
+    if (typeof k.type !== 'string' || !KEY_TYPES.includes(k.type)) fail(`${path}.keys[${i}].type`, 'expected number, bool or text')
+    if (!valueMatches(k.type as KeyType, k.value)) fail(`${path}.keys[${i}].value`, `expected a ${k.type} value`)
+    return { key, type: k.type as KeyType, value: k.value }
+  })
+  if (new Set(keys.map((k) => k.key)).size !== keys.length) fail(`${path}.keys`, 'a key is listed twice')
+  return { name: json.name, points, keys, root: nodeAt(json.root, `${path}.root`, { points, keys, ids: new Set() }, null, 1) }
+}
+
+function subtreesOf(root: BtNode): string[] {
+  if (root.type === 'run_behavior') return [root.tree]
+  return isComposite(root) ? root.children.flatMap(subtreesOf) : []
+}
+
+function checkSubtrees(trees: ReadonlyMap<string, BehaviorTree>): void {
+  const visit = (key: string, chain: string[]): void => {
+    if (chain.includes(key)) fail(`trees.${chain[0]}`, `Run Behavior loops: ${[...chain, key].join(' -> ')}`)
+    if (chain.length > LIMITS.subtreeDepth) fail(`trees.${chain[0]}`, `Run Behavior goes at most ${LIMITS.subtreeDepth} trees deep`)
+    const tree = trees.get(key)!
+    for (const subKey of subtreesOf(tree.root)) {
+      const sub = trees.get(subKey) ?? fail(`trees.${key}`, `no tree "${subKey}"`)
+      const point = sub.points.find((p) => !tree.points.includes(p))
+      if (point) fail(`trees.${key}`, `"${subKey}" uses the point ${point}, missing here`)
+      const bbKey = sub.keys.find((k) => tree.keys.find((c) => c.key === k.key)?.type !== k.type)
+      if (bbKey) fail(`trees.${key}`, `"${subKey}" uses the ${bbKey.type} key ${bbKey.key}, missing here or of another type`)
+      visit(subKey, [...chain, key])
+    }
+  }
+  for (const key of trees.keys()) visit(key, [])
+}
+
+function prefixIds(node: BtNode, prefix: string): BtNode {
+  const id = `${prefix}${node.id}`
+  return isComposite(node) ? { ...node, id, children: node.children.map((c) => prefixIds(c, prefix)) } : { ...node, id }
+}
+
+export function inlineSubtrees(tree: BehaviorTree, trees: ReadonlyMap<string, BehaviorTree>): BehaviorTree {
+  const expand = (node: BtNode): BtNode => {
+    if (node.type === 'run_behavior') {
+      const sub = expand(trees.get(node.tree)!.root)
+      return { id: node.id, type: 'sequence', decorators: node.decorators, weight: node.weight, services: [], children: [prefixIds(sub, `${node.id}${SUBTREE_SEPARATOR}`)] }
+    }
+    return isComposite(node) ? { ...node, children: node.children.map(expand) } : node
+  }
+  return { ...tree, root: expand(tree.root) }
 }
 
 function vec3At(value: unknown, path: string): Vec3Tuple {
@@ -229,6 +340,7 @@ export function parseNpcBehavior(raw: unknown): NpcBehaviorFile {
   const treeJson = objectAt(json.trees, 'trees')
   if (Object.keys(treeJson).length > LIMITS.trees) fail('trees', `at most ${LIMITS.trees} trees`)
   const trees = new Map(Object.entries(treeJson).map(([key, t]) => [keyAt(key, `trees.${key}`), treeAt(t, `trees.${key}`)]))
+  checkSubtrees(trees)
   const seen = new Set<string>()
   const npcs = arrayAt(json.npcs, 'npcs', LIMITS.npcs).map((raw, i): NpcAssignment => {
     const path = `npcs[${i}]`

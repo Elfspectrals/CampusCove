@@ -5,6 +5,7 @@ import { createEndpoint, createRouter, matchMaker } from 'colyseus'
 import { REALTIME_SHARED_SECRET } from './config.ts'
 import { parseTaskTierReached, type TaskTierReached } from './tasks.ts'
 import { parseTutorialChange, type TutorialChange } from './tutorial.ts'
+import type { NpcDebug } from './npcBrain.ts'
 
 interface HousingAware {
   onHousingChanged(): Promise<void>
@@ -16,6 +17,10 @@ interface BanAware {
 
 interface TaskAware {
   onTaskTierReached(reached: TaskTierReached): void
+}
+
+interface NpcDebugAware {
+  npcs: { debug(): NpcDebug[] }
 }
 
 interface TutorialAware {
@@ -76,4 +81,14 @@ const tutorialChanged = createEndpoint('/internal/tutorial-changed', { method: '
   return Response.json({ ok: true })
 })
 
-export const internalRoutes = createRouter({ housingChanged, ipBanned, taskTierReached, tutorialChanged })
+const npcDebug = createEndpoint('/internal/npc-debug', { method: 'GET' }, async (ctx) => {
+  if (!isRealtimeSecret(ctx.request?.headers.get('x-realtime-secret') ?? null)) throw ctx.error(403)
+  const rooms = await matchMaker.query({ name: 'city' })
+  const instances = rooms.flatMap((cached) => {
+    const room = matchMaker.getLocalRoomById(cached.roomId) as unknown as NpcDebugAware | undefined
+    return room ? [{ roomId: cached.roomId, npcs: room.npcs.debug() }] : []
+  })
+  return Response.json({ now: Date.now(), instances })
+})
+
+export const internalRoutes = createRouter({ housingChanged, ipBanned, taskTierReached, tutorialChanged, npcDebug })

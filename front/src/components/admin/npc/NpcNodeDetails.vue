@@ -5,7 +5,11 @@ import {
   BUILT_IN_POINTS,
   COMPOSITE_TYPES,
   KEY_PATTERN,
+  MAX_NUMBER,
+  MAX_TEXT,
   NODE_SPECS,
+  comparesFor,
+  defaultValue,
   isComposite,
   type BehaviorTree,
   type BtNode,
@@ -15,7 +19,7 @@ import {
 import { findNode, moveNode, parentOf, removeNode, setCompositeType, updateNode } from '../../../game/npcBehavior/npcTreeEdit'
 import type { Selection } from '../../../composables/useNpcBehaviorEditor'
 
-const props = defineProps<{ tree: BehaviorTree; selection: Selection }>()
+const props = defineProps<{ tree: BehaviorTree; selection: Selection; subtrees: string[] }>()
 const emit = defineEmits<{ update: [tree: BehaviorTree]; select: [selection: Selection] }>()
 
 type Params = Record<string, unknown>
@@ -34,6 +38,13 @@ const part = computed<{ list: 'decorators' | 'services'; index: number; value: P
 const spec = computed(() => (part.value ? NODE_SPECS[part.value.value.type] : node.value ? NODE_SPECS[node.value.type] : null))
 const values = computed<Params>(() => (part.value ? part.value.value : ((node.value ?? {}) as unknown as Params)))
 const pointOptions = computed(() => [...BUILT_IN_POINTS, ...props.tree.points])
+const keyType = computed(() => props.tree.keys.find((k) => k.key === values.value.key)?.type ?? null)
+
+function optionsOf(field: Extract<FieldSpec, { kind: 'choice' }>): readonly string[] {
+  if (field.key === 'compare' && keyType.value) return comparesFor(keyType.value)
+  if (field.key === 'op' && keyType.value && keyType.value !== 'number') return ['set']
+  return field.options
+}
 const siblings = computed(() => parent.value?.children ?? [])
 const index = computed(() => siblings.value.findIndex((c) => c.id === node.value?.id))
 
@@ -48,6 +59,20 @@ function setField(field: FieldSpec, raw: unknown): void {
     if (!Number.isFinite(n)) return
     value = Math.min(field.max, Math.max(field.min, field.integer ? Math.round(n) : n))
   }
+  if (field.kind === 'value' && keyType.value === 'number') {
+    const n = Number(raw)
+    if (!Number.isFinite(n)) return
+    value = Math.min(MAX_NUMBER, Math.max(-MAX_NUMBER, n))
+  }
+  if (field.kind === 'value' && keyType.value === 'text') value = String(raw).slice(0, MAX_TEXT)
+  const extra: Params = {}
+  if (field.kind === 'key') {
+    const type = props.tree.keys.find((k) => k.key === raw)?.type
+    if (!type) return
+    extra.value = defaultValue(type)
+    if ('compare' in values.value && !comparesFor(type).includes(values.value.compare as never)) extra.compare = 'eq'
+    if ('op' in values.value && type !== 'number') extra.op = 'set'
+  }
   if (field.kind === 'lines') {
     const lines = String(raw)
       .split('\n')
@@ -58,10 +83,10 @@ function setField(field: FieldSpec, raw: unknown): void {
     value = lines
   }
   const p = part.value
-  if (!p) return editNode((n) => ({ ...n, [field.key]: value }) as BtNode)
+  if (!p) return editNode((n) => ({ ...n, [field.key]: value, ...extra }) as BtNode)
   editNode((n) => {
     const list = [...((n as unknown as Record<string, Params[]>)[p.list] ?? [])]
-    list[p.index] = { ...list[p.index], [field.key]: value }
+    list[p.index] = { ...list[p.index], [field.key]: value, ...extra }
     return { ...n, [p.list]: list } as unknown as BtNode
   })
 }
@@ -152,7 +177,7 @@ const canRemove = computed(() => !!part.value || (!!node.value && node.value.id 
         </template>
 
         <label v-for="field in spec.fields" :key="`${selection?.node}-${field.key}`" :class="field.kind === 'bool' ? 'flex items-center gap-2' : 'flex flex-col gap-1'">
-          <template v-if="field.kind === 'bool'">
+          <template v-if="field.kind === 'bool' || (field.kind === 'value' && keyType === 'bool')">
             <input type="checkbox" :checked="values[field.key] === true" @change="setField(field, ($event.target as HTMLInputElement).checked)" />
             <span class="text-xs font-bold">{{ field.label }}</span>
           </template>
@@ -169,7 +194,31 @@ const canRemove = computed(() => !!part.value || (!!node.value && node.value.id 
               @change="setField(field, ($event.target as HTMLInputElement).value)"
             />
             <select v-else-if="field.kind === 'choice'" class="cc-input py-1.5 text-sm" :value="values[field.key]" @change="setField(field, ($event.target as HTMLSelectElement).value)">
-              <option v-for="o in field.options" :key="o" :value="o">{{ o }}</option>
+              <option v-for="o in optionsOf(field)" :key="o" :value="o">{{ o }}</option>
+            </select>
+            <select v-else-if="field.kind === 'key'" class="cc-input py-1.5 font-mono text-sm" :value="values[field.key]" @change="setField(field, ($event.target as HTMLSelectElement).value)">
+              <option value="" disabled>{{ tree.keys.length ? 'Choose a key' : 'Add a key in the Blackboard first' }}</option>
+              <option v-for="k in tree.keys" :key="k.key" :value="k.key">{{ k.key }} · {{ k.type }}</option>
+            </select>
+            <input
+              v-else-if="field.kind === 'value' && keyType === 'number'"
+              type="number"
+              step="1"
+              :value="values[field.key]"
+              class="cc-input py-1.5 text-sm"
+              @change="setField(field, ($event.target as HTMLInputElement).value)"
+            />
+            <input
+              v-else-if="field.kind === 'value' && keyType === 'text'"
+              :value="values[field.key]"
+              :maxlength="MAX_TEXT"
+              class="cc-input py-1.5 text-sm"
+              @change="setField(field, ($event.target as HTMLInputElement).value)"
+            />
+            <span v-else-if="field.kind === 'value'" class="text-xs text-mist">Choose a key first.</span>
+            <select v-else-if="field.kind === 'tree'" class="cc-input py-1.5 font-mono text-sm" :value="values[field.key]" @change="setField(field, ($event.target as HTMLSelectElement).value)">
+              <option value="" disabled>Choose a tree</option>
+              <option v-for="t in subtrees" :key="t" :value="t">{{ t }}</option>
             </select>
             <select v-else-if="field.kind === 'point'" class="cc-input py-1.5 font-mono text-sm" :value="values[field.key]" @change="setField(field, ($event.target as HTMLSelectElement).value)">
               <option v-for="o in pointOptions" :key="o" :value="o">{{ o }}</option>

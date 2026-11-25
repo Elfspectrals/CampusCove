@@ -2,8 +2,8 @@
 // ticks every brain and broadcasts what changed. Re-reads the file every few seconds so the admin editor's saves
 // show up in a running game.
 import type { Json } from './backend.ts'
-import { parseNpcBehavior, type CropKind, type NpcBehaviorFile, type Vec3Tuple } from './npcBehavior.ts'
-import { NpcBrain, type NpcHome, type NpcShop, type NpcState, type PlantSource } from './npcBrain.ts'
+import { inlineSubtrees, parseNpcBehavior, type CropKind, type NpcBehaviorFile, type Vec3Tuple } from './npcBehavior.ts'
+import { NpcBrain, type NpcDebug, type NpcHome, type NpcShop, type NpcState, type PlantSource } from './npcBrain.ts'
 import { shopNav } from './shopNav.ts'
 import { CheckoutLine, shopLayout } from './shopSpots.ts'
 import type { GameClient, Player } from './types.ts'
@@ -70,7 +70,7 @@ export function buildBrains(file: NpcBehaviorFile, zones: ReadonlyMap<string, Js
     const home = zoneNpcHome(a.zone, decor, a.npc)
     const far = Object.entries(a.points).find(([, [x, , z]]) => Math.hypot(x - home.position[0], z - home.position[2]) > MAX_POINT_DISTANCE)
     if (far) throw new Error(`${a.zone}/${a.npc}: point ${far[0]} is over ${MAX_POINT_DISTANCE} m from the NPC`)
-    return new NpcBrain(`${a.zone}/${a.npc}`, file.trees.get(a.tree)!, home, a.points, { random, plants, shop: shopOf(a.zone, decor) })
+    return new NpcBrain(`${a.zone}/${a.npc}`, inlineSubtrees(file.trees.get(a.tree)!, file.trees), home, a.points, { random, plants, shop: shopOf(a.zone, decor) })
   })
 }
 
@@ -119,6 +119,10 @@ export class NpcDirector {
       const state = brain.state(now)
       this.room.forEachClient((c) => c.send('npc_state', state))
     }
+  }
+
+  debug(): NpcDebug[] {
+    return this.brains.map((b) => b.debug())
   }
 
   snapshot(now: number): { npcs: NpcState[] } {

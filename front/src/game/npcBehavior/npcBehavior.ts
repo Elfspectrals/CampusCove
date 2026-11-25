@@ -9,6 +9,7 @@ export const KEY_PATTERN = /^[a-z0-9_]+$/
 export const BUILT_IN_POINTS = ['home', 'target'] as const
 export const MAX_TREES = 40
 export const MAX_POINTS = 16
+export const MAX_KEYS = 16
 const MAX_NODES = 200
 const MAX_DEPTH = 12
 export const MAX_CHILDREN = 12
@@ -17,10 +18,18 @@ export const MAX_SERVICES = 3
 const MAX_ASSIGNMENTS = 64
 export const MAX_POINT_DISTANCE = 60
 const MAX_NAME = 40
+export const MAX_TEXT = 40
+export const MAX_NUMBER = 1_000_000
+const MAX_SUBTREE_DEPTH = 4
+const MAX_POS = 100_000
 
 export const COMPOSITE_TYPES = ['selector', 'sequence', 'random'] as const
-export const TASK_TYPES = ['move_to', 'wander', 'pick_crop', 'browse_shelf', 'checkout', 'wait', 'face', 'animate', 'say'] as const
-export const DECORATOR_TYPES = ['has_target', 'time_of_day', 'chance', 'cooldown', 'loop'] as const
+export const TASK_TYPES = ['move_to', 'wander', 'pick_crop', 'browse_shelf', 'checkout', 'wait', 'face', 'animate', 'say', 'set_value', 'run_behavior'] as const
+export const DECORATOR_TYPES = ['has_target', 'time_of_day', 'blackboard', 'chance', 'cooldown', 'loop'] as const
+export const KEY_TYPES = ['number', 'bool', 'text'] as const
+export const COMPARES = ['eq', 'ne', 'lt', 'le', 'gt', 'ge'] as const
+const EQUALITY: readonly Compare[] = ['eq', 'ne']
+const SET_OPS = ['set', 'add'] as const
 export const SERVICE_TYPES = ['perceive_players'] as const
 const ABORTS = ['none', 'self', 'lower', 'both'] as const
 const SPEEDS = ['walk', 'run'] as const
@@ -37,10 +46,21 @@ export type Abort = (typeof ABORTS)[number]
 type MoveSpeed = (typeof SPEEDS)[number]
 export type NpcClip = (typeof CLIPS)[number]
 type CropKind = (typeof CROP_KINDS)[number]
+export type KeyType = (typeof KEY_TYPES)[number]
+export type Compare = (typeof COMPARES)[number]
+type SetOp = (typeof SET_OPS)[number]
+export type BbValue = number | boolean | string
+
+export interface BlackboardKey {
+  key: string
+  type: KeyType
+  value: BbValue
+}
 
 export type Decorator =
   | { type: 'has_target'; invert: boolean; abort: Abort }
   | { type: 'time_of_day'; from: number; to: number; invert: boolean; abort: Abort }
+  | { type: 'blackboard'; key: string; compare: Compare; value: BbValue; abort: Abort }
   | { type: 'chance'; percent: number }
   | { type: 'cooldown'; seconds: number }
   | { type: 'loop'; count: number }
@@ -52,6 +72,7 @@ interface NodeBase {
   decorators: Decorator[]
   /** Only under a `random` composite. */
   weight?: number
+  pos?: [number, number]
 }
 
 export interface CompositeNode extends NodeBase {
@@ -71,6 +92,8 @@ type TaskNode = NodeBase &
     | { type: 'face'; point: string }
     | { type: 'animate'; clip: NpcClip; seconds: number }
     | { type: 'say'; lines: string[]; seconds: number }
+    | { type: 'set_value'; key: string; op: SetOp; value: BbValue }
+    | { type: 'run_behavior'; tree: string }
   )
 
 export type BtNode = CompositeNode | TaskNode
@@ -78,6 +101,7 @@ export type BtNode = CompositeNode | TaskNode
 export interface BehaviorTree {
   name: string
   points: string[]
+  keys: BlackboardKey[]
   root: BtNode
 }
 
@@ -100,6 +124,9 @@ export type FieldSpec =
   | { key: string; label: string; kind: 'bool' }
   | { key: string; label: string; kind: 'point' }
   | { key: string; label: string; kind: 'lines'; maxLines: number; maxLength: number }
+  | { key: string; label: string; kind: 'key' }
+  | { key: string; label: string; kind: 'value' }
+  | { key: string; label: string; kind: 'tree' }
 
 type NodeGroup = 'composite' | 'task' | 'decorator' | 'service'
 
@@ -116,6 +143,8 @@ const ABORT_FIELD: FieldSpec = { key: 'abort', label: 'Observer aborts', kind: '
 const INVERT_FIELD: FieldSpec = { key: 'invert', label: 'Inverse condition', kind: 'bool' }
 const SPEED_FIELD: FieldSpec = { key: 'speed', label: 'Speed', kind: 'choice', options: SPEEDS }
 const POINT_FIELD: FieldSpec = { key: 'point', label: 'Point', kind: 'point' }
+const KEY_FIELD: FieldSpec = { key: 'key', label: 'Key', kind: 'key' }
+const VALUE_FIELD: FieldSpec = { key: 'value', label: 'Value', kind: 'value' }
 
 /** Every node type, its parameters and their ranges: drives validation and the editor's Details panel. */
 export const NODE_SPECS: Record<NodeSpec['type'], NodeSpec> = {
@@ -197,6 +226,22 @@ export const NODE_SPECS: Record<NodeSpec['type'], NodeSpec> = {
     ],
     defaults: { lines: ['Hello!'], seconds: 4 },
   },
+  set_value: {
+    type: 'set_value',
+    label: 'Set Value',
+    group: 'task',
+    hint: 'Sets a blackboard key, or adds to a number key (a negative value takes away). Succeeds at once.',
+    fields: [KEY_FIELD, { key: 'op', label: 'Operation', kind: 'choice', options: SET_OPS }, VALUE_FIELD],
+    defaults: { key: '', op: 'set', value: 0 },
+  },
+  run_behavior: {
+    type: 'run_behavior',
+    label: 'Run Behavior',
+    group: 'task',
+    hint: 'Runs another tree here and returns its result. Its points and keys must exist in this tree with the same types.',
+    fields: [{ key: 'tree', label: 'Tree', kind: 'tree' }],
+    defaults: { tree: '' },
+  },
   has_target: { type: 'has_target', label: 'Has Target', group: 'decorator', hint: 'Passes when a player is perceived.', fields: [INVERT_FIELD, ABORT_FIELD], defaults: { invert: false, abort: 'none' } },
   time_of_day: {
     type: 'time_of_day',
@@ -210,6 +255,14 @@ export const NODE_SPECS: Record<NodeSpec['type'], NodeSpec> = {
       ABORT_FIELD,
     ],
     defaults: { from: 8, to: 20, invert: false, abort: 'none' },
+  },
+  blackboard: {
+    type: 'blackboard',
+    label: 'Blackboard',
+    group: 'decorator',
+    hint: 'Condition on a blackboard key: numbers compare, booleans and texts are equal or not.',
+    fields: [KEY_FIELD, { key: 'compare', label: 'Compare', kind: 'choice', options: COMPARES }, VALUE_FIELD, ABORT_FIELD],
+    defaults: { key: '', compare: 'eq', value: 0, abort: 'none' },
   },
   chance: {
     type: 'chance',
@@ -253,8 +306,29 @@ export function isComposite(node: BtNode): node is CompositeNode {
 }
 
 export function isCondition(decorator: Decorator): decorator is Extract<Decorator, { abort: Abort }> {
-  return decorator.type === 'has_target' || decorator.type === 'time_of_day'
+  return decorator.type === 'has_target' || decorator.type === 'time_of_day' || decorator.type === 'blackboard'
 }
+
+export function comparesFor(type: KeyType): readonly Compare[] {
+  return type === 'number' ? COMPARES : EQUALITY
+}
+
+export function valueMatches(type: KeyType, value: unknown): value is BbValue {
+  if (type === 'number') return typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= MAX_NUMBER
+  if (type === 'bool') return typeof value === 'boolean'
+  return typeof value === 'string' && value.length <= MAX_TEXT
+}
+
+export function defaultValue(type: KeyType): BbValue {
+  return type === 'number' ? 0 : type === 'bool' ? false : ''
+}
+
+interface FieldContext {
+  points: readonly string[]
+  keys: readonly BlackboardKey[]
+}
+
+const NO_CONTEXT: FieldContext = { points: [], keys: [] }
 
 // ------------------------------------------------------------------ parsing
 
@@ -278,7 +352,7 @@ function keyAt(value: unknown, path: string): string {
   return value
 }
 
-function fieldAt(spec: FieldSpec, value: unknown, path: string, points: readonly string[]): unknown {
+function fieldAt(spec: FieldSpec, value: unknown, path: string, ctx: FieldContext): unknown {
   switch (spec.kind) {
     case 'number': {
       if (typeof value !== 'number' || !Number.isFinite(value) || value < spec.min || value > spec.max) throw new TemplateError(path, `expected a number from ${spec.min} to ${spec.max}`)
@@ -292,8 +366,16 @@ function fieldAt(spec: FieldSpec, value: unknown, path: string, points: readonly
       if (typeof value !== 'boolean') throw new TemplateError(path, 'expected true or false')
       return value
     case 'point':
-      if (typeof value !== 'string' || !([...BUILT_IN_POINTS, ...points] as string[]).includes(value)) throw new TemplateError(path, `expected home, target or a point of the tree (${points.join(', ') || 'none'})`)
+      if (typeof value !== 'string' || !([...BUILT_IN_POINTS, ...ctx.points] as string[]).includes(value)) throw new TemplateError(path, `expected home, target or a point of the tree (${ctx.points.join(', ') || 'none'})`)
       return value
+    case 'key':
+      if (typeof value !== 'string' || !ctx.keys.some((k) => k.key === value)) throw new TemplateError(path, `expected a blackboard key of the tree (${ctx.keys.map((k) => k.key).join(', ') || 'none'})`)
+      return value
+    case 'value':
+      if (!valueMatches('number', value) && !valueMatches('bool', value) && !valueMatches('text', value)) throw new TemplateError(path, `expected a number, true or false, or a text of at most ${MAX_TEXT} characters`)
+      return value
+    case 'tree':
+      return keyAt(value, path)
     case 'lines':
       return arrayAt(value, path, spec.maxLines, 1).map((line, i) => {
         if (typeof line !== 'string' || line.trim() === '' || line.length > spec.maxLength) throw new TemplateError(`${path}[${i}]`, `expected a text of 1 to ${spec.maxLength} characters`)
@@ -302,17 +384,26 @@ function fieldAt(spec: FieldSpec, value: unknown, path: string, points: readonly
   }
 }
 
-function paramsAt(spec: NodeSpec, json: Json, path: string, points: readonly string[]): Json {
-  return Object.fromEntries(spec.fields.map((f) => [f.key, fieldAt(f, json[f.key], `${path}.${f.key}`, points)]))
+function paramsAt(spec: NodeSpec, json: Json, path: string, ctx: FieldContext): Json {
+  return Object.fromEntries(spec.fields.map((f) => [f.key, fieldAt(f, json[f.key], `${path}.${f.key}`, ctx)]))
 }
 
-function decoratorAt(raw: unknown, path: string, parent: CompositeType | null): Decorator {
+function keyTypeOf(ctx: FieldContext, key: string): KeyType {
+  return ctx.keys.find((k) => k.key === key)!.type
+}
+
+function decoratorAt(raw: unknown, path: string, parent: CompositeType | null, ctx: FieldContext): Decorator {
   const type = (raw as Json | null)?.type
   if (typeof type !== 'string' || !(DECORATOR_TYPES as readonly string[]).includes(type)) throw new TemplateError(`${path}.type`, `expected one of ${DECORATOR_TYPES.join(', ')}`)
   const spec = NODE_SPECS[type as DecoratorType]
   const json = objectAt(raw, path, ['type', ...spec.fields.map((f) => f.key)])
-  const decorator = { type, ...paramsAt(spec, json, path, []) } as Decorator
+  const decorator = { type, ...paramsAt(spec, json, path, ctx) } as Decorator
   if (decorator.type === 'time_of_day' && decorator.from === decorator.to) throw new TemplateError(`${path}.to`, 'from and to must differ')
+  if (decorator.type === 'blackboard') {
+    const keyType = keyTypeOf(ctx, decorator.key)
+    if (!comparesFor(keyType).includes(decorator.compare)) throw new TemplateError(`${path}.compare`, `a ${keyType} key only compares with eq or ne`)
+    if (!valueMatches(keyType, decorator.value)) throw new TemplateError(`${path}.value`, `expected a ${keyType} value like the key`)
+  }
   if (isCondition(decorator) && (decorator.abort === 'lower' || decorator.abort === 'both') && parent !== 'selector') {
     throw new TemplateError(`${path}.abort`, 'lower priority aborts only work on a child of a selector')
   }
@@ -323,12 +414,16 @@ function serviceAt(raw: unknown, path: string): Service {
   const type = (raw as Json | null)?.type
   if (typeof type !== 'string' || !(SERVICE_TYPES as readonly string[]).includes(type)) throw new TemplateError(`${path}.type`, `expected one of ${SERVICE_TYPES.join(', ')}`)
   const spec = NODE_SPECS[type as ServiceType]
-  return { type, ...paramsAt(spec, objectAt(raw, path, ['type', ...spec.fields.map((f) => f.key)]), path, []) } as Service
+  return { type, ...paramsAt(spec, objectAt(raw, path, ['type', ...spec.fields.map((f) => f.key)]), path, NO_CONTEXT) } as Service
 }
 
-interface NodeWalk {
-  points: readonly string[]
+interface NodeWalk extends FieldContext {
   ids: Set<string>
+}
+
+function posAt(value: unknown, path: string): [number, number] {
+  if (!Array.isArray(value) || value.length !== 2 || !value.every((n) => typeof n === 'number' && Number.isFinite(n) && Math.abs(n) <= MAX_POS)) throw new TemplateError(path, 'expected [x, y]')
+  return [value[0], value[1]]
 }
 
 function nodeAt(raw: unknown, path: string, walk: NodeWalk, parent: CompositeType | null, depth: number): BtNode {
@@ -338,30 +433,49 @@ function nodeAt(raw: unknown, path: string, walk: NodeWalk, parent: CompositeTyp
   if (typeof type !== 'string' || !types.includes(type)) throw new TemplateError(`${path}.type`, `expected one of ${types.join(', ')}`)
   const spec = NODE_SPECS[type as CompositeType | TaskType]
   const composite = spec.group === 'composite'
-  const allowed = ['id', 'type', 'decorators', 'weight', ...(composite ? ['services', 'children'] : spec.fields.map((f) => f.key))]
+  const allowed = ['id', 'type', 'decorators', 'weight', 'pos', ...(composite ? ['services', 'children'] : spec.fields.map((f) => f.key))]
   const json = objectAt(raw, path, allowed)
   const id = keyAt(json.id, `${path}.id`)
   if (walk.ids.has(id)) throw new TemplateError(`${path}.id`, `"${id}" is used by another node`)
   walk.ids.add(id)
   if (walk.ids.size > MAX_NODES) throw new TemplateError(path, `a tree holds at most ${MAX_NODES} nodes`)
-  const decorators = arrayAt(json.decorators ?? [], `${path}.decorators`, MAX_DECORATORS).map((d, i) => decoratorAt(d, `${path}.decorators[${i}]`, parent))
+  const decorators = arrayAt(json.decorators ?? [], `${path}.decorators`, MAX_DECORATORS).map((d, i) => decoratorAt(d, `${path}.decorators[${i}]`, parent, walk))
   const base: NodeBase = { id, decorators }
+  if (json.pos !== undefined) base.pos = posAt(json.pos, `${path}.pos`)
   if (json.weight !== undefined) {
     if (parent !== 'random') throw new TemplateError(`${path}.weight`, 'weight only exists under a random composite')
-    base.weight = fieldAt({ key: 'weight', label: '', kind: 'number', min: 1, max: 100, step: 1 }, json.weight, `${path}.weight`, []) as number
+    base.weight = fieldAt({ key: 'weight', label: '', kind: 'number', min: 1, max: 100, step: 1 }, json.weight, `${path}.weight`, NO_CONTEXT) as number
   }
   if (composite) {
     const services = arrayAt(json.services ?? [], `${path}.services`, MAX_SERVICES).map((s, i) => serviceAt(s, `${path}.services[${i}]`))
     const children = arrayAt(json.children, `${path}.children`, MAX_CHILDREN, 1).map((c, i) => nodeAt(c, `${path}.children[${i}]`, walk, type as CompositeType, depth + 1))
     return { ...base, type: type as CompositeType, services, children }
   }
-  const task = { ...base, type, ...paramsAt(spec, json, path, walk.points) } as TaskNode
+  const task = { ...base, type, ...paramsAt(spec, json, path, walk) } as TaskNode
   if (task.type === 'wait' && task.min > task.max) throw new TemplateError(`${path}.max`, 'max must be at least min')
+  if (task.type === 'set_value') {
+    const keyType = keyTypeOf(walk, task.key)
+    if (task.op === 'add' && keyType !== 'number') throw new TemplateError(`${path}.op`, 'add only works on a number key')
+    if (!valueMatches(keyType, task.value)) throw new TemplateError(`${path}.value`, `expected a ${keyType} value like the key`)
+  }
   return task
 }
 
+function keysAt(raw: unknown, path: string, points: readonly string[]): BlackboardKey[] {
+  const keys = arrayAt(raw, path, MAX_KEYS).map((k, i) => {
+    const json = objectAt(k, `${path}[${i}]`, ['key', 'type', 'value'])
+    const key = keyAt(json.key, `${path}[${i}].key`)
+    if ((BUILT_IN_POINTS as readonly string[]).includes(key) || points.includes(key)) throw new TemplateError(`${path}[${i}].key`, `"${key}" is already a point`)
+    const type = fieldAt({ key: 'type', label: '', kind: 'choice', options: KEY_TYPES }, json.type, `${path}[${i}].type`, NO_CONTEXT) as KeyType
+    if (!valueMatches(type, json.value)) throw new TemplateError(`${path}[${i}].value`, `expected a ${type} value`)
+    return { key, type, value: json.value }
+  })
+  if (new Set(keys.map((k) => k.key)).size !== keys.length) throw new TemplateError(path, 'a key is listed twice')
+  return keys
+}
+
 export function parseTree(raw: unknown, path: string): BehaviorTree {
-  const json = objectAt(raw, path, ['name', 'points', 'root'])
+  const json = objectAt(raw, path, ['name', 'points', 'keys', 'root'])
   if (typeof json.name !== 'string' || json.name.trim() === '' || json.name.length > MAX_NAME) throw new TemplateError(`${path}.name`, `expected 1 to ${MAX_NAME} characters`)
   const points = arrayAt(json.points, `${path}.points`, MAX_POINTS).map((p, i) => {
     const key = keyAt(p, `${path}.points[${i}]`)
@@ -369,7 +483,36 @@ export function parseTree(raw: unknown, path: string): BehaviorTree {
     return key
   })
   if (new Set(points).size !== points.length) throw new TemplateError(`${path}.points`, 'a point is listed twice')
-  return { name: json.name, points, root: nodeAt(json.root, `${path}.root`, { points, ids: new Set() }, null, 1) }
+  const keys = keysAt(json.keys ?? [], `${path}.keys`, points)
+  return { name: json.name, points, keys, root: nodeAt(json.root, `${path}.root`, { points, keys, ids: new Set() }, null, 1) }
+}
+
+export function subtreesOf(root: BtNode): string[] {
+  if (root.type === 'run_behavior') return [root.tree]
+  return isComposite(root) ? root.children.flatMap(subtreesOf) : []
+}
+
+export function subtreeProblem(caller: BehaviorTree, sub: BehaviorTree | undefined, subKey: string): string | null {
+  if (!sub) return `no tree "${subKey}"`
+  const point = sub.points.find((p) => !caller.points.includes(p))
+  if (point) return `"${subKey}" uses the point ${point}, missing here`
+  const key = sub.keys.find((k) => caller.keys.find((c) => c.key === k.key)?.type !== k.type)
+  if (key) return `"${subKey}" uses the ${key.type} key ${key.key}, missing here or of another type`
+  return null
+}
+
+function checkSubtrees(trees: Record<string, BehaviorTree>): void {
+  const visit = (key: string, chain: string[]): void => {
+    if (chain.includes(key)) throw new TemplateError(`behavior.trees.${chain[0]}`, `Run Behavior loops: ${[...chain, key].join(' → ')}`)
+    if (chain.length > MAX_SUBTREE_DEPTH) throw new TemplateError(`behavior.trees.${chain[0]}`, `Run Behavior goes at most ${MAX_SUBTREE_DEPTH} trees deep`)
+    const tree = trees[key]!
+    for (const sub of subtreesOf(tree.root)) {
+      const problem = subtreeProblem(tree, trees[sub], sub)
+      if (problem) throw new TemplateError(`behavior.trees.${key}`, problem)
+      visit(sub, [...chain, key])
+    }
+  }
+  for (const key of Object.keys(trees)) visit(key, [])
 }
 
 function vec3At(value: unknown, path: string): Vec3 {
@@ -404,6 +547,7 @@ export function parseNpcBehavior(raw: unknown): NpcBehaviorFile {
   const treeJson = objectAt(json.trees, 'behavior.trees', Object.keys(json.trees ?? {}))
   if (Object.keys(treeJson).length > MAX_TREES) throw new TemplateError('behavior.trees', `at most ${MAX_TREES} trees`)
   const trees = Object.fromEntries(Object.entries(treeJson).map(([key, tree]) => [keyAt(key, `behavior.trees.${key}`), parseTree(tree, `behavior.trees.${key}`)]))
+  checkSubtrees(trees)
   const npcs = arrayAt(json.npcs, 'behavior.npcs', MAX_ASSIGNMENTS).map((a, i) => assignmentAt(a, `behavior.npcs[${i}]`, trees))
   const seen = new Set<string>()
   npcs.forEach((a, i) => {
