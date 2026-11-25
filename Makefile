@@ -92,7 +92,7 @@ collision-extract: ## Collision JSON from a GLB (MODEL=path/to/Foo.colsrc.glb)
 	cd front && npm run collision:extract -- $(MODEL)
 
 # * local only: needs Jerome's Mac (~/test3Dmodel/Hunyuan3D-2, ~/image-inpaint-mps, Blender.app)
-ifneq (,$(filter model model-checked,$(firstword $(MAKECMDGOALS))))
+ifneq (,$(filter model model-checked model-install,$(firstword $(MAKECMDGOALS))))
 MODEL_PROMPT := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 %:
 	@:
@@ -103,13 +103,18 @@ TEXTURE_PROMPT := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 	@:
 endif
 slug = $(shell echo '$(1)' | tr 'A-Z' 'a-z' | tr -cs 'a-z0-9' '_' | sed 's/^_//;s/_$$//' | cut -c1-40)
-MODEL_SLUG = $(call slug,$(MODEL_PROMPT))
+MODEL_IMAGE = $(filter %.png %.jpg %.jpeg %.webp,$(MODEL_PROMPT))
+MODEL_SLUG = $(or $(SLUG),$(call slug,$(if $(MODEL_IMAGE),$(basename $(notdir $(MODEL_IMAGE))),$(MODEL_PROMPT))))
 TEXTURE_KEY = $(call slug,$(TEXTURE_PROMPT))
 HEIGHT ?= 1.0
 TRIS ?= 800
 VIEW ?= quarter
 SEED ?= 42
 REFS ?=
+SLUG ?=
+TEXTURE ?= $(if $(MODEL_IMAGE),ref,wood)
+EXTRA_VIEWS ?= back side
+KEY ?=
 CHECK ?=
 TRIES ?= 6
 SHAPE ?= hunyuan3d-dit-v2-0-turbo
@@ -120,16 +125,30 @@ AI_IMAGE_PYTHON := $(HOME)/image-inpaint-mps/.venv/bin/python
 BLENDER := /Applications/Blender.app/Contents/MacOS/Blender
 AI_OUT = map-src/CampusCove/out/ai/$(MODEL_SLUG)
 
-model: ## * Prompt -> image -> 3D -> cleaned GLB + collision.json in map-src/CampusCove/out/ai/<slug>/ (make model "a wooden lantern" HEIGHT=1.2 TRIS=400 [VIEW=side] [SEED=7] [REFS="a.png b.png"] [SHAPE=hunyuan3d-dit-v2-0 STEPS=30 OCTREE=384])
+AI_SCRIPTS = $(CURDIR)/map-src/CampusCove
+AI_REF_VIEWS = $(if $(filter ref,$(TEXTURE)),$(EXTRA_VIEWS))
+AI_VIEW_FILES = $(foreach view,$(AI_REF_VIEWS),$(CURDIR)/$(AI_OUT)/ref_$(view).png)
+
+model: ## * Prompt or image path -> image -> 3D -> cleaned GLB + collision.json + meta.json in map-src/CampusCove/out/ai/<slug>/ (make model "a wooden lantern" or make model path/to/image.png, HEIGHT=1.2 TRIS=400 [VIEW=side] [SEED=7] [SLUG=name] [TEXTURE=wood|ref] [EXTRA_VIEWS="back side"] [REFS="a.png b.png"] [SHAPE=hunyuan3d-dit-v2-0 STEPS=30 OCTREE=384]); an image gets TEXTURE=ref: its back and side views are generated and baked into model.glb
 	@test -n "$(MODEL_PROMPT)" || { echo 'usage: make model "a single wooden lantern" [HEIGHT=1.2] [TRIS=400]'; exit 1; }
+	@test -n "$(MODEL_SLUG)" || { echo 'no usable name in "$(MODEL_PROMPT)": pass SLUG=my_name'; exit 1; }
+	$(AI_IMAGE_PYTHON) $(AI_SCRIPTS)/ai_meta.py check $(AI_OUT) "$(MODEL_PROMPT)"
 	mkdir -p $(AI_OUT)
-	$(AI_IMAGE_PYTHON) map-src/CampusCove/campuscove_image.py "$(MODEL_PROMPT)" $(CURDIR)/$(AI_OUT)/ref.png --view $(VIEW) --seed $(SEED) $(foreach ref,$(REFS),--ref $(ref))
-	$(if $(CHECK),cd $(AI_3D) && HF_HUB_OFFLINE=1 .venv/bin/python $(CURDIR)/map-src/CampusCove/check_ai_image.py $(CURDIR)/$(AI_OUT)/ref.png $(CHECK))
-	cd $(AI_3D) && HF_HUB_OFFLINE=1 .venv/bin/python $(CURDIR)/map-src/CampusCove/ai_mask.py $(CURDIR)/$(AI_OUT)/ref.png
-	cd $(AI_3D) && HY3DGEN_MODELS=models HF_HUB_OFFLINE=1 PYTORCH_ENABLE_MPS_FALLBACK=1 .venv/bin/python $(CURDIR)/map-src/CampusCove/campuscove_shape.py $(CURDIR)/$(AI_OUT)/ref.png $(CURDIR)/$(AI_OUT)/raw.glb --model $(SHAPE) --steps $(STEPS) --octree $(OCTREE)
-	$(BLENDER) -b --factory-startup -P map-src/CampusCove/clean_ai_mesh.py -- $(CURDIR)/$(AI_OUT)/raw.glb $(CURDIR)/$(AI_OUT)/model.glb $(MODEL_SLUG) $(HEIGHT) $(TRIS)
+	cd $(AI_OUT) && rm -f ref*.png mask*.png atlas.png raw.glb model.glb collision.json meta.json
+	$(if $(MODEL_IMAGE),sips -s format png "$(abspath $(MODEL_IMAGE))" --out $(CURDIR)/$(AI_OUT)/ref.png,$(AI_IMAGE_PYTHON) $(AI_SCRIPTS)/campuscove_image.py "$(MODEL_PROMPT)" $(CURDIR)/$(AI_OUT)/ref.png --view $(VIEW) --seed $(SEED) $(foreach ref,$(REFS),--ref $(ref)))
+	$(if $(or $(MODEL_IMAGE),$(AI_REF_VIEWS)),$(AI_IMAGE_PYTHON) $(AI_SCRIPTS)/ref_views.py $(CURDIR)/$(AI_OUT)/ref.png $(if $(MODEL_IMAGE),--normalise) --seed $(SEED) $(AI_REF_VIEWS))
+	$(if $(CHECK),cd $(AI_3D) && HF_HUB_OFFLINE=1 .venv/bin/python $(AI_SCRIPTS)/check_ai_image.py $(CURDIR)/$(AI_OUT)/ref.png $(CHECK))
+	cd $(AI_3D) && HF_HUB_OFFLINE=1 .venv/bin/python $(AI_SCRIPTS)/ai_mask.py $(CURDIR)/$(AI_OUT)/ref.png $(AI_VIEW_FILES)
+	cd $(AI_3D) && HY3DGEN_MODELS=models HF_HUB_OFFLINE=1 PYTORCH_ENABLE_MPS_FALLBACK=1 .venv/bin/python $(AI_SCRIPTS)/campuscove_shape.py $(CURDIR)/$(AI_OUT)/ref.png $(CURDIR)/$(AI_OUT)/raw.glb --model $(SHAPE) --steps $(STEPS) --octree $(OCTREE)
+	$(BLENDER) -b --factory-startup -P $(AI_SCRIPTS)/clean_ai_mesh.py -- $(CURDIR)/$(AI_OUT)/raw.glb $(CURDIR)/$(AI_OUT)/model.glb $(MODEL_SLUG) $(HEIGHT) $(TRIS)
+	$(if $(filter ref,$(TEXTURE)),$(AI_IMAGE_PYTHON) $(AI_SCRIPTS)/ref_atlas.py $(CURDIR)/$(AI_OUT) && $(BLENDER) -b --factory-startup -P $(AI_SCRIPTS)/bake_ref_atlas.py -- $(CURDIR)/$(AI_OUT)/model.glb $(CURDIR)/$(AI_OUT))
 	node front/scripts/apply-decor-collision.mjs $(AI_OUT)/model.glb
-	$(AI_IMAGE_PYTHON) map-src/CampusCove/texture_parts.py model $(AI_OUT) $(PARTS)
+	$(AI_IMAGE_PYTHON) $(AI_SCRIPTS)/texture_parts.py model $(AI_OUT) $(PARTS)
+	$(AI_IMAGE_PYTHON) $(AI_SCRIPTS)/ai_meta.py write $(AI_OUT) "input=$(MODEL_PROMPT)" seed=$(SEED) view=$(VIEW) height=$(HEIGHT) tris=$(TRIS) shape=$(SHAPE) steps=$(STEPS) octree=$(OCTREE) texture=$(TEXTURE) "extra_views=$(AI_REF_VIEWS)"
+
+model-install: ## * Copy make model's result into front/public/assets/decor/<KEY>/ and list it in a decor category (make model-install "a wooden lantern" KEY=lantern CATEGORY=lighting); never overwrites
+	@test -n "$(KEY)" -a "$(origin CATEGORY)" = "command line" || { echo 'usage: make model-install "<prompt or image path>" KEY=lantern CATEGORY=lighting'; exit 1; }
+	$(AI_IMAGE_PYTHON) $(AI_SCRIPTS)/install_ai_decor.py $(AI_OUT) front/public/assets/decor $(KEY) $(CATEGORY)
 
 model-checked: ## * make model with CHECK=quadruped|biped, retried on the next seeds until the concept image passes (TRIES=6)
 	@test -n "$(CHECK)" || { echo 'usage: make model-checked "a cow standing" VIEW=side CHECK=quadruped [TRIES=6]'; exit 1; }
@@ -138,8 +157,10 @@ model-checked: ## * make model with CHECK=quadruped|biped, retried on the next s
 		echo "seed $$seed refused, trying the next one"; \
 	done; echo "no seed out of $(TRIES) passed the check"; exit 1
 
-model-test: ## * Tests of the make model Blender cleanup (headless Blender)
+model-test: ## * Tests of the make model Blender cleanup (headless Blender) and of its views, atlas, meta and install helpers
 	$(BLENDER) -b --factory-startup --python-exit-code 1 -P map-src/CampusCove/test_clean_ai_mesh.py
+	$(BLENDER) -b --factory-startup --python-exit-code 1 -P map-src/CampusCove/test_bake_ref_atlas.py
+	cd map-src/CampusCove && $(AI_IMAGE_PYTHON) test_ai_tools.py
 
 animal-skin-test: ## * Tests of the animal auto-skinning on a worm, fish, bird, tiger, octopus and every shipped animal (headless Blender)
 	$(BLENDER) -b --factory-startup --python-exit-code 1 -P map-src/CampusCove/test_animal_skin.py
