@@ -51,6 +51,7 @@ const FIT_MARGIN = 40
 const DRAG_THRESHOLD = 3
 const PIN = 14
 const RESULT_SHOWN_MS = 2500
+const MENU_W = 248
 
 interface MenuItem {
   group: string
@@ -68,7 +69,7 @@ const viewport = ref<HTMLElement | null>(null)
 const search = ref<HTMLInputElement | null>(null)
 const pan = ref({ x: 0, y: 0 })
 const zoom = ref(1)
-const menu = ref<{ x: number; y: number; nodeId: string; pos?: [number, number] } | null>(null)
+const menu = ref<{ x: number; y: number; up: boolean; nodeId: string; pos?: [number, number] } | null>(null)
 const query = ref('')
 const highlighted = ref(0)
 const collapsed = ref(new Set<string>())
@@ -182,7 +183,8 @@ function toWorld(event: { clientX: number; clientY: number }): [number, number] 
 }
 
 function openMenu(at: [number, number], nodeId: string, pos?: [number, number]): void {
-  menu.value = { x: at[0], y: at[1], nodeId, pos }
+  const el = viewport.value!
+  menu.value = { x: Math.min(at[0], el.clientWidth - MENU_W), y: at[1], up: at[1] > el.clientHeight / 2, nodeId, pos }
   query.value = ''
   highlighted.value = 0
   void nextTick(() => search.value?.focus())
@@ -383,7 +385,7 @@ defineExpose({ fit, openPalette })
   <div
     ref="viewport"
     tabindex="0"
-    class="npc-graph relative h-full w-full cursor-grab overflow-hidden rounded-2xl outline-none"
+    class="npc-graph relative h-full w-full cursor-grab select-none overflow-hidden rounded-2xl outline-none"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
     @pointerup="onPointerUp"
@@ -497,7 +499,7 @@ defineExpose({ fit, openPalette })
     <div
       v-if="menu && menuNode"
       class="cc-panel-flat absolute z-10 flex max-h-[70%] w-60 flex-col gap-0.5 p-1.5 text-sm"
-      :style="{ left: `${menu.x}px`, top: `${menu.y}px` }"
+      :style="menu.up ? { left: `${menu.x}px`, bottom: `${viewport!.clientHeight - menu.y}px` } : { left: `${menu.x}px`, top: `${menu.y}px` }"
       @pointerdown.stop
     >
       <input ref="search" v-model="query" class="cc-input mb-1 py-1 text-sm" :placeholder="menu.pos ? `Add under ${menuNode.id}…` : 'Search…'" @keydown.stop="onMenuKey" />

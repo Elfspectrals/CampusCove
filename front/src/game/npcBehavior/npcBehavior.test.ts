@@ -178,3 +178,16 @@ test('run behavior needs an existing tree whose points and keys are here, withou
   assert.throws(() => parseNpcBehavior({ version: 1, trees: { sub, caller: caller([]) }, npcs: [] }), /uses the point bench, missing here/)
   assert.throws(() => parseNpcBehavior({ version: 1, trees: { caller: { ...caller([]), root: { id: 'rb', type: 'run_behavior', tree: 'caller' } } }, npcs: [] }), /Run Behavior loops/)
 })
+
+test('in a tree laid out by hand, new and pasted nodes take a place and children stay ordered by x', () => {
+  const placed = setPositions(nested(), new Map<string, [number, number]>([['root', [0, 0]], ['left', [-300, 120]], ['right', [300, 120]], ['a', [-400, 240]], ['b', [-200, 240]], ['c', [300, 240]]]))
+  const added = addChild(placed, 'left', 'wait')
+  assert.deepEqual(findNode(added.tree.root, added.id)?.pos, [-200 + 220 + 28, 240])
+  const dropped = addChild(placed, 'left', 'wait', [-1000, 240])
+  assert.deepEqual(childIds(dropped.tree, 'left'), [dropped.id, 'a', 'b'])
+  const pasted = pasteNode(placed, 'root', findNode(placed.root, 'right')!, [-900, 0])
+  assert.deepEqual(childIds((pasted as { tree: BehaviorTree }).tree, 'root'), ['right_1', 'left', 'right'])
+  const swapped = moveNode(placed, 'b', -1)
+  assert.deepEqual(childIds(swapped, 'left'), ['b', 'a'])
+  assert.deepEqual([findNode(swapped.root, 'b')?.pos, findNode(swapped.root, 'a')?.pos], [[-400, 240], [-200, 240]])
+})

@@ -94,12 +94,31 @@ export function updateNode(tree: BehaviorTree, id: string, edit: (node: BtNode) 
 export function addChild(tree: BehaviorTree, parentId: string, type: CompositeType | TaskType, pos?: [number, number]): { tree: BehaviorTree; id: string } {
   const id = newNodeId(tree.root, type)
   const withFirst = NODE_SPECS[type].group === 'composite'
+  const parent = findNode(tree.root, parentId)
+  const at = pos ?? (parent && isComposite(parent) ? besideSiblings(parent) : undefined)
   const first = withFirst ? createNode('wait', `${id}_wait`) : undefined
-  if (first && pos) first.pos = [pos[0], pos[1] + HEADER_H + GAP_Y]
+  if (first && at) first.pos = [at[0], at[1] + HEADER_H + GAP_Y]
   const node = withFirstKey(createNode(type, id, first), tree)
-  if (pos) node.pos = pos
-  const next = updateNode(tree, parentId, (parent) => (isComposite(parent) ? { ...parent, children: [...parent.children, node] } : parent))
+  if (at) node.pos = at
+  const next = updateNode(tree, parentId, (p) => (isComposite(p) ? { ...p, children: byPosition([...p.children, node]) } : p))
   return { tree: next, id }
+}
+
+function byPosition(children: BtNode[]): BtNode[] {
+  return children.every((c) => c.pos) ? [...children].sort((a, b) => a.pos![0] - b.pos![0]) : children
+}
+
+function besideSiblings(parent: CompositeNode): [number, number] | undefined {
+  if (!parent.pos) return undefined
+  const placed = parent.children.filter((c) => c.pos)
+  if (placed.length === 0) return [parent.pos[0], parent.pos[1] + nodeHeight(parent) + GAP_Y]
+  const right = placed.reduce((a, b) => (b.pos![0] > a.pos![0] ? b : a))
+  return [right.pos![0] + NODE_WIDTH + GAP_X, right.pos![1]]
+}
+
+function shifted(node: BtNode, dx: number): BtNode {
+  const moved = node.pos ? { ...node, pos: [node.pos[0] + dx, node.pos[1]] as [number, number] } : node
+  return isComposite(moved) ? { ...moved, children: moved.children.map((c) => shifted(c, dx)) } : moved
 }
 
 /** Not the root, and a composite keeps at least one child: returns the same tree then. */
@@ -116,7 +135,9 @@ export function moveNode(tree: BehaviorTree, id: string, delta: -1 | 1): Behavio
   const to = from + delta
   if (to < 0 || to >= parent.children.length) return tree
   const children = [...parent.children]
-  ;[children[from], children[to]] = [children[to]!, children[from]!]
+  const [a, b] = [children[from]!, children[to]!]
+  const dx = a.pos && b.pos ? b.pos[0] - a.pos[0] : 0
+  ;[children[from], children[to]] = [shifted(b, -dx), shifted(a, dx)]
   return updateNode(tree, parent.id, (p) => ({ ...p, children }))
 }
 
@@ -183,7 +204,7 @@ export function pasteNode(tree: BehaviorTree, parentId: string, node: BtNode, of
   if (!parent || !isComposite(parent)) return { error: 'Paste under a composite: select one first.' }
   if (parent.children.length >= MAX_CHILDREN) return { error: `${parentId} already has ${MAX_CHILDREN} children.` }
   const copy = fitToParent(freshCopy(tree, node, offset), parent.type)
-  return { tree: updateNode(tree, parentId, (p) => ({ ...p, children: [...(p as CompositeNode).children, copy] })), id: copy.id }
+  return { tree: updateNode(tree, parentId, (p) => ({ ...p, children: byPosition([...(p as CompositeNode).children, copy]) })), id: copy.id }
 }
 
 function replacePoint(root: BtNode, from: string, to: string): BtNode {

@@ -376,7 +376,7 @@ onBeforeUnmount(() => {
               </div>
               <form class="flex items-center gap-1" @submit.prevent="addKey">
                 <input v-model="newKeyName" placeholder="new_key" class="cc-input min-w-0 flex-1 py-1 font-mono text-xs" />
-                <select v-model="newKeyType" class="cc-input w-20 py-1 text-xs">
+                <select v-model="newKeyType" class="cc-input w-24 shrink-0 py-1 text-xs">
                   <option v-for="t in KEY_TYPES" :key="t" :value="t">{{ t }}</option>
                 </select>
                 <button type="submit" class="cc-btn cc-btn-sm cc-btn-ghost px-2"><UiIcon name="plus" :size="12" /></button>
